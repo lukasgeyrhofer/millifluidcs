@@ -137,7 +137,8 @@ class timeseries:
         p0 = np.array([t[maxidx]-0.03,t[maxidx]+0.03,np.sqrt(p[maxidx]),np.sqrt(p[minidx] if p[minidx]>0 else 0)])
         
         parameters,cov = curve_fit(stepoffset,t,p,p0=p0,maxfev=self.__maxfev)
-        return parameters
+        fitparam = np.array([parameters[0],parameters[2]**2,parameters[3]**2,parameters[1]])
+        return fitparam
         
     
     def fit_gaussian(self,startindex,finalindex):
@@ -150,7 +151,8 @@ class timeseries:
         p0 = np.array([t[maxidx],0.03,np.sqrt(p[maxidx]-p[minidx]),np.sqrt(p[minidx] if p[minidx]>0 else 0)])
         
         parameters,cov = curve_fit(gaussoffset,t,p,p0=p0,maxfev=self.__maxfev)
-        return parameters
+        fitparam = np.array([0.5*(parameters[0]+parameters[1]),parameters[2]**2,parameters[3]**2,parameters[1]-parameters[0]])
+        return fitparam
     
     def fit_sigmoid(self,startindex,finalindex):
         t = self.__timeseriesdata[startindex:finalindex,0]
@@ -162,7 +164,8 @@ class timeseries:
         p0 = np.array([t[maxidx],0.03,0.003,np.sqrt(p[maxidx]-p[minidx]),np.sqrt(p[minidx] if p[minidx]>0 else 0)])
         
         parameters,cov = curve_fit(sigmoidoffset,t,p,p0=p0,maxfev=self.__maxfev)
-        return parameters
+        fitparam = np.array([parameters[0],parameters[3]**2,parameters[4]**2,parameters[1],parameters[2]])
+        return fitparam
         
     
     def get_droplet_data_fit(self):
