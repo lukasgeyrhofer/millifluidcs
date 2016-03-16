@@ -33,13 +33,12 @@ class droplet:
     
     
     def add_droplet_fitinfo(self,key,dropletID,values):
+        c = len(values)
         if not key in self.__fitkeys:
-            c = len(values)
-            self.__fitdata[key] = np.zeros((values,self.__dropletcount))
+            self.__fitdata[key] = np.zeros((self.__dropletcount,c))
             self.__fitkeys.append(key)
         if dropletID < self.__dropletcount:
-            self.__fitdata[key][:,i] = values
-            
+            self.__fitdata[key][dropletID] = values
     
     def __getitem__(self,key):
         if key in self.__fitkeys:
@@ -68,22 +67,28 @@ class droplet:
         return self.__dropletcount
     def get_data(self):
         return self.__droplettime,self.__dropletmax,self.__dropletbase
-    def get_fitdata(self):
-        return self.__fittime,self.__fitheight,self.__fitbase,self.__fitwidth
                         
+    def __iter__(self):
+        for key in self.__fitkeys:
+            yield self[key]
 
 
 def gaussoffset(x,mean,stddev,sqrtmaxval,sqrtbaseval):
     return np.exp(-0.5*(x-mean)**2/stddev**2)*sqrtmaxval**2+sqrtbaseval**2
 
 def stepoffset(x,t1,t2,sqrtmaxval,sqrtminval):
-    if x<=t1:   return sqrtminval**2
-    elif x<=t2: return sqrtmaxval**2
-    else:       return sqrtminval**2
+    r = np.ones(len(x))*sqrtminval**2
+    i1 = ((x-t1)**2).argmin()
+    i2 = ((x-t2)**2).argmin()
+    r[i1:i2] = sqrtmaxval**2
+    return r
 
 def sigmoidoffset(x,mean,crossover,steepness,sqrtheight,sqrtbase):
-    if x>=mean: return sqrtheight**2 /(1.+np.exp( (x-mean-crossover)/steepness)) + sqrtbase**2
-    if x<mean:  return sqrtheight**2 /(1.+np.exp(-(x-mean+crossover)/steepness)) + sqrtbase**2
+    r = np.zeros(len(x))
+    i1 = ((x-mean)**2).argmin()
+    r[:i1] = sqrtheight**2 /(1.+np.exp(-(x[:i1]-mean+crossover)/steepness)) + sqrtbase**2
+    r[i1:] = sqrtheight**2 /(1.+np.exp( (x[i1:]-mean-crossover)/steepness)) + sqrtbase**2
+    return r
 
 class timeseries:
     def __init__(self,filename,minmax_lowerthreshold = .15, minmax_upperthreshold = .3,maxfev=5000):
@@ -118,7 +123,6 @@ class timeseries:
                 maxidx  = self.__timeseriesdata[enteredlower:i,1].argmax()+enteredlower
                 maxval  = self.__timeseriesdata[maxidx,1]
                 time    = self.__timeseriesdata[maxidx,0]
-                #print baseidx,maxidx,enteredlower
                 
                 self.__droplets.add_droplet(maxval,baseval,time,maxidx)
                 enteredlower = i
@@ -132,7 +136,7 @@ class timeseries:
         
         p0 = np.array([t[maxidx]-0.03,t[maxidx]+0.03,np.sqrt(p[maxidx]),np.sqrt(p[minidx] if p[minidx]>0 else 0)])
         
-        parameters,cov = curve_fit(stepoffset,t,p,p0=p0,maxfe=self.__maxfev)
+        parameters,cov = curve_fit(stepoffset,t,p,p0=p0,maxfev=self.__maxfev)
         return parameters
         
     
@@ -156,6 +160,10 @@ class timeseries:
         minidx = p.argmin()
 
         p0 = np.array([t[maxidx],0.03,0.003,np.sqrt(p[maxidx]-p[minidx]),np.sqrt(p[minidx] if p[minidx]>0 else 0)])
+        
+        parameters,cov = curve_fit(sigmoidoffset,t,p,p0=p0,maxfev=self.__maxfev)
+        return parameters
+        
     
     def get_droplet_data_fit(self):
         for i in range(self.__droplets["count"]):
@@ -179,27 +187,33 @@ class timeseries:
 
     def __str__(self):
         n = self.__droplets.get_count()
-        #print n
         if n == 0:
             return "no data"
         else:
             dtime,dmax,dbase = self.__droplets.get_data()
-            ftime,fmax,fbase,fwidth = self.__droplets.get_fitdata()
-            s = ""
-            for i in range(n):
-                s += "%5d %e %e %e %e %e %e %e\n"%(i,dtime[i],dmax[i],dbase[i],ftime[i],fmax[i],fbase[i],fwidth[i])
-            return s
             
-parser = argparse.ArgumentParser()
-parser.add_argument("-i","--infile")
-parser.add_argument("-m","--minthreshold",type=float,default=.15)
-parser.add_argument("-M","--maxthreshold",type=float,default=.3)
-args = parser.parse_args()
-
-data = timeseries(args.infile,args.minthreshold,args.maxthreshold)
-#data.check()
-data.get_droplet_data_minmax()
-data.get_droplet_data_fit()
-print data
+            s = ["%5d %e %e %e"%(i,dtime[i],dmax[i],dbase[i]) for i in range(n)]
+            for fitdata in iter(self.__droplets):
+                for i in range(n):
+                    for j in range(len(fitdata[i])):
+                        s[i] += " %e"%fitdata[i,j]
+            
+            return "\n".join(s)
+    
 
 
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i","--infile")
+    parser.add_argument("-m","--minthreshold",type=float,default=.15)
+    parser.add_argument("-M","--maxthreshold",type=float,default=.3)
+    args = parser.parse_args()
+
+    data = timeseries(args.infile,args.minthreshold,args.maxthreshold)
+    data.get_droplet_data_minmax()
+    data.get_droplet_data_fit()
+    print data
+
+if __name__ == "__main__":
+    main()
