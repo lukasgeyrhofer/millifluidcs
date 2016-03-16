@@ -83,12 +83,13 @@ def stepoffset(x,t1,t2,sqrtmaxval,sqrtminval):
     r[i1:i2] = sqrtmaxval**2
     return r
 
-def sigmoidoffset(x,mean,crossover,steepness,sqrtheight,sqrtbase):
+def sigmoidoffset(x,mean,sqrtcrossover,sqrtsteepness,sqrtheight,sqrtbase):
     r = np.zeros(len(x))
     i1 = ((x-mean)**2).argmin()
-    r[:i1] = sqrtheight**2 /(1.+np.exp(-(x[:i1]-mean+crossover)/steepness)) + sqrtbase**2
-    r[i1:] = sqrtheight**2 /(1.+np.exp( (x[i1:]-mean-crossover)/steepness)) + sqrtbase**2
+    r[:i1] = sqrtheight**2 /(1.+np.exp(-(x[:i1]-mean+sqrtcrossover**2)/sqrtsteepness**2)) + sqrtbase**2
+    r[i1:] = sqrtheight**2 /(1.+np.exp( (x[i1:]-mean-sqrtcrossover**2)/sqrtsteepness**2)) + sqrtbase**2
     return r
+
 
 class timeseries:
     def __init__(self,filename,minmax_lowerthreshold = .15, minmax_upperthreshold = .3,maxfev=5000):
@@ -137,7 +138,7 @@ class timeseries:
         p0 = np.array([t[maxidx]-0.03,t[maxidx]+0.03,np.sqrt(p[maxidx]),np.sqrt(p[minidx] if p[minidx]>0 else 0)])
         
         parameters,cov = curve_fit(stepoffset,t,p,p0=p0,maxfev=self.__maxfev)
-        fitparam = np.array([parameters[0],parameters[2]**2,parameters[3]**2,parameters[1]])
+        fitparam = np.array([0.5*(parameters[0]+parameters[1]),parameters[2]**2,parameters[3]**2,abs(parameters[1]-parameters[0])])
         return fitparam
         
     
@@ -151,8 +152,9 @@ class timeseries:
         p0 = np.array([t[maxidx],0.03,np.sqrt(p[maxidx]-p[minidx]),np.sqrt(p[minidx] if p[minidx]>0 else 0)])
         
         parameters,cov = curve_fit(gaussoffset,t,p,p0=p0,maxfev=self.__maxfev)
-        fitparam = np.array([0.5*(parameters[0]+parameters[1]),parameters[2]**2,parameters[3]**2,parameters[1]-parameters[0]])
+        fitparam = np.array([parameters[0],parameters[2]**2+parameters[3]**2,parameters[3]**2,abs(parameters[1])])
         return fitparam
+    
     
     def fit_sigmoid(self,startindex,finalindex):
         t = self.__timeseriesdata[startindex:finalindex,0]
@@ -161,10 +163,10 @@ class timeseries:
         maxidx = p.argmax()
         minidx = p.argmin()
 
-        p0 = np.array([t[maxidx],0.03,0.003,np.sqrt(p[maxidx]-p[minidx]),np.sqrt(p[minidx] if p[minidx]>0 else 0)])
+        p0 = np.array([t[maxidx],np.sqrt(0.03),np.sqrt(0.003),np.sqrt(p[maxidx]-p[minidx]),np.sqrt(p[minidx] if p[minidx]>0 else 0)])
         
         parameters,cov = curve_fit(sigmoidoffset,t,p,p0=p0,maxfev=self.__maxfev)
-        fitparam = np.array([parameters[0],parameters[3]**2,parameters[4]**2,parameters[1],parameters[2]])
+        fitparam = np.array([parameters[0],parameters[3]**2+parameters[4]**2,parameters[4]**2,parameters[1]**2,parameters[2]**2])
         return fitparam
         
     
