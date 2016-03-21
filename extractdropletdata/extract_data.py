@@ -71,6 +71,9 @@ class droplet:
     def __iter__(self):
         for key in self.__fitkeys:
             yield self[key]
+    
+    def get_fitkeys(self):
+        return self.__fitkeys
 
 
 def gaussoffset(x,mean,stddev,sqrtmaxval,sqrtbaseval):
@@ -205,6 +208,21 @@ class timeseries:
             
             return "\n".join(s)
     
+    def print_gnuplot_fits(self,filename = None):
+        for fitkey in self.__droplets.get_fitkeys():
+            if   fitkey == "gauss":     print "fitgauss(x,time,maxval,minval,width) = (maxval-minval)*exp(-(x-time)**2/(2*width**2))+minval"
+            elif fitkey == "step":      print "fitstep(x,time,maxval,minval,width) = (x<=time-width/2?minval:(x<=time+width/2?maxval:minval))"
+            elif fitkey == "sigmoid":   print "fitsigmoid(x,time,maxval,minval,width,steepness) = (x>=time?minval+(maxval-minval)/(1+exp((x-time-width)/steepness)):minval+(maxval-minval)/(1+exp((-x+time-width)/steepness)))"
+            else:                       print "ERROR: fit not implemented"
+        if filename != None:
+            print "plot \"%s\" u 1:2 w lp lw 5 lc rgb \"#babdb6\", "%filename,
+        else:
+            print "plot ",
+        print ", ".join([", ".join(["fit%s(x,"%fitkey + ",".join(["%e"%v for v in value]) + ")" for value in self.__droplets[fitkey]]) for fitkey in self.__droplets.get_fitkeys()])
+        
+        
+            
+    
 
 
 
@@ -218,6 +236,7 @@ def main():
     data = timeseries(args.infile,args.minthreshold,args.maxthreshold)
     data.get_droplet_data_minmax()
     data.get_droplet_data_fit()
+    #data.print_gnuplot_fits(filename = args.infile)
     print data
 
 if __name__ == "__main__":
