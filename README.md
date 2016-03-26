@@ -1,2 +1,2 @@
 # millifluidics
-Collection of programs to investigate micriobial populations in millifluidic droplets
+Collection of programs to investigate microbial populations in millifluidic droplets
