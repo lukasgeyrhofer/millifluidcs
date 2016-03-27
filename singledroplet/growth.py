@@ -1,4 +1,21 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# ======================================================= #
+#  Reaction system to compute growth of microbes          #
+#  in a single millifluidic droplet in the presence       #
+#  of antibiotics. Both, growth rate and yield factor     #
+#  are influenced by increasing antibiotic concentration  #
+# ======================================================= #
+#  USAGE:                                                 #
+#   ./growth.py                                           #
+#                                                         #
+#  Parameters estimated corresponding to values found in  #
+#    Baraban et al., LabChip (2011)                       #
+#                                                         #
+#  Lukas Geyrhofer, 2016                                  #
+# ======================================================= #
+
 
 import numpy as np
 import argparse
@@ -15,6 +32,8 @@ def RungeKutta4(func,xx,tt,step):
 
 class dropletdynamics:
     def __init__(self,**kwargs):
+        # initialization
+        # extract all parameters from the argparser namespace
         self.__x = np.array([kwargs.get('start_bacteria',10.),kwargs.get('start_nutrients',1.5),kwargs.get('start_antibiotics',0)])
         self.__antibiotics = {'zmic':kwargs.get('antibiotics_zmic',0.002),'kappa':kwargs.get('antibiotics_kappa',2.),'gamma':kwargs.get('antibiotics_gamma',10)}
         self.__nutrients = {'ks':kwargs.get('nutrients_ks',0.2),'amax':kwargs.get('nutrients_amax',0.02),'yield':kwargs.get('yieldfactor',2e5)}
@@ -23,14 +42,21 @@ class dropletdynamics:
         self.__epsilon = kwargs.get('epsilon',0.05)
     
     def __str__(self):
-        return "{:.2f} {:e} {:e} {:e}".format(self.__time,self.__x[0],self.__x[1],self.__x[2])
+        # return time and all concentrations when object is printed
+        s = "{:.3f}".format(self.__time)
+        for i in len(self.__x):
+            s += " {:e}".format(self.__x[i])
+        return s
     
     def dxdt(self,tt,xx):
+        # time evolution for system of differential equations
         growthrate  = self.__nutrients['amax'] * xx[1] / (self.__nutrients['ks'] + xx[1]) * (1-(1+self.__antibiotics['gamma'])*np.power(xx[2]/self.__antibiotics['zmic'],self.__antibiotics['kappa'])/(np.power(xx[2]/self.__antibiotics['zmic'],self.__antibiotics['kappa']) + self.__antibiotics['gamma']))
         yieldfactor = self.__nutrients['yield'] # still a dummy
         return np.array([growthrate * xx[0], -growthrate/yieldfactor * xx[0],0])
     
     def step(self):
+        # iterate a single step
+        # concentration cannot be smaller than 0
         self.__x             =  RungeKutta4(self.dxdt,self.__x,self.__time,self.__epsilon)
         self.__x[self.__x<0] =  0
         self.__time          += self.__epsilon
@@ -58,10 +84,15 @@ def main():
     parser_algorithm.add_argument(  "-O","--outputstep",        type=int,   default=20)
     args = parser.parse_args()
     
+    # create droplet object
     droplet = dropletdynamics(**vars(args))
+    
+    # iterate single steps
     for i in range(args.maxsteps):
+        # output ?
         if i%args.outputstep == 0:
             print droplet
+        # iterate
         droplet.step()
     
         
