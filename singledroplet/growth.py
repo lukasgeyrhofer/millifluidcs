@@ -31,26 +31,31 @@ class dropletdynamics:
         return np.array([growthrate * xx[0], -growthrate/yieldfactor * xx[0],0])
     
     def step(self):
-        self.__x      = RungeKutta4(self.dxdt,self.__x,self.__time,self.__epsilon)
-        self.__x[self.__x<0] = 0
-        self.__time  += self.__epsilon
-        self.__steps += 1
+        self.__x             =  RungeKutta4(self.dxdt,self.__x,self.__time,self.__epsilon)
+        self.__x[self.__x<0] =  0
+        self.__time          += self.__epsilon
+        self.__steps         += 1
     
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-N","--start_bacteria",type=float,default=10)
-    parser.add_argument("-S","--start_substrate",type=float,default=1.5)
-    parser.add_argument("-B","--start_antibiotics",type=float,default=0)
-    parser.add_argument("-z","--antibiotics_zmic",type=float,default=0.002)
-    parser.add_argument("-k","--antibiotics_kappa",type=float,default=2.)
-    parser.add_argument("-g","--antibiotics_gamma",type=float,default=10.)
-    parser.add_argument("-s","--nutrients_ks",type=float,default=0.2)
-    parser.add_argument("-a","--nutrients_amax",type=float,default=0.02)
-    parser.add_argument("-y","--yieldfactor",type=float,default=2e5)
-    parser.add_argument("-e","--epsilon",type=float,default=0.05)
-    parser.add_argument("-M","--maxsteps",type=int,default=2000)
-    parser.add_argument("-O","--outputstep",type=int,default=20)
+    parse_initialcond = parser.add_argument_group(description = "Initialconditions")
+    parser_initialcond.add_argument("-N","--start_bacteria",    type=float, default=10)
+    parser_initialcond.add_argument("-S","--start_substrate",   type=float, default=1.5)
+    parser_initialcond.add_argument("-B","--start_antibiotics", type=float, default=0)
+    
+    parser_interaction = parser.add_argument_group(description = "Interaction parameters")
+    parser_interaction.add_argument("-z","--antibiotics_zmic",  type=float, default=0.002)
+    parser_interaction.add_argument("-k","--antibiotics_kappa", type=float, default=2.)
+    parser_interaction.add_argument("-g","--antibiotics_gamma", type=float, default=10.)
+    parser_interaction.add_argument("-s","--nutrients_ks",      type=float, default=0.2)
+    parser_interaction.add_argument("-a","--nutrients_amax",    type=float, default=0.02)
+    parser_interaction.add_argument("-y","--yieldfactor",       type=float, default=2e5)
+    
+    parser_algorithm   = parser.add_argument_group(description = "Algorithm parameters")
+    parser_algorithm.add_argument(  "-e","--epsilon",           type=float, default=0.05)
+    parser_algorithm.add_argument(  "-M","--maxsteps",          type=int,   default=2000)
+    parser_algorithm.add_argument(  "-O","--outputstep",        type=int,   default=20)
     args = parser.parse_args()
     
     droplet = dropletdynamics(**vars(args))
