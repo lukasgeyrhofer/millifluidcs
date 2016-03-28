@@ -34,7 +34,8 @@ class dropletdynamics:
     def __init__(self,**kwargs):
         # initialization
         # extract all parameters from the argparser namespace
-        self.__x = np.array([kwargs.get('start_bacteria',10.),kwargs.get('start_nutrients',1.5),kwargs.get('start_antibiotics',0)])
+        self.__start = np.array([kwargs.get('start_bacteria',10.),kwargs.get('start_nutrients',1.5),kwargs.get('start_antibiotics',0)])
+        self.__x = self.__start[:]
         self.__antibiotics = {'zmic':kwargs.get('antibiotics_zmic',0.002),'kappa':kwargs.get('antibiotics_kappa',2.),'gamma':kwargs.get('antibiotics_gamma',10)}
         self.__nutrients = {'ks':kwargs.get('nutrients_ks',0.2),'amax':kwargs.get('nutrients_amax',0.02),'yield':kwargs.get('yieldfactor',2e5)}
         self.__time = 0
@@ -50,22 +51,30 @@ class dropletdynamics:
     
     def dxdt(self,tt,xx):
         # time evolution for system of differential equations
-        growthrate  = self.__nutrients['amax'] * xx[1] / (self.__nutrients['ks'] + xx[1]) * (1-(1+self.__antibiotics['gamma'])*np.power(xx[2]/self.__antibiotics['zmic'],self.__antibiotics['kappa'])/(np.power(xx[2]/self.__antibiotics['zmic'],self.__antibiotics['kappa']) + self.__antibiotics['gamma']))
-        yieldfactor = self.__nutrients['yield'] # still a dummy
+        # it seems that nutrient concentrations and antibiotic concenctration are almost independent effects
+        # thus, model growth rate as product of standard Michaelis-Menten kinetics and a sigmoid curve in antibiotic concentration of growth rate (=beta), interpolating between 1 and -gamma (reaching 0 at a concentration of zMIC)
+        bzk = np.power(xx[2]/self.__antibiotics['zmic'],self.__antibiotics['kappa'])
+        beta = (1-(1+self.__antibiotics['gamma'])*bzk/(bzk + self.__antibiotics['gamma']))
+        growthrate  = self.__nutrients['amax'] * xx[1] / (self.__nutrients['ks'] + xx[1]) * beta
+        # results in Baraban et al, LabChip(2011) indicate that maximal denisty is also dependent on antibiotic concentration
+        # change yield such that growth stops at the same time
+        yieldfactor = self.__nutrients['yield'] * (np.power(self.__start[1]*self.__nutrients['yield']/self.__start[0]+1,beta)-1)
+        # still unanswered question: why does this depend on initial conditions?
         return np.array([growthrate * xx[0], -growthrate/yieldfactor * xx[0],0])
     
     def step(self):
         # iterate a single step
-        # concentration cannot be smaller than 0
         self.__x             =  RungeKutta4(self.dxdt,self.__x,self.__time,self.__epsilon)
+        # concentrations cannot be smaller than 0
         self.__x[self.__x<0] =  0
+        # progress time
         self.__time          += self.__epsilon
         self.__steps         += 1
     
 
 def main():
     parser = argparse.ArgumentParser()
-    parser_initialcond = parser.add_argument_group(description = "Initialconditions")
+    parser_initialcond = parser.add_argument_group(description = "Initial conditions")
     parser_initialcond.add_argument("-N","--start_bacteria",    type=float, default=10)
     parser_initialcond.add_argument("-S","--start_substrate",   type=float, default=1.5)
     parser_initialcond.add_argument("-B","--start_antibiotics", type=float, default=0)
