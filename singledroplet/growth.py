@@ -44,7 +44,7 @@ class dropletdynamics:
     def __str__(self):
         # return time and all concentrations when object is printed
         s = "{:.3f}".format(self.__time)
-        for i in len(self.__x):
+        for i in range(len(self.__x)):
             s += " {:e}".format(self.__x[i])
         return s
     
@@ -65,7 +65,7 @@ class dropletdynamics:
 
 def main():
     parser = argparse.ArgumentParser()
-    parse_initialcond = parser.add_argument_group(description = "Initialconditions")
+    parser_initialcond = parser.add_argument_group(description = "Initialconditions")
     parser_initialcond.add_argument("-N","--start_bacteria",    type=float, default=10)
     parser_initialcond.add_argument("-S","--start_substrate",   type=float, default=1.5)
     parser_initialcond.add_argument("-B","--start_antibiotics", type=float, default=0)
