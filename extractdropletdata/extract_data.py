@@ -1,10 +1,48 @@
 #!/usr/bin/env python
 
+
+# ==================================================================== #
+#    Extract data from droplet train                                   #
+# ==================================================================== #
+#                                                                      #
+#    Takes time series data and extracts info for each droplet         #
+#    by finding increases in signal that corresponds to a              #
+#    droplet, then fitting fit fuctions through the time series        #
+#    to get properties of the droplet.                                 #
+#                                                                      #
+#    Currently implemented fit functions:                              #
+#      * rectangular                                                   #
+#      * Gaussian                                                      #
+#      * sigmoid                                                       #
+#    Each fit yields                                                   #
+#      * position of droplet center in time                            #
+#      * maximum value of signal                                       #
+#      * base value of signal                                          #
+#      * parameter related to width of droplet                         #
+#      * (for sigmoid only:) steepness of signal at flanks             #
+#                                                                      #
+#    Usage:                                                            #
+#      ./extract_data.py -i DATAFILE -m 0.15 -M 0.3                    #
+#                                                                      #
+#    Use option --help to see improved description                     #
+#                                                                      #
+#                                                                      #
+#    Lukas Geyrhofer, 2016                                             #
+#                                                                      #
+#                                                                      #
+# ==================================================================== #
+
+
+
 import numpy as np
 import argparse
 import sys,math
 from scipy.optimize import curve_fit
 
+
+# data structure for droplets
+#   contains fitdata, iterating over class yields the data from
+#   all fits currently stored in the object
 class droplet:
     def __init__(self):
         self.__dropletcount = 0
@@ -40,10 +78,13 @@ class droplet:
         if dropletID < self.__dropletcount:
             self.__fitdata[key][dropletID] = values
     
+    # fit data can be retrieved like a "dictionary"
     def __getitem__(self,key):
-        if key in self.__fitkeys:
+        if key in self.fitkeys:
             return self.__fitdata[key]
-        elif key == "time":
+    
+    def __getattr__(self,key):
+        if key == "time":
             return self.__droplettime
         elif key == "max":
             return self.__dropletmax
@@ -53,39 +94,30 @@ class droplet:
             return self.__dropletdataindex
         elif key == "count":
             return self.__dropletcount
+        elif key == "data":
+            return self.__droplettime,self.__dropletmax,self.__dropletbase
+        elif key == "fitkeys":
+            return self.__fitkeys
     
+    # casting object as int returns number of droplets
     def __int__(self):
         return self.__dropletcount
-    
-    def get_max(self):
-        return self.__dropletmax
-    def get_times(self):
-        return self.__droplettime
-    def get_base(self):
-        return self.__dropletbase
-    def get_count(self):
-        return self.__dropletcount
-    def get_data(self):
-        return self.__droplettime,self.__dropletmax,self.__dropletbase
-                        
+            
+    # iterating yields arrays with fitdata
     def __iter__(self):
         for key in self.__fitkeys:
             yield self[key]
-    
-    def get_fitkeys(self):
-        return self.__fitkeys
 
 
+# fitfunctions
 def gaussoffset(x,mean,stddev,sqrtmaxval,sqrtbaseval):
     return np.exp(-0.5*(x-mean)**2/stddev**2)*sqrtmaxval**2+sqrtbaseval**2
-
 def stepoffset(x,t1,t2,sqrtmaxval,sqrtminval):
     r = np.ones(len(x))*sqrtminval**2
     i1 = ((x-t1)**2).argmin()
     i2 = ((x-t2)**2).argmin()
     r[i1:i2] = sqrtmaxval**2
     return r
-
 def sigmoidoffset(x,mean,sqrtcrossover,sqrtsteepness,sqrtheight,sqrtbase):
     r = np.zeros(len(x))
     i1 = ((x-mean)**2).argmin()
@@ -93,9 +125,10 @@ def sigmoidoffset(x,mean,sqrtcrossover,sqrtsteepness,sqrtheight,sqrtbase):
     r[i1:] = sqrtheight**2 /(1.+np.exp( (x[i1:]-mean-sqrtcrossover**2)/sqrtsteepness**2)) + sqrtbase**2
     return r
 
-
+# class that reads time series and extracts data.
+#   holds an object droplets (see class above) to store data
 class timeseries:
-    def __init__(self,filename,minmax_lowerthreshold = .15, minmax_upperthreshold = .3,maxfev=5000):
+    def __init__(self,filename,minmax_lowerthreshold = .15, minmax_upperthreshold = .3,maxfev=5000,verbose=False):
         self.__filename = filename
         try:
             self.__timeseriesdata = np.genfromtxt(filename)
@@ -174,13 +207,13 @@ class timeseries:
         
     
     def get_droplet_data_fit(self):
-        for i in range(self.__droplets["count"]):
+        for i in range(int(self.__droplets)):
             if i > 0:                       
-                start = int((self.__droplets["index"][i-1] + self.__droplets["index"][i])/2)
+                start = int((self.__droplets.index[i-1] + self.__droplets.index[i])/2)
             else:
                 start = 0
-            if i < self.__droplets["count"] - 1:
-                final = int((self.__droplets["index"][i+1] + self.__droplets["index"][i])/2)
+            if i < int(self.__droplets) - 1:
+                final = int((self.__droplets.index[i+1] + self.__droplets.index[i])/2)
             else:
                 final = len(self.__timeseriesdata)
             
@@ -194,22 +227,21 @@ class timeseries:
             self.__droplets.add_droplet_fitinfo("sigmoid",i,valuessigmoid)
 
     def __str__(self):
-        n = self.__droplets.get_count()
-        if n == 0:
+        if int(self.__droplets) == 0:
             return "no data"
         else:
-            dtime,dmax,dbase = self.__droplets.get_data()
+            dtime,dmax,dbase = self.__droplets.data
             
-            s = ["%5d %e %e %e"%(i,dtime[i],dmax[i],dbase[i]) for i in range(n)]
+            s = ["%5d %e %e %e"%(i,dtime[i],dmax[i],dbase[i]) for i in range(int(self.__droplets))]
             for fitdata in iter(self.__droplets):
-                for i in range(n):
+                for i in range(int(self.__droplets)):
                     for j in range(len(fitdata[i])):
                         s[i] += " %e"%fitdata[i,j]
             
             return "\n".join(s)
     
     def print_gnuplot_fits(self,filename = None):
-        for fitkey in self.__droplets.get_fitkeys():
+        for fitkey in self.__droplets.fitkeys:
             if   fitkey == "gauss":     print "fitgauss(x,time,maxval,minval,width) = (maxval-minval)*exp(-(x-time)**2/(2*width**2))+minval"
             elif fitkey == "step":      print "fitstep(x,time,maxval,minval,width) = (x<=time-width/2?minval:(x<=time+width/2?maxval:minval))"
             elif fitkey == "sigmoid":   print "fitsigmoid(x,time,maxval,minval,width,steepness) = (x>=time?minval+(maxval-minval)/(1+exp((x-time-width)/steepness)):minval+(maxval-minval)/(1+exp((-x+time-width)/steepness)))"
@@ -218,7 +250,7 @@ class timeseries:
             print "plot \"%s\" u 1:2 w lp lw 5 lc rgb \"#babdb6\", "%filename,
         else:
             print "plot ",
-        print ", ".join([", ".join(["fit%s(x,"%fitkey + ",".join(["%e"%v for v in value]) + ")" for value in self.__droplets[fitkey]]) for fitkey in self.__droplets.get_fitkeys()])
+        print ", ".join([", ".join(["fit%s(x,"%fitkey + ",".join(["%e"%v for v in value]) + ")" for value in self.__droplets[fitkey]]) for fitkey in self.__droplets.fitkeys()])
         
         
             
@@ -227,17 +259,30 @@ class timeseries:
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i","--infile")
-    parser.add_argument("-m","--minthreshold",type=float,default=.15)
-    parser.add_argument("-M","--maxthreshold",type=float,default=.3)
+    parser = argparse.ArgumentParser(description = "Extract data from time series of PMT measurements in droplets.")
+    parser.add_argument("-i","--infile",help = "Data file containing two columns with time stamp and PMT measurement")
+    parser.add_argument("-m","--minthreshold",type=float,default=.15 , help = "Used for finding maxima. Should be higher than all base values.")
+    parser.add_argument("-M","--maxthreshold",type=float,default=.3, help = "Used for finding maxima. Should be smaller than all maximal values in droplets.")
+    parser.add_argument("-v","--verbose",default=False,action="store_true",help = "Print plot statements for fit functions for each droplet in gnuplot")
     args = parser.parse_args()
 
+
+    # read data
     data = timeseries(args.infile,args.minthreshold,args.maxthreshold)
+    # iterate trough time series to get maxima (and thus roughly the time of each droplet)
     data.get_droplet_data_minmax()
+    # use times from maxima to fit functions through the signal
     data.get_droplet_data_fit()
-    #data.print_gnuplot_fits(filename = args.infile)
-    print data
+
+    # output
+    if args.verbose:
+        # full output to lot all fit functions for each droplet
+        data.print_gnuplot_fits(filename = args.infile)
+    else:
+        # otherwise just print table of data
+        print data
+
+
 
 if __name__ == "__main__":
     main()
