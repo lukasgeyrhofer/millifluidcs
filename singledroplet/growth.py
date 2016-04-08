@@ -23,10 +23,10 @@ import sys,math
 
 def RungeKutta4(func,xx,tt,step):
   # 4th order Runge-Kutta integration scheme
-  k1 = step * func( tt       , xx )
-  k2 = step * func( tt+step/2, xx+k1/2 )
-  k3 = step * func( tt+step/2, xx+k2/2 )
-  k4 = step * func( tt+step  , xx+k3 )
+  k1 = step * func( tt        , xx )
+  k2 = step * func( tt+step/2., xx+k1/2. )
+  k3 = step * func( tt+step/2., xx+k2/2. )
+  k4 = step * func( tt+step   , xx+k3 )
   return xx + (k1+2*k2+2*k3+k4)/6.
 
 
@@ -58,7 +58,7 @@ class dropletdynamics:
         growthrate  = self.__nutrients['amax'] * xx[1] / (self.__nutrients['ks'] + xx[1]) * beta
         # results in Baraban et al, LabChip(2011) indicate that maximal denisty is also dependent on antibiotic concentration
         # change yield such that growth stops at the same time
-        yieldfactor = self.__nutrients['yield'] * (np.power(self.__start[1]*self.__nutrients['yield']/self.__start[0]+1,beta)-1)
+        yieldfactor = self.__nutrients['yield'] * beta
         # still unanswered question: why does this depend on initial conditions?
         return np.array([growthrate * xx[0], -growthrate/yieldfactor * xx[0],0])
     
