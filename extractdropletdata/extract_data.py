@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# -*- coding: utf-8 -*-
 
 # ==================================================================== #
 #    Extract data from droplet train                                   #
@@ -40,9 +40,12 @@ import sys,math
 from scipy.optimize import curve_fit
 
 
-# data structure for droplets
-#   contains fitdata, iterating over class yields the data from
-#   all fits currently stored in the object
+# ==================================================================== #
+# data structure for droplets                                          #
+# ==================================================================== #
+#   contains fitdata, iterating over class yields the data from        #
+#   all fits currently stored in the object                            #
+# ==================================================================== #
 class droplet:
     def __init__(self):
         self.__dropletcount = 0
@@ -78,7 +81,7 @@ class droplet:
         if dropletID < self.__dropletcount:
             self.__fitdata[key][dropletID] = values
     
-    # fit data can be retrieved like a "dictionary"
+    # fitdata can be retrieved like a "dictionary"
     def __getitem__(self,key):
         if key in self.fitkeys:
             return self.__fitdata[key]
@@ -109,7 +112,10 @@ class droplet:
             yield self[key]
 
 
-# fitfunctions
+
+# ==================================================================== #
+# fitfunctions                                                         #
+# ==================================================================== #
 def gaussoffset(x,mean,stddev,sqrtmaxval,sqrtbaseval):
     return np.exp(-0.5*(x-mean)**2/stddev**2)*sqrtmaxval**2+sqrtbaseval**2
 def stepoffset(x,t1,t2,sqrtmaxval,sqrtminval):
@@ -125,8 +131,12 @@ def sigmoidoffset(x,mean,sqrtcrossover,sqrtsteepness,sqrtheight,sqrtbase):
     r[i1:] = sqrtheight**2 /(1.+np.exp( (x[i1:]-mean-sqrtcrossover**2)/sqrtsteepness**2)) + sqrtbase**2
     return r
 
-# class that reads time series and extracts data.
-#   holds an object droplets (see class above) to store data
+
+# ==================================================================== #
+# class that reads time series and extracts data                       #
+# ==================================================================== #
+#   holds an object droplets (see class above) to store data           #
+# ==================================================================== #
 class timeseries:
     def __init__(self,filename,minmax_lowerthreshold = .15, minmax_upperthreshold = .3,maxfev=5000,verbose=False):
         self.__filename = filename
@@ -142,6 +152,24 @@ class timeseries:
         
         self.__maxfev = maxfev
     
+    # extract maxima:
+    #                                               *****
+    #                          *****               *     *
+    #                         *     *             *       *
+    #                        *       *           *        *
+    #    maxthreshold  ------O-------*-----------O---------*------------
+    #                       *        *           *         *
+    #                       *        *           *         *
+    #                      *          *         *           *
+    #                      *           *        *            *
+    #    minthreshold  ----*-----------O-------*-------------O----------
+    #                      *           *       *             *     *
+    #                   ***             *******               *****
+    #                        |         |         |           |
+    #                        |inupper  |inlower  |inupper    |inlower
+    #                        |         |         |           |
+    #                ====== findmax ==>|<== findmax ========>|<== findmax =======
+    #
     def get_droplet_data_minmax(self):
         inlower = True
         inupper = False
@@ -257,8 +285,14 @@ class timeseries:
     
 
 
-
+# ==================================================================== #
+#  main part of program                                                #
+# ==================================================================== #
+#   parse command line, instantiate timeseries class with              #
+#   data file, get maxima, fit shape of data                           #
+# ==================================================================== #
 def main():
+    # parse commandline options
     parser = argparse.ArgumentParser(description = "Extract data from time series of PMT measurements in droplets.")
     parser.add_argument("-i","--infile",help = "Data file containing two columns with time stamp and PMT measurement")
     parser.add_argument("-m","--minthreshold",type=float,default=.15 , help = "Used for finding maxima. Should be higher than all base values.")
@@ -283,6 +317,10 @@ def main():
         print data
 
 
-
+# ==================================================================== #
+# python: program could be loaded as module, if executed as            #
+# standalone, run main routine                                         #
+# ==================================================================== #
 if __name__ == "__main__":
     main()
+
