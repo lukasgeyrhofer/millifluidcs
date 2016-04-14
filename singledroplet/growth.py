@@ -61,18 +61,24 @@ class dropletdynamics:
         bzk = np.power(xx[2]/self.__antibiotics['zmic'],self.__antibiotics['kappa'])
         beta = (1-(1+self.__antibiotics['gamma'])*bzk/(bzk + self.__antibiotics['gamma']))
         growthrate  = self.__nutrients['amax'] * xx[1] / (self.__nutrients['ks'] + xx[1])
+        
         # results in Baraban et al, LabChip(2011) indicate that maximal denisty is also dependent on antibiotic concentration
         # change yield such that growth stops at the same time
         
         #yieldfactor = self.__nutrients['yield'] * np.power(self.__start[1]*self.__nutrients['yield']/self.__start[0],beta-1)
-        #yieldfactor = np.power(self.__nutrients['yield'],beta)
-        yieldfactor = self.__nutrients['yield']
         # still unanswered question: why does this depend on initial conditions?
         
-        # weird behavior for beta < 0  --  nutrient concentration would grow again in original equations
-        nutrientdecay = -growthrate/yieldfactor if beta>=0 else 0
+        # delete dependence on initial conditions
+        #yieldfactor = np.power(self.__nutrients['yield'],beta)
         
-        return np.array([growthrate *beta* xx[0], -growthrate/yieldfactor * xx[0],0])
+        # another option:
+        #yieldfactor = self.__nutrients['yield']*np.exp(self.__antibiotics['yielddecay']*(beta-1))
+
+        # no dependence on antibiotic concentration
+        yieldfactor = self.__nutrients['yield']
+        
+        
+        return np.array([growthrate * beta * xx[0], -growthrate/yieldfactor * xx[0],0])
     
     def step(self):
         # iterate a single step
@@ -103,7 +109,7 @@ def main():
     
     parser_algorithm   = parser.add_argument_group(description = "Algorithm parameters")
     parser_algorithm.add_argument(  "-e","--epsilon",                type=float, default=0.05)
-    parser_algorithm.add_argument(  "-M","--maxsteps",               type=int,   default=100000)
+    parser_algorithm.add_argument(  "-M","--maxsteps",               type=int,   default=40000)
     parser_algorithm.add_argument(  "-O","--outputstep",             type=int,   default=20)
     args = parser.parse_args()
     
