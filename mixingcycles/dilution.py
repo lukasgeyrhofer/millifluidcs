@@ -80,10 +80,10 @@ if args.poissonoutfile != None:
     x = np.arange(0,args.outputmax if args.outputmax!=None else args.maxsize,args.outputdx)
 
     # first compute all relevant poisson distributions and store them in an array
-    px = np.zeros((args.maxsize,len(x)))
+    px = np.zeros((len(x),args.maxsize))
     px[0,0] = 1.
-    for i in range(1,args.maxsize):
-        px[i] = poisson.pmf(x,i)
+    for i in range(len(x)):
+        px[i] = poisson.pmf(np.arange(args.maxsize),x[i])
     
     n1 = np.zeros((len(x),len(x),2))
     t1 = np.zeros((len(x),len(x)))
@@ -94,7 +94,7 @@ if args.poissonoutfile != None:
             # average values from above with poissonian weights
             n1[i,j] = np.dot(px[i],np.dot(px[j],n0))
             t1[i,j] = np.dot(px[i],np.dot(px[j],t0))
-            print >> fp,"{:.5e} {:.5e} {:.5e} {:.5e} {:.5e}".format(x[i],x[j],n0[i,j,0],n0[i,j,1],t1[i,j])
+            print >> fp,"{:.5e} {:.5e} {:.5e} {:.5e} {:.5e}".format(x[i],x[j],n1[i,j,0],n1[i,j,1],t1[i,j])
         print >> fp
     fp.close()
 
