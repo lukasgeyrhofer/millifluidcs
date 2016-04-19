@@ -36,20 +36,23 @@ def get_growth(initialcells,parameters):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-n","--maxsize",type=int,default=100)
-parser.add_argument("-m","--outputmax",type=float,default=None)
-parser.add_argument("-d","--outputdx",type=float,default=1.)
+parser.add_argument("-m","--maxsize",type=int,default=100)
+parser.add_argument("-n","--outputmax",type=float,default=None)
+parser.add_argument("-D","--outputdx",type=float,default=1.)
 parser.add_argument("-o","--outfile",default=None)
 parser.add_argument("-O","--poissonoutfile",default=None)
+parser.add_argument("-T","--mixingtime",default=10,type=float)
+parser.add_argument("-S","--substrateconcentration",default=1e4,type=float)
+parser.add_argument("-d","--dilutionfactor",default=2e-4,type=float)
 args = parser.parse_args()
 
 # generate parameter dictionary
 p = {}
 p['yield']      = np.array([1.,2.])
 p['growth']     = np.array([2.,1.])
-p['substrate']  = 1e4
-p['mixingtime'] = 10
-p['dilution']   = 2e-4
+p['substrate']  = args.substrateconcentration
+p['mixingtime'] = args.mixingtime
+p['dilution']   = args.dilutionfactor
 
 
 # assume index [i,j] are numbers of cells in droplet:
