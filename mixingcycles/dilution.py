@@ -57,8 +57,6 @@ p['mixingtime'] = args.mixingtime
 p['dilution']   = args.dilutionfactor
 
 
-print p
-
 # assume index [i,j] are numbers of cells in droplet:
 # what is the expected final number of cells for all combinations of initial conditions?
 # (up to args.maxsize cells of each type)
@@ -94,7 +92,7 @@ if args.poissonoutfile != None:
     # first compute all relevant poisson distributions and store them in an array
     px = np.zeros((len(x),args.maxsize))
     px[0,0] = 1.
-    for i in range(len(x)):
+    for i in range(1,len(x)):
         px[i] = poisson.pmf(np.arange(args.maxsize),x[i])
     
     n1 = np.zeros((len(x),len(x),2))
