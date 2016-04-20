@@ -44,16 +44,20 @@ parser.add_argument("-O","--poissonoutfile",default=None)
 parser.add_argument("-T","--mixingtime",default=10,type=float)
 parser.add_argument("-S","--substrateconcentration",default=1e4,type=float)
 parser.add_argument("-d","--dilutionfactor",default=2e-4,type=float)
+parser.add_argument("-a","--growthrates",type=float,nargs=2,default=[2.,1.])
+parser.add_argument("-Y","--yieldfactor",type=float,nargs=2,default=[1.,2.])
 args = parser.parse_args()
 
 # generate parameter dictionary
 p = {}
-p['yield']      = np.array([1.,2.])
-p['growth']     = np.array([2.,1.])
+p['yield']      = np.array(args.yieldfactor)
+p['growth']     = np.array(args.growthrates)
 p['substrate']  = args.substrateconcentration
 p['mixingtime'] = args.mixingtime
 p['dilution']   = args.dilutionfactor
 
+
+print p
 
 # assume index [i,j] are numbers of cells in droplet:
 # what is the expected final number of cells for all combinations of initial conditions?
