@@ -36,7 +36,7 @@ def get_growth(initialcells,parameters):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-m","--maxsize",type=int,default=100)
+parser.add_argument("-m","--maxsize",type=int,default=300)
 parser.add_argument("-n","--outputmax",type=float,default=None)
 parser.add_argument("-D","--outputdx",type=float,default=1.)
 parser.add_argument("-o","--outfile",default=None)
@@ -77,7 +77,12 @@ if args.outfile != None:
             print >> fp,"{:3d} {:3d} {:.5e} {:.5e} {:.5e}".format(i,j,n0[i,j,0],n0[i,j,1],t0[i,j])
         print >> fp
     fp.close()
-
+elif args.poissonoutfile == None:
+    # output to stdout if no outfile is specified at all
+    for i in range(args.maxsize):
+        for j in range(args.maxsize):
+            print "{:3d} {:3d} {:.5e} {:.5e} {:.5e}".format(i,j,n0[i,j,0],n0[i,j,1],t0[i,j])
+        print
 
 # add noise:
 # number of initial cells in droplet is drawn from poisson distribution
