@@ -78,7 +78,7 @@ if args.outfile != None:
         print >> fp
     fp.close()
 elif args.poissonoutfile == None:
-    # output to stdout if no outfile is specified at all
+    # output to stdout if no outfile (-o, -O) is specified at all
     for i in range(args.maxsize):
         for j in range(args.maxsize):
             print "{:3d} {:3d} {:.5e} {:.5e} {:.5e}".format(i,j,n0[i,j,0],n0[i,j,1],t0[i,j])
@@ -109,16 +109,5 @@ if args.poissonoutfile != None:
             print >> fp,"{:.5e} {:.5e} {:.5e} {:.5e} {:.5e}".format(x[i],x[j],n1[i,j,0],n1[i,j,1],t1[i,j])
         print >> fp
     fp.close()
-
-
-
-
-
-
-
-
-
-
-
 
 
