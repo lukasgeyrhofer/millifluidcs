@@ -123,7 +123,7 @@ def main():
 
     args = parser.parse_args()
     
-    s = population(args.droplets,args.initialpopulation,args.growthrates,args.yields,args.substrate,args.dilution/args.droplets,args.mixingtime,debug = args.debug,dilutiontype = 1)
+    s = population(args.droplets,args.initialpopulation,args.growthrates,args.yields,args.substrate,args.dilution/args.droplets,args.mixingtime,debug = args.debug,dilutiontype = 0)
     for i in range(args.maxsteps):
         s.grow()
         if i%args.outputsteps == 0:
