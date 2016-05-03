@@ -4,7 +4,7 @@
 import numpy as np
 import argparse
 import sys,math
-
+from scipy.stats import poisson
 
 def getGrowthMatrix(parameters,size = 300):
         def get_time_to_substrate_depletion(m1,m2,alpha=1.,maxsteps = 10000, precision = 1e-10):
@@ -36,6 +36,27 @@ def getGrowthMatrix(parameters,size = 300):
 
         return m
 
+def fn(n):
+    px = poisson.pmf(m,n[0])
+    py = poisson.pmf(m,n[1])
+    ppxy = np.outer(px,py)
+    return n - np.sum(ppxy,mnext,axis=(0,1))
+    
+def Jac(n):
+    px = poisson.pmf(m,n[0])
+    py = poisson.pmf(m,n[1])
+    
+    if n[0] > 0:
+        pxn = px*(m/n[0]-1)
+    else:
+        pxn = -px
+    if n[1] > 0:
+        pyn = py*(m/n[1]-1)
+    else:
+        pyn = -py
+
+    return np.array([ [1. - np.sum(np.outer(pxn,py)*mnext[:,:,0]),n[0] - np.sum(np.outer(px,pyn)*mnext[:,:,0])],[n[1] - np.sum(np.outer(pxn,py)*mnext[:,:,1]),1. - np.sum(np.outer(px,pyn)*mnext[:,:,1])]])
+    
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m","--maxM",type=int,default=300)
@@ -58,8 +79,13 @@ p['dilution']   = args.dilutionfactor
 
 global mnext
 mnext = getGrowthMatrix(p,size = args.maxM)
+global m
+m = np.arange(args.maxM)
+
 
 n = p['dilution']/(1-p['dilution'])*p['substrate']*p['yield']
 
-
+for i in range(args.maxiterations):
+    print n
+    n = n - args.alpha*np.dot(np.inv(Jac(n)),fn(n))
 
