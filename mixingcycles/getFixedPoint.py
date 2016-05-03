@@ -7,7 +7,7 @@ import sys,math
 from scipy.stats import poisson
 
 def getGrowthMatrix(parameters,size = 300):
-        def get_time_to_substrate_depletion(m1,m2,alpha=1.,maxsteps = 10000, precision = 1e-10):
+    def get_time_to_substrate_depletion(m1,m2,alpha=1.,maxsteps = 10000, precision = 1e-10):
         initialcells = np.array([m1,m2])
         # internal function to have all parameters.
         t0 = 0
@@ -28,35 +28,29 @@ def getGrowthMatrix(parameters,size = 300):
         else:
             return 0
         
-        m = np.zeros((size,size,2))
-        for i in range(size):
-            for j in range(size):
-                t = get_time_to_substrate_depletion(i,j)
-                m[i,j] = np.array([i,j]) * np.exp(p['growthrates']*t) * p['dilution']
+    mn = np.zeros((size,size,2))
+    for i in range(size):
+        for j in range(size):
+            t = get_time_to_substrate_depletion(i,j)
+            mn[i,j] = np.array([i,j]) * np.exp(p['growth']*t) * p['dilution']
 
-        return m
+    return mn
 
-def fn(n):
-    px = poisson.pmf(m,n[0])
-    py = poisson.pmf(m,n[1])
-    ppxy = np.outer(px,py)
-    return n - np.sum(ppxy,mnext,axis=(0,1))
-    
-def Jac(n):
-    px = poisson.pmf(m,n[0])
-    py = poisson.pmf(m,n[1])
-    
+def prob(m,n):
     if n[0] > 0:
-        pxn = px*(m/n[0]-1)
+        px = poisson.pmf(m,n[0])
+        px[-1] += (1. - np.sum(px))
     else:
-        pxn = -px
+        px = np.zeros(len(m))
+        px[0] = 1
     if n[1] > 0:
-        pyn = py*(m/n[1]-1)
+        py = poisson.pmf(m,n[1])
+        py[-1] += (1. - np.sum(py))
     else:
-        pyn = -py
+        py = np.zeros(len(m))
+        py[0] = 1
+    return px,py
 
-    return np.array([ [1. - np.sum(np.outer(pxn,py)*mnext[:,:,0]),n[0] - np.sum(np.outer(px,pyn)*mnext[:,:,0])],[n[1] - np.sum(np.outer(pxn,py)*mnext[:,:,1]),1. - np.sum(np.outer(px,pyn)*mnext[:,:,1])]])
-    
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m","--maxM",type=int,default=300)
@@ -65,6 +59,9 @@ parser.add_argument("-Y","--yieldfactor",type=float,nargs="*",default=[1.,2.])
 parser.add_argument("-S","--substrateconcentration",type=float,default=1e4)
 parser.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
 parser.add_argument("-T","--mixingtime",type=float,default=12.)
+parser.add_argument("-M","--maxiterations",type=int,default=1000)
+parser.add_argument("-A","--alpha",type=float,default=1.)
+parser.add_argument("-p","--precision",type=float,default=1e-20)
 args = parser.parse_args()
 
 
@@ -77,15 +74,18 @@ p['substrate']  = args.substrateconcentration
 p['mixingtime'] = args.mixingtime
 p['dilution']   = args.dilutionfactor
 
-global mnext
-mnext = getGrowthMatrix(p,size = args.maxM)
-global m
+growthm = getGrowthMatrix(p,size = args.maxM)
+
 m = np.arange(args.maxM)
-
-
 n = p['dilution']/(1-p['dilution'])*p['substrate']*p['yield']
 
 for i in range(args.maxiterations):
-    print n
-    n = n - args.alpha*np.dot(np.inv(Jac(n)),fn(n))
+    print "{:4d} {:12.8f} {:12.8f}".format(i,n[0],n[1])
+    px,py = prob(m,n)
+    # construct iteration function
+    fn = np.dot(px,np.dot(py,growthm))
+    if np.sum((n-fn)**2) < args.precision:
+        break
+    n = fn
+    
 
