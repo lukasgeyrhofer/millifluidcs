@@ -40,6 +40,7 @@ class growthdynamics:
       
 
     def getGrowth(self,initialcells = None):
+        assert len(self.__growthrates) == len(self.__yieldrates)        
         if initialcells is None:
             if isinstance(initialcells,np.ndarray):
                 if len(initialcells) > self.__numstrains:
