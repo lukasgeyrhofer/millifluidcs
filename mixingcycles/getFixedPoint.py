@@ -53,17 +53,20 @@ def prob(m,n):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-m","--maxM",type=int,default=300)
-parser.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
-parser.add_argument("-Y","--yieldfactor",type=float,nargs="*",default=[1.,2.])
-parser.add_argument("-S","--substrateconcentration",type=float,default=1e4)
-parser.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
-parser.add_argument("-T","--mixingtime",type=float,default=12.)
-parser.add_argument("-M","--maxiterations",type=int,default=1000)
-parser.add_argument("-A","--alpha",type=float,default=1.)
-parser.add_argument("-p","--precision",type=float,default=1e-14)
-parser.add_argument("-v","--verbose",action="store_true",default=False)
-parser.add_argument("-N","--newtonraphson",action="store_true",default=False)
+parser_populations = parser.add_argument_group(description = "=== Parameters for population growth and mixing ===")
+parser_populations.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
+parser_populations.add_argument("-Y","--yieldfactor",type=float,nargs="*",default=[1.,2.])
+parser_populations.add_argument("-S","--substrateconcentration",type=float,default=1e4)
+parser_populations.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
+parser_populations.add_argument("-T","--mixingtime",type=float,default=12.)
+
+parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ==="
+parser_algorithm.add_argument("-m","--maxM",type=int,default=300)
+parser_algorithm.add_argument("-M","--maxiterations",type=int,default=1000)
+parser_algorithm.add_argument("-A","--alpha",type=float,default=1.)
+parser_algorithm.add_argument("-p","--precision",type=float,default=1e-14)
+parser_algorithm.add_argument("-v","--verbose",action="store_true",default=False)
+parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False)
 args = parser.parse_args()
 
 
