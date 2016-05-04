@@ -36,15 +36,17 @@ def getGrowthMatrix(parameters,size = 300):
 
     return mn1,mn2
 
-def prob(m,n):
+def prob(m,n,cutoff):
     if n[0] > 0:
         px = poisson.pmf(m,n[0])
+        px[px<cutoff] = 0.
         px[-1] += (1. - np.sum(px))
     else:
         px = np.zeros(len(m))
         px[0] = 1
     if n[1] > 0:
         py = poisson.pmf(m,n[1])
+        py[py<cutoff] = 0.
         py[-1] += (1. - np.sum(py))
     else:
         py = np.zeros(len(m))
@@ -60,13 +62,14 @@ parser_populations.add_argument("-S","--substrateconcentration",type=float,defau
 parser_populations.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
 parser_populations.add_argument("-T","--mixingtime",type=float,default=12.)
 
-parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ==="
-parser_algorithm.add_argument("-m","--maxM",type=int,default=300)
-parser_algorithm.add_argument("-M","--maxiterations",type=int,default=1000)
-parser_algorithm.add_argument("-A","--alpha",type=float,default=1.)
-parser_algorithm.add_argument("-p","--precision",type=float,default=1e-14)
-parser_algorithm.add_argument("-v","--verbose",action="store_true",default=False)
-parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False)
+parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ===")
+parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False,help = "Plain iteration of dynamics or try to use NR to estimate fixed point")
+parser_algorithm.add_argument("-m","--maxM",type=int,default=300,help = "maximum possible number for seeding[default: 300]")
+parser_algorithm.add_argument("-M","--maxiterations",type=int,default=1000, help = "maximum number of iterations [default: 1000]")
+parser_algorithm.add_argument("-A","--alpha",type=float,default=1.,help = "convergence parameter for NR [default: 1.0]")
+parser_algorithm.add_argument("-p","--precision",type=float,default=1e-14,help = "relative precision as premature stopping condition, computed as sum( (dn/n)^2 ) [default: 1e-14]")
+parser_algorithm.add_argument("-v","--verbose",action="store_true",default=False,help = "output current values every iteration step")
+parser_algorithm.add_argument("-c","--cutoff",type=float,default=1e-100,help = "cutoff probabilities lower than this value [default: 1e-100]")
 args = parser.parse_args()
 
 
@@ -89,12 +92,13 @@ n = p['dilution']/(1-p['dilution'])*p['substrate']*p['yield']
 
 for i in range(args.maxiterations):
     if args.verbose:
-        print "{:4d} {:12.8f} {:12.8f}".format(i,n[0],n[1])
+        print "#{:4d} {:12.8f} {:12.8f}".format(i,n[0],n[1])
     
-    # poisson probabilities for seeding new droplets
-    px,py = prob(m,n)
+    # probabilities for seeding new droplets, assumed to be poissonian
+    px,py = prob(m,n,args.cutoff)
     
-    # construct iteration function for growth and dilution by summing over all possibilities of how droplets are seeded
+    # construct iteration function for growth and dilution
+    # by weighting growth with the probability of how droplets are seeded
     fn = np.array([np.dot(py,np.dot(px,growth1)),np.dot(py,np.dot(px,growth2))])
     
     if args.newtonraphson:
@@ -115,9 +119,10 @@ for i in range(args.maxiterations):
         dn = -args.alpha * np.dot(np.linalg.inv(j),fn-n)
     
     else:
-        # simple iterations of the function, hoping it converges at some point
+        # simple iteration of the function, hoping it converges at some point
         dn = fn-n
     
+    # apply changes
     n += dn
     n[n<0] = 0
     
@@ -126,6 +131,6 @@ for i in range(args.maxiterations):
         break
 
 # final output
-print p['growth'][0]/p['growth'][1],p['yield'][0]/p['yield'][1],n[0],n[1]
+print "{:.6f} {:.6f} {:14.8f} {:14.8f} {:4d}".format(p['growth'][0]/p['growth'][1],p['yield'][0]/p['yield'][1],n[0],n[1],i)
 
 
