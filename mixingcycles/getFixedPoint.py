@@ -5,36 +5,7 @@ import argparse
 import sys,math
 from scipy.stats import poisson
 
-def getGrowthMatrix(parameters,size = 300):
-    def get_time_to_substrate_depletion(m1,m2,alpha=1.,maxsteps = 10000, precision = 1e-10):
-        initialcells = np.array([m1,m2])
-        # internal function to have all parameters.
-        t0 = 0
-        if np.sum(initialcells) > 0:
-            # initial condition for iteration is assuming only strain with highest expected yield is present
-            p = (1.*initialcells/parameters['yield']).argmax() # get ID of strain
-            t1 = np.log(parameters['substrate']*parameters['yield'][p]/initialcells[p]+1.)/parameters['growth'][p] # set first estimate of time for single strain
-            i = 0
-            while ((t1-t0)/t1)**2 > precision**2:
-                t0 = t1
-                # Newton-Raphson iteration to refine solution
-                t1 += alpha*(parameters['substrate']-np.sum(initialcells/parameters['yield']*(np.exp(parameters['growth']*t1)-1.)))/(np.sum(initialcells/parameters['yield']*parameters['growth']*np.exp(parameters['growth']*t1)))
-                i+=1
-                # should not iterate infinitely
-                if i > maxsteps:
-                    raise ValueError
-            return min(t1,parameters['mixingtime'])
-        else:
-            return 0
-        
-    mn1 = np.zeros((size,size))
-    mn2 = np.zeros((size,size))
-    for i in range(size):
-        for j in range(size):
-            t = get_time_to_substrate_depletion(i,j)
-            mn1[i,j],mn2[i,j] = np.array([i,j]) * np.exp(p['growth']*t) * p['dilution']
-
-    return mn1,mn2
+from growthclasses import growthdynamics
 
 def prob(m,n,cutoff):
     if n[0] > 0:
@@ -57,7 +28,7 @@ def prob(m,n,cutoff):
 parser = argparse.ArgumentParser()
 parser_populations = parser.add_argument_group(description = "=== Parameters for population growth and mixing ===")
 parser_populations.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
-parser_populations.add_argument("-Y","--yieldfactor",type=float,nargs="*",default=[1.,2.])
+parser_populations.add_argument("-Y","--yieldrates",type=float,nargs="*",default=[1.,2.])
 parser_populations.add_argument("-S","--substrateconcentration",type=float,default=1e4)
 parser_populations.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
 parser_populations.add_argument("-T","--mixingtime",type=float,default=12.)
@@ -73,22 +44,16 @@ parser_algorithm.add_argument("-c","--cutoff",type=float,default=1e-100,help = "
 args = parser.parse_args()
 
 
-
-# generate parameter dictionary
-p = {}
-p['yield']      = np.array(args.yieldfactor)
-p['growth']     = np.array(args.growthrates)
-p['substrate']  = args.substrateconcentration
-p['mixingtime'] = args.mixingtime
-p['dilution']   = args.dilutionfactor
-
 # initialize necessary variables
-growth1,growth2 = getGrowthMatrix(p,size = args.maxM)
+g = growthdynamics(growthrates = np.array(args.growthrates), yieldrates = np.array(args.yieldrates), mixingtime = args.mixingtime, dilution = args.dilutionfactor, substrate = args.substrateconcentration)
+growth1,growth2 = g.getGrowthMatrix(size = args.maxM)
+# initial condition are the respective fixed points on the axis
+n = g.getSingleStrainFixedPoints()
+
+
 m = np.arange(args.maxM)
 j = np.zeros((2,2))
 
-# initial condition are the respective fixed points on the axis
-n = p['dilution']/(1-p['dilution'])*p['substrate']*p['yield']
 
 for i in range(args.maxiterations):
     if args.verbose:
@@ -131,6 +96,6 @@ for i in range(args.maxiterations):
         break
 
 # final output
-print "{:.6f} {:.6f} {:14.8f} {:14.8f} {:4d}".format(p['growth'][0]/p['growth'][1],p['yield'][0]/p['yield'][1],n[0],n[1],i)
+print "{:.6f} {:.6f} {:14.8f} {:14.8f} {:4d}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i)
 
 
