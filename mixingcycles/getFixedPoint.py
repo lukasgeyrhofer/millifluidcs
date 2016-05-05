@@ -7,7 +7,7 @@ from scipy.stats import poisson
 
 from growthclasses import growthdynamics
 
-def prob(m,n,cutoff):
+def prob(m,n,cutoff = 1e-100):
     if n[0] > 0:
         px = poisson.pmf(m,n[0])
         px[px<cutoff] = 0.
@@ -45,6 +45,7 @@ args = parser.parse_args()
 
 
 # initialize necessary variables
+if args.verbose: print >> sys.stderr,"# initializing growth matrix ..."
 g = growthdynamics(growthrates = np.array(args.growthrates), yieldrates = np.array(args.yieldrates), mixingtime = args.mixingtime, dilution = args.dilutionfactor, substrate = args.substrateconcentration)
 growth1,growth2 = g.getGrowthMatrix(size = args.maxM)
 # initial condition are the respective fixed points on the axis
@@ -54,13 +55,13 @@ n = g.getSingleStrainFixedPoints()
 m = np.arange(args.maxM)
 j = np.zeros((2,2))
 
-
+if args.verbose: print >> sys.stderr,"# starting iterations ..."
 for i in range(args.maxiterations):
     if args.verbose:
         print "#{:4d} {:12.8f} {:12.8f}".format(i,n[0],n[1])
     
     # probabilities for seeding new droplets, assumed to be poissonian
-    px,py = prob(m,n,args.cutoff)
+    px,py = prob(m,n,cutoff = args.cutoff)
     
     # construct iteration function for growth and dilution
     # by weighting growth with the probability of how droplets are seeded
