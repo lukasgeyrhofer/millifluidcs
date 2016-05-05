@@ -21,10 +21,8 @@ class growthdynamics:
         # internal function to have all parameters.
         t0 = 0
         if np.sum(initialcells) > 0.:
-            # initial condition for iteration is assuming only strain with highest expected yield is present
-            p = (1.*initialcells/self.__yieldrates).argmax() # get ID of strain
-            # set first estimate of time for single strain
-            t1 = np.log(self.__substrate*self.__yieldrates[p]/initialcells[p]+1.)/self.__growthrates[p]
+            # assume only single 
+            t1 = max(np.log(self.__substrate*self.__yieldrates[initialcells > 0]/initialcells[initialcells > 0]+1.)/self.__growthrates[initialcells >0])
             i = 0
             while ((t1-t0)/t1)**2 > self.__NR['precision2']:
                 t0 = t1
@@ -41,7 +39,7 @@ class growthdynamics:
 
     def getGrowth(self,initialcells = None):
         assert len(self.__growthrates) == len(self.__yieldrates)        
-        if initialcells is None:
+        if not initialcells is None:
             if isinstance(initialcells,np.ndarray):
                 if len(initialcells) > self.__numstrains:
                     initialcells = initialcells[:self.__numstrains]
@@ -63,7 +61,9 @@ class growthdynamics:
         
         
     def getSingleStrainFixedPoints(self):
-        return self.__dilution / (1. - self.__dilution) * self.__substrate * self.__yieldrates
+        t = 1./self.__growthrates * np.log(1./self.__dilution)
+        y = np.array([ self.__yieldrates[i] if t[i] <= self.__mixingtime else 0. for i in range(len(self.__yieldrates))])
+        return self.__dilution / (1. - self.__dilution) * self.__substrate * y
     
     def __getattr__(self,key):
         if key in self.__attributes:
@@ -74,5 +74,11 @@ class growthdynamics:
             elif key == 'dilution':     return self.__dilution
             
             
-            
+    def getTimeToDepletionMatrix(self,size):
+        m = np.arange(size)
+        t = np.zeros((size,size))
+        for i in m:
+            for j in m:
+                t[i,j] = self.__getTimeToDepletion(initialcells = np.array([i,j]))
+        return t
             

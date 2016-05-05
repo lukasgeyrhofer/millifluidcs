@@ -46,7 +46,13 @@ args = parser.parse_args()
 
 # initialize necessary variables
 if args.verbose: print >> sys.stderr,"# initializing growth matrix ..."
+
 g = growthdynamics(growthrates = np.array(args.growthrates), yieldrates = np.array(args.yieldrates), mixingtime = args.mixingtime, dilution = args.dilutionfactor, substrate = args.substrateconcentration)
+
+#t = g.getTimeToDepletionMatrix(args.maxM)
+#print t
+#exit(1)
+
 growth1,growth2 = g.getGrowthMatrix(size = args.maxM)
 # initial condition are the respective fixed points on the axis
 n = g.getSingleStrainFixedPoints()
@@ -58,7 +64,7 @@ j = np.zeros((2,2))
 if args.verbose: print >> sys.stderr,"# starting iterations ..."
 for i in range(args.maxiterations):
     if args.verbose:
-        print "#{:4d} {:12.8f} {:12.8f}".format(i,n[0],n[1])
+        print >> sys.stderr,"{:4d} {:12.8e} {:12.8e}".format(i,n[0],n[1])
     
     # probabilities for seeding new droplets, assumed to be poissonian
     px,py = prob(m,n,cutoff = args.cutoff)
@@ -97,6 +103,6 @@ for i in range(args.maxiterations):
         break
 
 # final output
-print "{:.6f} {:.6f} {:14.8f} {:14.8f} {:4d}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i)
+print "{:.6f} {:.6f} {:14.8e} {:14.8e} {:4d}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i)
 
 
