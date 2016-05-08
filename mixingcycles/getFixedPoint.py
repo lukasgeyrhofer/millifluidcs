@@ -7,6 +7,7 @@ from scipy.stats import poisson
 
 from growthclasses import growthdynamics
 
+
 def prob(m,n,cutoff = 1e-100):
     if n[0] > 0:
         px = poisson.pmf(m,n[0])
@@ -35,10 +36,10 @@ parser_populations.add_argument("-T","--mixingtime",type=float,default=12.)
 
 parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ===")
 parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False,help = "Plain iteration of dynamics or try to use NR to estimate fixed point")
-parser_algorithm.add_argument("-m","--maxM",type=int,default=300,help = "maximum possible number for seeding[default: 300]")
-parser_algorithm.add_argument("-M","--maxiterations",type=int,default=1000, help = "maximum number of iterations [default: 1000]")
-parser_algorithm.add_argument("-A","--alpha",type=float,default=1.,help = "convergence parameter for NR [default: 1.0]")
+parser_algorithm.add_argument("-m","--maxM",type=int,default=300,help = "maximum possible number for seeding [default: 300]")
 parser_algorithm.add_argument("-p","--precision",type=float,default=1e-14,help = "relative precision as premature stopping condition, computed as sum( (dn/n)^2 ) [default: 1e-14]")
+parser_algorithm.add_argument("-M","--maxiterations",type=int,default=None, help = "maximum number of iterations [default: None, iterate until precision is reached]")
+parser_algorithm.add_argument("-A","--alpha",type=float,default=1.,help = "convergence parameter for NR [default: 1.0]")
 parser_algorithm.add_argument("-v","--verbose",action="store_true",default=False,help = "output current values every iteration step")
 parser_algorithm.add_argument("-c","--cutoff",type=float,default=1e-100,help = "cutoff probabilities lower than this value [default: 1e-100]")
 args = parser.parse_args()
@@ -60,9 +61,11 @@ n = g.getSingleStrainFixedPoints()
 
 m = np.arange(args.maxM)
 j = np.zeros((2,2))
+dn = n
+i = 0
 
 if args.verbose: print >> sys.stderr,"# starting iterations ..."
-for i in range(args.maxiterations):
+while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
     if args.verbose:
         print >> sys.stderr,"{:4d} {:12.8e} {:12.8e}".format(i,n[0],n[1])
     
@@ -98,9 +101,9 @@ for i in range(args.maxiterations):
     n += dn
     n[n<0] = 0
     
-    # stop condition met? is the change small enough?
-    if np.sum((dn[n>0]/n[n>0])**2) < args.precision:
-        break
+    if not args.maxiterations is None:
+        if i<args.maxiterations:    i += 1
+        else:                       break
 
 # final output
 print "{:.6f} {:.6f} {:14.8e} {:14.8e} {:4d}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i)
