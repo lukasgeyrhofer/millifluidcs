@@ -60,31 +60,31 @@ class growthdynamics:
                 for j in m:
                     g[i,j] = self.getGrowth(initialcells = np.array([i,j]))
             return g[:,:,0],g[:,:,1]        
-        elif isinstance(size,np.ndarray):            
+        elif isinstance(size,np.ndarray):
             if isinstance(size[0],np.ndarray):
                 if len(size) >= 2:
                     m0 = size[0]
                     m1 = size[1]
                     g = np.zeros((len(m0),len(m1),2))
-                    for i in len(m0):
-                        for j in len(m1):
+                    for i in range(len(m0)):
+                        for j in range(len(m1)):
                             g[i,j] = self.getGrowth(initialcells = np.array([m0[i],m1[j]]))
                     return g[:,:,0],g[:,:,1]        
             else:
                 m = size
                 g = np.zeros(len(m))
-                for i in len(m):
-                    g[i] = self.getGrowth(initialcells = np.array([m[i]]))
+                for i in range(len(m)):
+                    g[i] = self.getGrowth(initialcells = np.array([m[i]]))[0]
                 return g
         elif isinstance(size,(list,tuple)):
             if (len(size) >= 2) and isinstance(size[0],np.ndarray):
                 m0 = size[0]
                 m1 = size[1]
                 g = np.zeros((len(m0),len(m1),2))
-                for i in len(m0):
-                    for j in len(m1):
+                for i in range(len(m0)):
+                    for j in range(len(m1)):
                         g[i,j] = self.getGrowth(initialcells = np.array([m0[i],m1[j]]))
-                return g[:,:,0],g[:,:,1]        
+                return g[:,:,0],g[:,:,1]
                 
     
         
