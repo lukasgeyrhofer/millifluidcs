@@ -12,17 +12,17 @@ def increasegrowth(pyoverdine):
     return 1 + epp['alpha'] / (1 + np.exp(-(pyoverdine - epp['mu'])/ epp['sigma']))
 
 
-def dy(y,t,dt,pp):
+def dy(t,y):
     if y[3] <= 0:
         growth = 0.
         y[3] = 0
     else:
         growth = 1.
     return np.array([
-        growth * pp['growth'][0] * y[0] * increasegrowth(y[2]),\
-        growth * pp['growth'][1] * y[1] * increasegrowth(y[2]),\
-        growth * pp['production'] * y[0] - pp['decay'] * y[2],\
-        -growth * increasegrowth(y[2]) * (pp['growth'][0]/pp['yield'][0]*y[0] + pp['growth'][1]/pp['yield'][1]*y[1] \
+        growth * p['growth'][0] * y[0] * increasegrowth(y[2]),\
+        growth * p['growth'][1] * y[1] * increasegrowth(y[2]),\
+        growth * p['production'] * y[0] - p['decay'] * y[2],\
+        -growth * increasegrowth(y[2]) * (p['growth'][0]/p['yield'][0]*y[0] + p['growth'][1]/p['yield'][1]*y[1]) \
     ])
 
 
@@ -34,9 +34,9 @@ parser.add_argument("-s","--substrateconcentration",default=1e5,type=float)
 parser.add_argument("-d","--dilutionrate",type=float,default=2e-4)
 parser.add_argument("-T","--mixingtime",type=float,default=24.)
 parser.add_argument("-N","--initialsize",nargs=2,default=np.array([1e5,1e5]))
-parser.add_argument("-p","--production",type=float,default=1e-3)
-parser.add_argument("-h","--halflife",type=float,default=2)
-parser.add_argument("-k","--droplets",type=int,default=500)
+parser.add_argument("-p","--production",type=float,default=1e-1)
+parser.add_argument("-H","--halflife",type=float,default=10)
+parser.add_argument("-k","--droplets",type=int,default=100)
 parser.add_argument("-m","--mixingsteps",type=int,default=20)
 parser.add_argument("-e","--epsilson",type=int,default=1/60.)
 
@@ -48,32 +48,36 @@ args = parser.parse_args()
 
 
 # generate parameter dictionary
+global p
 p = {}
-p['yield']      = np.array(args.yieldfactor)
+p['yield']      = np.array(args.yieldrates)
 p['growth']     = np.array(args.growthrates)
 p['substrate']  = args.substrateconcentration
 p['mixingtime'] = args.mixingtime
-p['dilution']   = args.dilutionfactor
+p['dilution']   = args.dilutionrate
 p['production'] = args.production
 p['decay']      = np.log(2.)/args.halflife
 
 global epp
 epp = {}
 epp['alpha'] = args.epalpha
-epp['mu']    = args.mu
-epp['sigma'] = args.sigma
+epp['mu']    = args.epmu
+epp['sigma'] = args.epsigma
 
 
-np = np.zeros(args.droplets)
-nn = np.zeros(args.droplets)
-ep = np.zeros(args.droplets)
+dropp = np.ones(args.droplets)*args.initialsize[0]
+dropn = np.ones(args.droplets)*args.initialsize[1]
+ep    = np.zeros(args.droplets)
 
 for m in range(args.mixingsteps):
-    ep    = np.mean(ep)/args.dilution             # extracellular product to start into new cycle
-    poolp = np.sum(np)/args.dilution              # diluted pool producers (poisson parameter!)
-    pooln = np.sum(nn)/args.dilution              # diluted pool non-producers
-    dropp = 1.*poisson.rvs(pp,size=args.droplets) # reseed with producer cells
-    dropn = 1.*poisson.rvs(pn,size=args.droplets) # reseed with nonproducer cells
+    ep[:] = np.mean(ep)*p['dilution']/args.droplets                  # extracellular product to start into new cycle
+    poolp = np.sum(dropp)*p['dilution']/args.droplets                # diluted pool producers (poisson parameter!)
+    pooln = np.sum(dropn)*p['dilution']/args.droplets                # diluted pool non-producers
+
+    if poolp > 0:   dropp = 1.*poisson.rvs(poolp,size=args.droplets) # reseed with producer cells
+    else:           dropp = np.zeros(args.droplets)
+    if pooln > 0:   dropn = 1.*poisson.rvs(pooln,size=args.droplets) # reseed with nonproducer cells
+    else:           dropn = np.zeros(args.droplets)
     
     for k in range(args.droplets):
         y = np.array([dropp[k],dropn[k],ep[k],p['substrate']])
@@ -82,7 +86,7 @@ for m in range(args.mixingsteps):
             t += args.epsilson
             y = RungeKutta4(dy,y,t,args.epsilson)
             
-        print m,k,dropp[k],dropn[k],ep[k],y
+        print "{:5d} {:5d} {:5.0f} {:5.0f} {:.6e} {:.6e} {:.6e} {:.6e} {:.6e}".format(m,k,dropp[k],dropn[k],ep[k],y[0],y[1],y[2],y[3])
         
         dropp[k] = y[0]
         dropn[k] = y[1]
