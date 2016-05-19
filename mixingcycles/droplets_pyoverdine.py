@@ -74,15 +74,19 @@ for m in range(args.mixingsteps):
     pooln = np.sum(nn)/args.dilution              # diluted pool non-producers
     dropp = 1.*poisson.rvs(pp,size=args.droplets) # reseed with producer cells
     dropn = 1.*poisson.rvs(pn,size=args.droplets) # reseed with nonproducer cells
+    
     for k in range(args.droplets):
         y = np.array([dropp[k],dropn[k],ep[k],p['substrate']])
         t = 0
         while t <= p['mixingtime']:
             t += args.epsilson
             y = RungeKutta4(dy,y,t,args.epsilson)
+            
         print m,k,dropp[k],dropn[k],ep[k],y
+        
         dropp[k] = y[0]
         dropn[k] = y[1]
         ep[k]    = y[2]
+    
     print
         
