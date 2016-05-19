@@ -2,6 +2,16 @@
 
 import numpy as np
 
+
+def RungeKutta4(func,xx,tt,step):
+  # 4th order Runge-Kutta integration scheme
+  k1 = step * func( tt        , xx )
+  k2 = step * func( tt+step/2., xx+k1/2. )
+  k3 = step * func( tt+step/2., xx+k2/2. )
+  k4 = step * func( tt+step   , xx+k3 )
+  return xx + (k1+2*k2+2*k3+k4)/6.
+
+
 class growthdynamics:
     def __init__(self,growthrates = np.array([2.,1.]), yieldrates = np.array([2.,1.]), dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
         
@@ -141,4 +151,4 @@ class growthdynamics:
         if isinstance(dilution,(int,float)):
             self.__dilution = 1.*dilution
         
-
+ 
