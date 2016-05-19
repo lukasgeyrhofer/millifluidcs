@@ -40,9 +40,9 @@ parser.add_argument("-k","--droplets",type=int,default=100)
 parser.add_argument("-m","--mixingsteps",type=int,default=20)
 parser.add_argument("-e","--epsilson",type=int,default=1/60.)
 
-parser.add_argument("-A","--epalpha",type=float,default=.5)
+parser.add_argument("-A","--epalpha",type=float,default=1)
 parser.add_argument("-M","--epmu",type=float,default=1e3)
-parser.add_argument("-S","--epsigma",type=float,default=1e3)
+parser.add_argument("-S","--epsigma",type=float,default=1e2)
 
 args = parser.parse_args()
 
