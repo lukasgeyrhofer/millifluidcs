@@ -31,8 +31,7 @@ def main():
     args = parser.parse_args()
     
     g = growthdynamics(growthrates = np.array(args.growthrates,dtype = float), yieldrates = np.array(args.yieldrates,dtype = float), mixingtime = args.mixingtime, dilution = args.dilution, substrate = args.substrate)
-    pool = np.array(args.initialsize,dtype = float)
-    #pool *= args.dilution/args.droplets
+    pool = np.array(args.initialsize,dtype = float) * g.dilution / args.droplets
     
     for m in range(args.mixingcycles):
         
