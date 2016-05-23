@@ -12,25 +12,29 @@ from growthclasses import growthdynamics
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n","--droplets",type=int,default=100)
-    parser.add_argument("-d","--dilution",type=float,default=1e-4)
-    parser.add_argument("-S","--substrate",type=float,default=1e5)
-    parser.add_argument("-g","--growthrates",type=float,nargs="*",default=[1,2])
-    parser.add_argument("-y","--yieldrates",type=float,nargs="*",default=[2,1])
-    parser.add_argument("-N","--initialpopulation",type=float,nargs="*",default=[1e6,1e6])
-    parser.add_argument("-T","--mixingtime",type=float,default=1e5)
-    parser.add_argument("-M","--maxsteps",type=int,default=10000)
+
+    parser.add_argument("-k","--droplets",type=int,default=100)
+    parser.add_argument("-a","--growthrates",nargs=2,default=np.array([1.,1.]))
+    parser.add_argument("-y","--yieldrates",nargs=2,default=np.array([.90,1.]))
+    parser.add_argument("-s","--substrate",default=1e5,type=float)
+    parser.add_argument("-d","--dilution",type=float,default=2e-4)
+    parser.add_argument("-T","--mixingtime",type=float,default=24.)
+
+    parser.add_argument("-N","--initialsize",nargs=2,default=np.array([1e5,1e5]))
+    parser.add_argument("-m","--mixingcycles",type=int,default=20)
+
+
     parser.add_argument("-O","--outputsteps",type=int,default=100)
     parser.add_argument("-v","--verbose",action="store_true",default=False)
     parser.add_argument("-q","--debug",action="store_true",default=False)
 
     args = parser.parse_args()
     
-    g = growthdynamics(growthrates = np.array(args.growthrates), yieldrates = np.array(args.yieldrates), mixingtime = args.mixingtime, dilution = args.dilution, substrate = args.substrate)
-    pool = np.array(args.initialpopulation)
+    g = growthdynamics(growthrates = np.array(args.growthrates,dtype = float), yieldrates = np.array(args.yieldrates,dtype = float), mixingtime = args.mixingtime, dilution = args.dilution, substrate = args.substrate)
+    pool = np.array(args.initialsize,dtype = float)
     #pool *= args.dilution/args.droplets
     
-    for m in range(args.maxsteps):
+    for m in range(args.mixingcycles):
         
         popdrop = np.random.poisson(pool,size = (args.droplets,g.numstrains))
         seeding = np.mean(popdrop,axis=0)

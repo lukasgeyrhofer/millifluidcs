@@ -28,18 +28,19 @@ def dy(t,y):
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument("-k","--droplets",type=int,default=100)
 parser.add_argument("-a","--growthrates",nargs=2,default=np.array([1.,1.]))
-parser.add_argument("-Y","--yieldrates",nargs=2,default=np.array([.90,1.]))
+parser.add_argument("-y","--yieldrates",nargs=2,default=np.array([.90,1.]))
 parser.add_argument("-s","--substrateconcentration",default=1e5,type=float)
 parser.add_argument("-d","--dilutionrate",type=float,default=2e-4)
 parser.add_argument("-T","--mixingtime",type=float,default=24.)
+
 parser.add_argument("-N","--initialsize",nargs=2,default=np.array([1e5,1e5]))
-parser.add_argument("-p","--production",type=float,default=1e-1)
-parser.add_argument("-H","--halflife",type=float,default=10)
-parser.add_argument("-k","--droplets",type=int,default=100)
-parser.add_argument("-m","--mixingsteps",type=int,default=20)
+parser.add_argument("-m","--mixingcycles",type=int,default=20)
 parser.add_argument("-e","--epsilson",type=int,default=1/60.)
 
+parser.add_argument("-p","--production",type=float,default=1e-1)
+parser.add_argument("-H","--halflife",type=float,default=10)
 parser.add_argument("-A","--epalpha",type=float,default=1)
 parser.add_argument("-M","--epmu",type=float,default=1e3)
 parser.add_argument("-S","--epsigma",type=float,default=1e2)
@@ -50,8 +51,8 @@ args = parser.parse_args()
 # generate parameter dictionary
 global p
 p = {}
-p['yield']      = np.array(args.yieldrates)
-p['growth']     = np.array(args.growthrates)
+p['yield']      = np.array(args.yieldrates,dtype = float)
+p['growth']     = np.array(args.growthrates,dtype = float)
 p['substrate']  = args.substrateconcentration
 p['mixingtime'] = args.mixingtime
 p['dilution']   = args.dilutionrate
@@ -64,12 +65,13 @@ epp['alpha'] = args.epalpha
 epp['mu']    = args.epmu
 epp['sigma'] = args.epsigma
 
+initialsize = np.array(args.initialsize,dtype = float)
 
-dropp = np.ones(args.droplets)*args.initialsize[0]
-dropn = np.ones(args.droplets)*args.initialsize[1]
+dropp = np.ones(args.droplets)*initialsize[0]
+dropn = np.ones(args.droplets)*initialsize[1]
 ep    = np.zeros(args.droplets)
 
-for m in range(args.mixingsteps):
+for m in range(args.mixingcycles):
     ep[:] = np.mean(ep)*p['dilution']/args.droplets                  # extracellular product to start into new cycle
     poolp = np.sum(dropp)*p['dilution']/args.droplets                # diluted pool producers (poisson parameter!)
     pooln = np.sum(dropn)*p['dilution']/args.droplets                # diluted pool non-producers
