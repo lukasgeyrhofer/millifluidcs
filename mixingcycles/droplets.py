@@ -22,8 +22,6 @@ class population:
         self.__populations = np.outer(np.ones(self.__droplets),self.__pool*self.__dilution)
         self.__precision = precision
         self.__debug = debug
-        #print self.__growthrates
-        #exit(1)
         
 
     def get_time_to_substrate_depletion(self,coefficients,rates,substrate,alpha=1.,maxsteps = 10000):
@@ -44,7 +42,7 @@ class population:
         
         
     def dilute_fraction(self):
-        self.__populations = np.random.poisson(lam = self.__pool*self.__dilution,size = (self.__droplets,self.__numstrains))
+        self.__populations = np.random.poisson(lam = self.__pool*self.__dilution/(1.*self.__droplets),size = (self.__droplets,self.__numstrains))
 
     def dilute_single(self):
         self.__populations = np.zeros((self.__droplets,self.__numstrains))
@@ -54,36 +52,37 @@ class population:
             self.__populations[i,a[i]] = 1
         
     def grow(self):
-
         if self.__dilutiontype == 0:
             self.dilute_fraction()
         elif self.__dilutiontype == 1:
             self.dilute_single()
         
-        
-        self.__seedsize = np.sum(self.__populations,axis=1)
-        self.__seedhisto,self.__seedbins = np.histogram(self.__seedsize)
+        #self.__seedsize = np.sum(self.__populations,axis=1)
+        #self.__seedhisto,self.__seedbins = np.histogram(self.__seedsize)
         
         self.__pool = np.zeros(self.__numstrains)
         
         self.__averagetime = 0
         self.__remaining_substrate_in_pool = 0
         n = 0
+        
         for i in range(self.__droplets):
             t = self.get_time_to_substrate_depletion(self.__populations[i]/self.__yields,self.__growthrates,self.__substrate)
+            self.__pool += self.__populations[i]*np.exp(self.__growthrates*t)
+            self.__remaining_substrate_in_pool += self.__substrate - np.sum(self.__populations[i]/self.__yields * (np.exp(self.__growthrates*t) - 1))
+            
             if t>0:
                 self.__averagetime += t
                 n += 1
-            self.__pool += self.__populations[i]*np.exp(self.__growthrates*t)
             if self.__debug: print "    %3d %.4e %6d %6d %.4e %.4e"%(i,t,self.__populations[i][0],self.__populations[i][1],self.__populations[i][0]*np.exp(self.__growthrates[0]*t),self.__populations[i][1]*np.exp(self.__growthrates[1]*t))
-            self.__remaining_substrate_in_pool += self.__substrate - np.sum(self.__populations[i]/self.__yields * (np.exp(self.__growthrates*t) - 1))
+
         if n > 0:
             self.__averagetime /= n
 
         
         
     def get_populations(self):
-        return np.sum(self.__populations,axis=0)
+        return np.sum(self.__populations,axis=0)/(1.*self.__droplets)
     
     
     def get_ratios(self):
@@ -127,7 +126,7 @@ def main():
     for i in range(args.maxsteps):
         s.grow()
         if i%args.outputsteps == 0:
-            print "%6d %14.6e %14.6e %14.6e %6d %6d"%(i,s.get_ratios()[0],s.get_average_time(),s.get_remaining_substrate(),s.get_populations()[0],s.get_populations()[1])
+            print "%6d %14.6e %14.6e %14.6e %6.2f %6.2f"%(i,s.get_ratios()[0],s.get_average_time(),s.get_remaining_substrate(),s.get_populations()[0],s.get_populations()[1])
             if args.verbose:
                 b,h = s.get_seedhisto()
                 for j in range(len(h)):

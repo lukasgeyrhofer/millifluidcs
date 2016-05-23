@@ -15,7 +15,7 @@ def RungeKutta4(func,xx,tt,step):
 class growthdynamics:
     def __init__(self,growthrates = np.array([2.,1.]), yieldrates = np.array([2.,1.]), dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
         
-        self.__attributes = ['growthrates','yieldrates','dilution','mixingtime','substrate']
+        self.__attributes = ['growthrates','yieldrates','dilution','mixingtime','substrate','numstrains']
         self.__growthrates = growthrates
         self.__yieldrates = yieldrates
         self.__dilution = dilution
@@ -27,7 +27,7 @@ class growthdynamics:
         self.__NR = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
         
     def __getTimeToDepletion(self,initialcells):
-        # internal function to have all parameters.
+        # internal function to determine when substrate is used up
         t0 = 0
         if np.sum(initialcells) > 0.:
             # assume only single 
@@ -36,7 +36,7 @@ class growthdynamics:
             while ((t1-t0)/t1)**2 > self.__NR['precision2']:
                 t0 = t1
                 # Newton-Raphson iteration to refine solution
-                t1 += self.__NR['alpha']*(self.__substrate-np.sum(initialcells/self.__yieldrates*(np.exp(self.__growthrates*t1)-1.)))/(np.sum(initialcells/self.__yieldrates*self.__growthrates*np.exp(self.__growthrates*t1)))
+                t1 += self.__NR['alpha']*(self.__substrate-np.sum(initialcells[initialcells>0]/self.__yieldrates[initialcells>0]*(np.exp(self.__growthrates[initialcells>0]*t1)-1.)))/(np.sum(initialcells[initialcells>0]/self.__yieldrates[initialcells>0]*self.__growthrates[initialcells>0]*np.exp(self.__growthrates[initialcells>0]*t1)))
                 i+=1
                 # should not iterate infinitely
                 if i > self.__NR['maxsteps']:
@@ -48,15 +48,14 @@ class growthdynamics:
 
     def getGrowth(self,initialcells = None):
         assert len(self.__growthrates) == len(self.__yieldrates)
-        n = len(self.__growthrates)
         if not initialcells is None:
             if isinstance(initialcells,np.ndarray):
-                if len(initialcells) > n:
-                    initialcells = initialcells[:n]
-                elif len(initialcells) < n:
-                    initialcells = np.concatenate([initialcells,np.zeros(n - len(initialcells))])
+                if len(initialcells) > self.numstrains:
+                    initialcells = initialcells[:self.numstrains]
+                elif len(initialcells) < self.numstrains:
+                    initialcells = np.concatenate([initialcells,np.zeros(self.numstrains - len(initialcells))])
             else:
-                initialcells = np.ones(n)
+                initialcells = np.ones(self.numstrains)
         else:
             initialcells = np.ones(n)
         return self.__dilution * initialcells * np.exp( self.__growthrates * self.__getTimeToDepletion(initialcells) )
@@ -122,6 +121,7 @@ class growthdynamics:
             elif key == 'substrate':    return self.__substrate
             elif key == 'mixingtime':   return self.__mixingtime
             elif key == 'dilution':     return self.__dilution
+            elif key == 'numstrains':   return len(self.__growthrates)
 
     def setGrowthRates(self,growthrates):
         if isinstance(growthrates,np.ndarray):
