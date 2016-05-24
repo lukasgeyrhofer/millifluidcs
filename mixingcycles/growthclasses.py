@@ -151,4 +151,5 @@ class growthdynamics:
         if isinstance(dilution,(int,float)):
             self.__dilution = 1.*dilution
         
- 
+
+
