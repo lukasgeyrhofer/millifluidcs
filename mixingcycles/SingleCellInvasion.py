@@ -5,14 +5,12 @@ import argparse
 import sys
 
 from growthclasses import growthdynamics
+from growthclasses import addgrowthparamters
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m","--maxM",type=float,default=1e6)
-parser.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
-parser.add_argument("-Y","--yieldrates",type=float,nargs="*",default=[1.,2.])
-parser.add_argument("-S","--substrateconcentration",type=float,default=1e4)
-parser.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
-parser.add_argument("-T","--mixingtime",type=float,default=12.)
+parser = addgrowthparamters(parser)
 args = parser.parse_args()
 
 g     = growthdynamics(growthrates = np.array(args.growthrates), yieldrates = np.array(args.yieldrates), mixingtime = args.mixingtime, dilution = args.dilutionfactor, substrate = args.substrateconcentration)

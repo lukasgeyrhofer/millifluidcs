@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import argparse
 
 
 def RungeKutta4(func,xx,tt,step):
@@ -10,6 +11,17 @@ def RungeKutta4(func,xx,tt,step):
   k3 = step * func( tt+step/2., xx+k2/2. )
   k4 = step * func( tt+step   , xx+k3 )
   return xx + (k1+2*k2+2*k3+k4)/6.
+
+
+def addgrowthparamters(p):
+    gp = p.add_argument_group(description = "Parameters for growth in droplets")
+    gp.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
+    gp.add_argument("-Y","--yieldrates",type=float,nargs="*",default=[1.,2.])
+    gp.add_argument("-S","--substrateconcentration",type=float,default=1e4)
+    gp.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
+    gp.add_argument("-T","--mixingtime",type=float,default=12.)
+    
+    return p
 
 
 class growthdynamics:
