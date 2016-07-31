@@ -105,7 +105,25 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
         if i<args.maxiterations:    i += 1
         else:                       break
 
+
+
+# stability of fixed point is checked with jacobian
+px,py = prob(m,n,cutoff = args.cutoff)
+
+if n[0] > 0:    dpx = (m/n[0] - 1.)*px
+else:           dpx = -px
+if n[1] > 0:    dpy = (m/n[1] - 1.)*py
+else:           dpy = -py
+
+j[0,0] = np.dot(dpy,np.dot(px,growth1))-1.
+j[0,1] = np.dot(py,np.dot(dpx,growth1))
+j[1,0] = np.dot(dpy,np.dot(px,growth2))
+j[1,1] = np.dot(py,np.dot(dpx,growth2))-1.
+
+w,v = np.linalg.eig(j)
+
+
 # final output
-print "{:.6f} {:.6f} {:14.8e} {:14.8e} {:4d}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i)
+print "{:.6f} {:.6f} {:14.8e} {:14.8e} {:4d} {:14.8e} {:14.8e} {:14.8e} {:14.8e}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i,np.real(w[0]),np.imag(w[0]),np.imag(w[1]),np.imag(w[1]))
 
 
