@@ -6,7 +6,7 @@ import sys,math
 from scipy.stats import poisson
 
 from growthclasses import growthdynamics
-
+from growthclasses import addgrowthparamters
 
 def prob(m,n,cutoff = 1e-100):
     if n[0] > 0:
@@ -27,12 +27,7 @@ def prob(m,n,cutoff = 1e-100):
 
 
 parser = argparse.ArgumentParser()
-parser_populations = parser.add_argument_group(description = "=== Parameters for population growth and mixing ===")
-parser_populations.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
-parser_populations.add_argument("-Y","--yieldrates",type=float,nargs="*",default=[1.,2.])
-parser_populations.add_argument("-S","--substrateconcentration",type=float,default=1e4)
-parser_populations.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
-parser_populations.add_argument("-T","--mixingtime",type=float,default=12.)
+parser = addgrowthparamters(parser)
 
 parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ===")
 parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False,help = "Plain iteration of dynamics or try to use NR to estimate fixed point")
@@ -122,8 +117,7 @@ j[1,1] = np.dot(py,np.dot(dpx,growth2))-1.
 
 w,v = np.linalg.eig(j)
 
-
 # final output
-print "{:.6f} {:.6f} {:14.8e} {:14.8e} {:4d} {:14.8e} {:14.8e} {:14.8e} {:14.8e}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i,np.real(w[0]),np.imag(w[0]),np.imag(w[1]),np.imag(w[1]))
+print "{:.6f} {:.6f} {:14.8e} {:14.8e} {:4d} {:14.8e} {:14.8e} {:14.8e} {:14.8e}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i,float(np.real(w[0])),float(np.imag(w[0])),float(np.real(w[1])),float(np.imag(w[1])))
 
 
