@@ -8,6 +8,11 @@ from scipy.stats import poisson
 from growthclasses import growthdynamics
 from growthclasses import addgrowthparamters
 
+def re(x):
+    return float(np.real(x))
+def im(x):
+    return float(np.imag(x))
+
 def prob(m,n,cutoff = 1e-100):
     if n[0] > 0:
         px = poisson.pmf(m,n[0])
@@ -37,6 +42,7 @@ parser_algorithm.add_argument("-M","--maxiterations",type=int,default=None, help
 parser_algorithm.add_argument("-A","--alpha",type=float,default=1.,help = "convergence parameter for NR [default: 1.0]")
 parser_algorithm.add_argument("-v","--verbose",action="store_true",default=False,help = "output current values every iteration step")
 parser_algorithm.add_argument("-c","--cutoff",type=float,default=1e-100,help = "cutoff probabilities lower than this value [default: 1e-100]")
+parser_algorithm.add_argument("-V","--printeigenvectors",default=False,action="store_true",help = "print eigenvectors of linearized iteration map")
 args = parser.parse_args()
 
 
@@ -97,9 +103,9 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
     n[n<0] = 0
     
     if not args.maxiterations is None:
-        if i<args.maxiterations:    i += 1
-        else:                       break
-
+        if i > args.maxiterations:
+            break
+    i += 1
 
 
 # stability of fixed point is checked with jacobian
@@ -110,14 +116,20 @@ else:           dpx = -px
 if n[1] > 0:    dpy = (m/n[1] - 1.)*py
 else:           dpy = -py
 
-j[0,0] = np.dot(dpy,np.dot(px,growth1))-1.
+j[0,0] = np.dot(dpy,np.dot(px,growth1))
 j[0,1] = np.dot(py,np.dot(dpx,growth1))
 j[1,0] = np.dot(dpy,np.dot(px,growth2))
-j[1,1] = np.dot(py,np.dot(dpx,growth2))-1.
+j[1,1] = np.dot(py,np.dot(dpx,growth2))
 
 w,v = np.linalg.eig(j)
 
 # final output
-print "{:.6f} {:.6f} {:14.8e} {:14.8e} {:4d} {:14.8e} {:14.8e} {:14.8e} {:14.8e}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i,float(np.real(w[0])),float(np.imag(w[0])),float(np.real(w[1])),float(np.imag(w[1])))
+print "{:10.6f} {:10.6f} {:14.8e} {:14.8e} {:4d}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i),
+print "{:11.6f} {:11.6f}".format(re(w[0]),re(w[1])),
+#print "{:11.6f} {:11.6f}".format(im(w[0]),im(w[1])),
+if args.printeigenvectors:
+    print "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(re(v[0][0]),re(v[0][1]),re(v[1][0]),re(v[1][1])),
+    #print "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1])),
+print
 
 
