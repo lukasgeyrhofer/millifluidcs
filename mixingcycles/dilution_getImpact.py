@@ -6,7 +6,7 @@ import sys,math
 from scipy.stats import poisson
 
 from growthclasses import growthdynamics
-from growthclasses import addgrowthparamters
+from growthclasses import addgrowthparameters
 
 def prob(m,n,cutoff = 1e-100):
     if n[0] > 0:
@@ -27,7 +27,7 @@ def prob(m,n,cutoff = 1e-100):
 
 
 parser = argparse.ArgumentParser()
-parser = addgrowthparamters(parser)
+parser = addgrowthparameters(parser)
 
 parser.add_argument("-n","--fixedpoints",nargs="*")
 parser.add_argument("-M","--maxN",type=int,default=10)

@@ -13,7 +13,7 @@ def RungeKutta4(func,xx,tt,step):
   return xx + (k1+2*k2+2*k3+k4)/6.
 
 
-def addgrowthparamters(p):
+def addgrowthparameters(p):
     gp = p.add_argument_group(description = "Parameters for growth in droplets")
     gp.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
     gp.add_argument("-Y","--yieldrates",type=float,nargs="*",default=[1.,2.])

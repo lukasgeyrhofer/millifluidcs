@@ -6,7 +6,7 @@ import sys,math
 from scipy.stats import poisson
 
 from growthclasses import growthdynamics
-from growthclasses import addgrowthparamters
+from growthclasses import addgrowthparameters
 
 def re(x):
     return float(np.real(x))
@@ -32,7 +32,7 @@ def prob(m,n,cutoff = 1e-100):
 
 
 parser = argparse.ArgumentParser()
-parser = addgrowthparamters(parser)
+parser = addgrowthparameters(parser)
 
 parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ===")
 parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False,help = "Plain iteration of dynamics or try to use NR to estimate fixed point")
