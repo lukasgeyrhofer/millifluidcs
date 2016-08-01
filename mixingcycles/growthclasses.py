@@ -2,7 +2,7 @@
 
 import numpy as np
 import argparse
-
+from scipy.stats import poisson
 
 def RungeKutta4(func,xx,tt,step):
   # 4th order Runge-Kutta integration scheme
@@ -22,6 +22,35 @@ def addgrowthparameters(p):
     gp.add_argument("-T","--mixingtime",type=float,default=12.)
     
     return p
+
+def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
+    if n[0] > 0:
+        px = poisson.pmf(m,n[0])
+        px[px<cutoff] = 0.
+        px[-1] += (1. - np.sum(px))
+        if diff:
+            dpx = (m/n[0] - 1.)*px
+    else:
+        px = np.zeros(len(m))
+        px[0] = 1
+        if diff:
+            dpx = -px
+    if n[1] > 0:
+        py = poisson.pmf(m,n[1])
+        py[py<cutoff] = 0.
+        py[-1] += (1. - np.sum(py))
+        if diff:
+            dpy = (m/n[1] - 1.)*py
+    else:
+        py = np.zeros(len(m))
+        py[0] = 1
+        if diff:
+            dpy = -py
+    if diff:
+        return px,py,dpx,dpy
+    else:
+        return px,py
+
 
 
 class growthdynamics:
@@ -69,7 +98,7 @@ class growthdynamics:
             else:
                 initialcells = np.ones(self.numstrains)
         else:
-            initialcells = np.ones(n)
+            initialcells = np.ones(self.numstrains)
         return self.__dilution * initialcells * np.exp( self.__growthrates * self.__getTimeToDepletion(initialcells) )
 
 
