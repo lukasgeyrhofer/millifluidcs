@@ -9,7 +9,7 @@ from scipy.stats import poisson
 import growthclasses as gc
 
 parser = argparse.ArgumentParser()
-parser = addgrowthparameters(parser)
+parser = gc.addgrowthparameters(parser)
 
 parser.add_argument("-m","--maxsize",type=int,default=100)
 parser.add_argument("-n","--outputmax",type=float,default=10)
