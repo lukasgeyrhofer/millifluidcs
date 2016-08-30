@@ -53,15 +53,15 @@ def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
 
 
 
-class growthdynamics:
+class GrowthDynamics:
     def __init__(self,growthrates = np.array([2.,1.]), yieldrates = np.array([2.,1.]), dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
         
-        self.__attributes = ['growthrates','yieldrates','dilution','mixingtime','substrate','numstrains']
-        self.__growthrates = growthrates
-        self.__yieldrates = yieldrates
-        self.__dilution = dilution
-        self.__mixingtime = mixingtime
-        self.__substrate = substrate
+        self.attributes = ['growthrates','yieldrates','dilution','mixingtime','substrate','numstrains']
+        self.growthrates = growthrates
+        self.yieldrates = yieldrates
+        self.dilution = dilution
+        self.mixingtime = mixingtime
+        self.substrate = substrate
         
         assert len(self.__growthrates) == len(self.__yieldrates)        
         
@@ -87,19 +87,26 @@ class growthdynamics:
             return 0.
       
 
-    def getGrowth(self,initialcells = None):
-        assert len(self.__growthrates) == len(self.__yieldrates)
+    def checkInitialCells(self,initialcells = None):
+        assert len(self.growthrates) == len(self.yieldrates)
         if not initialcells is None:
             if isinstance(initialcells,np.ndarray):
                 if len(initialcells) > self.numstrains:
-                    initialcells = initialcells[:self.numstrains]
+                    ret_ic = initialcells[:self.numstrains]
                 elif len(initialcells) < self.numstrains:
-                    initialcells = np.concatenate([initialcells,np.zeros(self.numstrains - len(initialcells))])
+                    ret_ic = np.concatenate([initialcells,np.zeros(self.numstrains - len(initialcells))])
+                else:
+                    ret_ic = initialcells
             else:
-                initialcells = np.ones(self.numstrains)
+                ret_ic = np.ones(self.numstrains)
         else:
-            initialcells = np.ones(self.numstrains)
-        return self.__dilution * initialcells * np.exp( self.__growthrates * self.__getTimeToDepletion(initialcells) )
+            ret_ic = np.ones(self.numstrains)
+        return ret_ic
+        
+
+    def getGrowth(self,initialcells = None):
+        ic = self.checkInitialCells(self,initialcells)
+        return self.__dilution * ic * np.exp( self.__growthrates * self.__getTimeToDepletion(ic) )
 
 
     def getGrowthMatrix(self,size):
@@ -154,16 +161,7 @@ class growthdynamics:
         return t
 
 
-            
-    def __getattr__(self,key):
-        if key in self.__attributes:
-            if   key == 'growthrates':  return self.__growthrates
-            elif key == 'yieldrates':   return self.__yieldrates
-            elif key == 'substrate':    return self.__substrate
-            elif key == 'mixingtime':   return self.__mixingtime
-            elif key == 'dilution':     return self.__dilution
-            elif key == 'numstrains':   return len(self.__growthrates)
-
+    
     def setGrowthRates(self,growthrates):
         if isinstance(growthrates,np.ndarray):
             self.__growthrates = growthrates
@@ -192,5 +190,44 @@ class growthdynamics:
         if isinstance(dilution,(int,float)):
             self.__dilution = 1.*dilution
         
+    def __str__(self):
+        return "growthclass object"
 
+
+class StochasticGrowthDynamics(GrowthDynamics):
+    
+    def __init__(self,growthrates = np.array([2.,1.]), yieldrates = np.array([2.,1.]), dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
+        self.attributes = ['growthrates','yieldrates','dilution','mixingtime','substrate','numstrains']
+        self.growthrates = growthrates
+        self.yieldrates = yieldrates
+        self.dilution = dilution
+        self.mixingtime = mixingtime
+        self.substrate = substrate
+        
+        assert len(self.growthrates) == len(self.yieldrates)        
+        
+        self.__NR = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
+        
+        self.numstrains = len(self.growthrates)
+        
+    
+    def __getNextDivision(self,population):
+        totalrate = np.dot(population,self.growthrates[:len(population)])
+        return np.random.choice(len(population),p = population*self.growthrates[:len(population)]/totalrate),np.random.exponential(1./totalrate)
+    
+    def growth(self,initialcells = None):
+        n = np.array(GrowthDynamics.checkInitialCells(self,initialcells),dtype=int)
+        t = 0
+        s = self.substrate
+        while True:
+            i,dt  = self.__getNextDivision(n)
+            
+            if s-self.yieldrates[i] < 0: break
+            if t+dt > self.mixingtime: break
+
+            t += dt
+            n[i] += 1
+            s -= self.yieldrates[i]
+
+        return min(t,self.mixingtime),n
 
