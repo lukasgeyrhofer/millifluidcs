@@ -196,7 +196,7 @@ class GrowthDynamics:
 
 class StochasticGrowthDynamics(GrowthDynamics):
     
-    def __init__(self,growthrates = np.array([2.,1.]), yieldrates = np.array([2.,1.]), dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
+    def __init__(self,growthrates = np.array([2.,1.]), yieldrates = np.array([1.,2.]), dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
         self.attributes = ['growthrates','yieldrates','dilution','mixingtime','substrate','numstrains']
         self.growthrates = growthrates
         self.yieldrates = yieldrates
