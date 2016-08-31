@@ -63,26 +63,26 @@ class GrowthDynamics:
         self.mixingtime = mixingtime
         self.substrate = substrate
         
-        assert len(self.__growthrates) == len(self.__yieldrates)        
+        assert len(self.growthrates) == len(self.yieldrates)        
         
-        self.__NR = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
+        self.NR = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
         
     def __getTimeToDepletion(self,initialcells):
         # internal function to determine when substrate is used up
         t0 = 0
         if np.sum(initialcells) > 0.:
             # assume only single 
-            t1 = max(np.log(self.__substrate*self.__yieldrates[initialcells > 0]/initialcells[initialcells > 0]+1.)/self.__growthrates[initialcells >0])
+            t1 = max(np.log(self.substrate*self.yieldrates[initialcells > 0]/initialcells[initialcells > 0]+1.)/self.growthrates[initialcells >0])
             i = 0
-            while ((t1-t0)/t1)**2 > self.__NR['precision2']:
+            while ((t1-t0)/t1)**2 > self.NR['precision2']:
                 t0 = t1
                 # Newton-Raphson iteration to refine solution
-                t1 += self.__NR['alpha']*(self.__substrate-np.sum(initialcells[initialcells>0]/self.__yieldrates[initialcells>0]*(np.exp(self.__growthrates[initialcells>0]*t1)-1.)))/(np.sum(initialcells[initialcells>0]/self.__yieldrates[initialcells>0]*self.__growthrates[initialcells>0]*np.exp(self.__growthrates[initialcells>0]*t1)))
+                t1 += self.NR['alpha']*(self.substrate-np.sum(initialcells[initialcells>0]/self.yieldrates[initialcells>0]*(np.exp(self.growthrates[initialcells>0]*t1)-1.)))/(np.sum(initialcells[initialcells>0]/self.yieldrates[initialcells>0]*self.growthrates[initialcells>0]*np.exp(self.growthrates[initialcells>0]*t1)))
                 i+=1
                 # should not iterate infinitely
-                if i > self.__NR['maxsteps']:
+                if i > self.NR['maxsteps']:
                     raise ValueError
-            return min(t1,self.__mixingtime)
+            return min(t1,self.mixingtime)
         else:
             return 0.
       
@@ -106,7 +106,7 @@ class GrowthDynamics:
 
     def getGrowth(self,initialcells = None):
         ic = self.checkInitialCells(self,initialcells)
-        return self.__dilution * ic * np.exp( self.__growthrates * self.__getTimeToDepletion(ic) )
+        return self.dilution * ic * np.exp( self.growthrates * self.getTimeToDepletion(ic) )
 
 
     def getGrowthMatrix(self,size):
@@ -146,9 +146,9 @@ class GrowthDynamics:
     
         
     def getSingleStrainFixedPoints(self):
-        t = 1./self.__growthrates * np.log(1./self.__dilution)
-        y = np.array([ self.__yieldrates[i] if t[i] <= self.__mixingtime else 0. for i in range(len(self.__yieldrates))])
-        return self.__dilution / (1. - self.__dilution) * self.__substrate * y
+        t = 1./self.growthrates * np.log(1./self.dilution)
+        y = np.array([ self.yieldrates[i] if t[i] <= self.mixingtime else 0. for i in range(len(self.yieldrates))])
+        return self.dilution / (1. - self.dilution) * self.substrate * y
     
             
             
@@ -164,31 +164,31 @@ class GrowthDynamics:
     
     def setGrowthRates(self,growthrates):
         if isinstance(growthrates,np.ndarray):
-            self.__growthrates = growthrates
+            self.growthrates = growthrates
         elif isinstance(growthrates,(int,float)):
-            self.__growthrates = np.array([float(growthrates)])
+            self.growthrates = np.array([float(growthrates)])
         elif isinstance(growthrates,(list,tuple)):
-            self.__growthrates = np.array(growthrates)
+            self.growthrates = np.array(growthrates)
     
     def setYieldRates(self,yieldrates):
         if isinstance(yieldrates,np.ndarray):
-            self.__yieldrates = yieldrates
+            self.yieldrates = yieldrates
         elif isinstance(yieldrates,float):
-            self.__yieldrates = np.array([yieldrates])
+            self.yieldrates = np.array([yieldrates])
         elif isinstance(yieldrates,(list,tuple)):
-            self.__yieldrates = np.array(yieldrates)
+            self.yieldrates = np.array(yieldrates)
 
     def setMixingTime(self,mixingtime):
         if isinstance(mixingtime,(int,float)):
-            self.__mixingtime = 1.*mixingtime
+            self.mixingtime = 1.*mixingtime
     
     def setSubstrate(self,substrate):
         if isinstance(substrate,(int,float)):
-            self.__substrate = 1.*substrate
+            self.substrate = 1.*substrate
     
     def setDilution(self,dilution):
         if isinstance(dilution,(int,float)):
-            self.__dilution = 1.*dilution
+            self.dilution = 1.*dilution
         
     def __str__(self):
         return "growthclass object"
