@@ -7,15 +7,16 @@ import growthclasses as gc
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-D","--delta",type=float,default=.2)
+parser.add_argument("-M","--maxexp",type=float,default=1)
 args = parser.parse_args()
 
 
 g = gc.GrowthDynamics(dilution = 1.)
 
-for yexp in np.arange(-1,1+args.delta,args.delta):
+for yexp in np.arange(-args.maxexp,args.maxexp+args.delta,args.delta):
     y = np.array([10**yexp,1.])
     g.setYieldRates(y)
-    for aexp in np.arange(-1,1+args.delta,args.delta):
+    for aexp in np.arange(-args.maxexp,args.maxexp+args.delta,args.delta):
         a = np.array([10**aexp,1.])
         g.setGrowthRates(a)
         
