@@ -13,7 +13,7 @@ def RungeKutta4(func,xx,tt,step):
   return xx + (k1+2*k2+2*k3+k4)/6.
 
 
-def addgrowthparameters(p):
+def AddGrowthParameters(p):
     gp = p.add_argument_group(description = "Parameters for growth in droplets")
     gp.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
     gp.add_argument("-Y","--yieldrates",type=float,nargs="*",default=[1.,2.])
@@ -57,8 +57,8 @@ class GrowthDynamics:
     def __init__(self,growthrates = np.array([2.,1.]), yieldrates = np.array([2.,1.]), dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
         
         self.attributes = ['growthrates','yieldrates','dilution','mixingtime','substrate','numstrains']
-        self.growthrates = growthrates
-        self.yieldrates = yieldrates
+        self.growthrates = np.array(growthrates,dtype=float)
+        self.yieldrates = np.array(yieldrates,dtype=float)
         self.dilution = dilution
         self.mixingtime = mixingtime
         self.substrate = substrate
@@ -89,6 +89,7 @@ class GrowthDynamics:
 
     def checkInitialCells(self,initialcells = None):
         assert len(self.growthrates) == len(self.yieldrates)
+        self.numstrains = len(self.growthrates)
         if not initialcells is None:
             if isinstance(initialcells,np.ndarray):
                 if len(initialcells) > self.numstrains:
@@ -101,12 +102,12 @@ class GrowthDynamics:
                 ret_ic = np.ones(self.numstrains)
         else:
             ret_ic = np.ones(self.numstrains)
-        return ret_ic
+        return np.array(ret_ic,dtype=float)
         
 
     def getGrowth(self,initialcells = None):
-        ic = self.checkInitialCells(self,initialcells)
-        return self.dilution * ic * np.exp( self.growthrates * self.getTimeToDepletion(ic) )
+        ic = self.checkInitialCells(initialcells)
+        return self.dilution * ic * np.exp( self.growthrates * self.__getTimeToDepletion(ic) )
 
 
     def getGrowthMatrix(self,size):
