@@ -86,6 +86,8 @@ class MicrobialStrain():
             self.__yieldfactor = checkedvalue
         elif key == "deathrate":
             self.__deathrate = checkedvalue
+        else:
+            super().__setattr__(key,value)
 
             
 class Environment():
@@ -136,6 +138,8 @@ class Environment():
                 raise ValueError
             if self.__numdroplets < 1:
                 self.__numdroplets = 1
+        else:
+            super().__setattr__(key,value)
     
     def getParams():
         return {"substrate":self.__substrate,"dilution":self.__dilution,"mixingtime":self.__mixingtime,"numdroplets":self.__numdroplets}
@@ -150,15 +154,15 @@ class GrowthDynamics:
         else:
             assert len(growthrates) == len(deathrates)
         
-        self.strains = []
+        self.strains = list()
         for a,y,d in zip(growthrates,yieldfactors,deathrates):
-            self.addStrain(growthrate = a,yieldfactor = y,deathrate = d)
+            self.strains.append(MicrobialStrain(growthrate = a,yieldfactor = y,deathrate = d))
             
         self.env = Environment(dilution = dilution,mixingtime = mixingtime, substrate = substrate)
         self.NR  = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
     
     def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
-        self.strains.append(MicrobialStrain(growthrate = growthrate, yieldfactor = yieldfactor, deathrate = deathrate)
+        self.strains.append(MicrobialStrain(growthrate = growthrate, yieldfactor = yieldfactor, deathrate = deathrate))
     
     def delLastStrain(self):
         return self.strains.pop()
@@ -197,7 +201,7 @@ class GrowthDynamics:
 
     def getGrowth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
-        return self.dilution * ic * np.exp( self.growthrates * self.__getTimeToDepletion(ic) )
+        return self.env.dilution * ic * np.exp( self.growthrates * self.__getTimeToDepletion(ic) )
 
 
     def getGrowthMatrix(self,size):
@@ -261,7 +265,8 @@ class GrowthDynamics:
             return np.array([self.strains[i].yieldfactor for i in range(self.numstrains)])
         elif key == "deathrates":
             return np.array([self.strains[i].deathrate for i in range(self.numstrains)])
-    
+        
+
     def __setattr__(self,key,value):
         if key == "growthrates":
             try:
@@ -287,17 +292,15 @@ class GrowthDynamics:
             assert len(tmp) == self.numstrains
             for i in range(self.numstrains):
                 self.strains[i].deathrate = tmp[i]
-            
-
+        else:
+            super().__setattr__(key,value)
+        
     def setMixingTime(self,mixingtime):
             self.env.mixingtime = mixingtime
     def setSubstrate(self,substrate):
             self.env.substrate = substrate
     def setDilution(self,dilution):
             self.env.dilution = dilution
-        
-    def __str__(self):
-        return "growthclass object"
 
 
 class StochasticGrowthDynamics(GrowthDynamics):

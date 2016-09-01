@@ -15,10 +15,10 @@ g = gc.GrowthDynamics(dilution = 1.)
 
 for yexp in np.arange(-args.maxexp,args.maxexp+args.delta,args.delta):
     y = np.array([10**yexp,1.])
-    g.setYieldRates(y)
+    g.yieldfactors = y
     for aexp in np.arange(-args.maxexp,args.maxexp+args.delta,args.delta):
         a = np.array([10**aexp,1.])
-        g.setGrowthRates(a)
+        g.growthrates = a
         
         n11 = g.getGrowth(np.array([2,0]))
         n22 = g.getGrowth(np.array([0,2]))
