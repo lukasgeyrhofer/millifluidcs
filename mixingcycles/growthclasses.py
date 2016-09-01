@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -324,7 +324,7 @@ class StochasticGrowthDynamics(GrowthDynamics):
         totalrate = np.dot(population,self.growthrates[:len(population)])
         return np.random.choice(len(population),p = population*self.growthrates[:len(population)]/totalrate),np.random.exponential(1./totalrate)
     
-    def growth(self,initialcells = None):
+    def Growth(self,initialcells = None):
         n = np.array(GrowthDynamics.checkInitialCells(self,initialcells),dtype=int)
         t = 0
         s = self.substrate
