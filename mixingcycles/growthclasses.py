@@ -13,13 +13,18 @@ def RungeKutta4(func,xx,tt,step):
   return xx + (k1+2*k2+2*k3+k4)/6.
 
 
-def AddGrowthParameters(p):
+def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = False,dilution = False):
     gp = p.add_argument_group(description = "Parameters for growth in droplets")
     gp.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
-    gp.add_argument("-Y","--yieldfactors",type=float,nargs="*",default=[1.,2.])
+    gp.add_argument("-y","--yieldfactors",type=float,nargs="*",default=[1.,2.])
+    if allparams or deathrates:
+        gp.add_argument("-d","--deathrates",type=float,nargs="*",default=[0.,0.])
     gp.add_argument("-S","--substrateconcentration",type=float,default=1e4)
-    gp.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
     gp.add_argument("-T","--mixingtime",type=float,default=12.)
+    if allparams or dilution:
+        gp.add_argument("-D","--dilution",type=float,default=2e-4)
+    if allparams or numdroplets:
+        gp.add_argument("-K","--numdroplets",type=int,default=1000)
     return p
 
 def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
@@ -53,9 +58,9 @@ def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
 
 class MicrobialStrain():
     def __init__(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0.):
-        self.__growthrate = growthrate
-        self.__yieldfactor = yieldfactor
-        self.__deathrate = deathrate
+        self.growthrate  = growthrate
+        self.yieldfactor = yieldfactor
+        self.deathrate   = deathrate
     
     def __getattr__(self,key):
         if key == "growthrate":
@@ -64,8 +69,6 @@ class MicrobialStrain():
             return self.__yieldfactor
         elif key == "deathrate":
             return self.__deathrate
-        else:
-            raise KeyError
     
     def __setattr__(self,key,value):
         if not isinstance(value,(float,np.float,np.float64)):
@@ -83,15 +86,14 @@ class MicrobialStrain():
             self.__yieldfactor = checkedvalue
         elif key == "deathrate":
             self.__deathrate = checkedvalue
-        else:
-            raise KeyError
+
             
 class Environment():
     def __init__(self,substrate = 1e4,dilution = 1.,mixingtime = 10.,numdroplets = 1000):
-        self.__substrate = substrate
-        self.__dilution = dilution
-        self.__mixingtime = mixingtime
-        self.__numdroplets = numdroplets
+        self.substrate   = substrate
+        self.dilution    = dilution
+        self.mixingtime  = mixingtime
+        self.numdroplets = numdroplets
         
     def __getattr__(self,key):
         if key == "substrate":
@@ -102,8 +104,6 @@ class Environment():
             return self.__mixingtime
         elif key == "numdroplets":
             return self.__numdroplets
-        else:
-            raise KeyError
     
     def __setattr__(self,key,value):
         if key == "substrate":
@@ -136,8 +136,6 @@ class Environment():
                 raise ValueError
             if self.__numdroplets < 1:
                 self.__numdroplets = 1
-        else:
-            raise KeyError
     
     def getParams():
         return {"substrate":self.__substrate,"dilution":self.__dilution,"mixingtime":self.__mixingtime,"numdroplets":self.__numdroplets}
