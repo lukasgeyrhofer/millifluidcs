@@ -16,11 +16,10 @@ def RungeKutta4(func,xx,tt,step):
 def AddGrowthParameters(p):
     gp = p.add_argument_group(description = "Parameters for growth in droplets")
     gp.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
-    gp.add_argument("-Y","--yieldrates",type=float,nargs="*",default=[1.,2.])
+    gp.add_argument("-Y","--yieldfactors",type=float,nargs="*",default=[1.,2.])
     gp.add_argument("-S","--substrateconcentration",type=float,default=1e4)
     gp.add_argument("-d","--dilutionfactor",type=float,default=2e-4)
     gp.add_argument("-T","--mixingtime",type=float,default=12.)
-    
     return p
 
 def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
@@ -52,57 +51,150 @@ def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
         return px,py
 
 
+class MicrobialStrain():
+    def __init__(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0.):
+        self.__growthrate = growthrate
+        self.__yieldfactor = yieldfactor
+        self.__deathrate = deathrate
+    
+    def __getattr__(self,key):
+        if key == "growthrate":
+            return self.__growthrate
+        elif key == "yieldfactor":
+            return self.__yieldfactor
+        elif key == "deathrate":
+            return self.__deathrate
+        else:
+            raise KeyError
+    
+    def __setattr__(self,key,value):
+        if not isinstance(value,(float,np.float,np.float64)):
+            try:
+                checkedvalue = float(value)
+            except:
+                raise ValueError
+        else:
+            checkedvalue = value
+        if checkedvalue < 0.:
+            checkedvalue = 0.
+        if key == "growthrate":
+            self.__growthrate = checkedvalue
+        elif key == "yieldfactor":
+            self.__yieldfactor = checkedvalue
+        elif key == "deathrate":
+            self.__deathrate = checkedvalue
+        else:
+            raise KeyError
+            
+class Environment():
+    def __init__(self,substrate = 1e4,dilution = 1.,mixingtime = 10.,numdroplets = 1000):
+        self.__substrate = substrate
+        self.__dilution = dilution
+        self.__mixingtime = mixingtime
+        self.__numdroplets = numdroplets
+        
+    def __getattr__(self,key):
+        if key == "substrate":
+            return self.__substrate
+        elif key == "dilution":
+            return self.__dilution
+        elif key == "mixingtime":
+            return self.__mixingtime
+        elif key == "numdroplets":
+            return self.__numdroplets
+        else:
+            raise KeyError
+    
+    def __setattr__(self,key,value):
+        if key == "substrate":
+            try:
+                self.__substrate = float(value)
+            except:
+                raise ValueError
+            if self.__substrate < 0.:
+                self.__substrate = 0
+        elif key == "dilution":
+            try:
+                self.__dilution = float(value)
+            except:
+                raise ValueError
+            if self.__dilution < 0.:
+                self.__dilution = 0.
+            if self.__dilution > 1.:
+                self.dilution = 1.
+        elif key == "mixingtime":
+            try:
+                self.__mixingtime = float(value)
+            except:
+                raise ValueError
+            if self.__mixingtime < 0.:
+                self.__mixingtime = 0.
+        elif key == "numdroplets":
+            try:
+                self.__numdroplets = int(value)
+            except:
+                raise ValueError
+            if self.__numdroplets < 1:
+                self.__numdroplets = 1
+        else:
+            raise KeyError
+    
+    def getParams():
+        return {"substrate":self.__substrate,"dilution":self.__dilution,"mixingtime":self.__mixingtime,"numdroplets":self.__numdroplets}
+
 
 class GrowthDynamics:
-    def __init__(self,growthrates = np.array([2.,1.]), yieldrates = np.array([2.,1.]), dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
+    def __init__(self,growthrates = np.array([2.,1.]), yieldfactors = np.array([2.,1.]), deathrates = None, dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
         
-        self.attributes = ['growthrates','yieldrates','dilution','mixingtime','substrate','numstrains']
-        self.growthrates = np.array(growthrates,dtype=float)
-        self.yieldrates = np.array(yieldrates,dtype=float)
-        self.dilution = dilution
-        self.mixingtime = mixingtime
-        self.substrate = substrate
+        assert len(growthrates) == len(yieldfactors)
+        if deathrates is None:
+            deathrates = np.zeros(len(growthrates))
+        else:
+            assert len(growthrates) == len(deathrates)
         
-        assert len(self.growthrates) == len(self.yieldrates)        
-        
-        self.NR = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
-        
+        self.strains = []
+        for a,y,d in zip(growthrates,yieldfactors,deathrates):
+            self.addStrain(growthrate = a,yieldfactor = y,deathrate = d)
+            
+        self.env = Environment(dilution = dilution,mixingtime = mixingtime, substrate = substrate)
+        self.NR  = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
+    
+    def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
+        self.strains.append(MicrobialStrain(growthrate = growthrate, yieldfactor = yieldfactor, deathrate = deathrate)
+    
+    def delLastStrain(self):
+        return self.strains.pop()
+    
     def __getTimeToDepletion(self,initialcells):
         # internal function to determine when substrate is used up
         t0 = 0
         if np.sum(initialcells) > 0.:
-            # assume only single 
-            t1 = max(np.log(self.substrate*self.yieldrates[initialcells > 0]/initialcells[initialcells > 0]+1.)/self.growthrates[initialcells >0])
+            # assume only single strain
+            t1 = max(np.log(self.env.substrate*self.yieldfactors[initialcells > 0]/initialcells[initialcells > 0]+1.)/self.growthrates[initialcells >0])
             i = 0
             while ((t1-t0)/t1)**2 > self.NR['precision2']:
                 t0 = t1
                 # Newton-Raphson iteration to refine solution
-                t1 += self.NR['alpha']*(self.substrate-np.sum(initialcells[initialcells>0]/self.yieldrates[initialcells>0]*(np.exp(self.growthrates[initialcells>0]*t1)-1.)))/(np.sum(initialcells[initialcells>0]/self.yieldrates[initialcells>0]*self.growthrates[initialcells>0]*np.exp(self.growthrates[initialcells>0]*t1)))
+                t1 += self.NR['alpha']*(self.env.substrate-np.sum(initialcells[initialcells>0]/self.yieldfactors[initialcells>0]*(np.exp(self.growthrates[initialcells>0]*t1)-1.)))/(np.sum(initialcells[initialcells>0]/self.yieldfactors[initialcells>0]*self.growthrates[initialcells>0]*np.exp(self.growthrates[initialcells>0]*t1)))
                 i+=1
                 # should not iterate infinitely
                 if i > self.NR['maxsteps']:
                     raise ValueError
-            return min(t1,self.mixingtime)
+            return min(t1,self.env.mixingtime)
         else:
             return 0.
       
 
     def checkInitialCells(self,initialcells = None):
-        assert len(self.growthrates) == len(self.yieldrates)
-        self.numstrains = len(self.growthrates)
-        if not initialcells is None:
-            if isinstance(initialcells,np.ndarray):
-                if len(initialcells) > self.numstrains:
-                    ret_ic = initialcells[:self.numstrains]
-                elif len(initialcells) < self.numstrains:
-                    ret_ic = np.concatenate([initialcells,np.zeros(self.numstrains - len(initialcells))])
-                else:
-                    ret_ic = initialcells
-            else:
-                ret_ic = np.ones(self.numstrains)
-        else:
-            ret_ic = np.ones(self.numstrains)
-        return np.array(ret_ic,dtype=float)
+        try:
+            ret_ic = np.array(initialcells,dtype=float)
+        except:
+            ret_ic = np.ones(self.numstrains,dype=float)
+        if len(ret_ic) < self.numstrains:
+            ret_ic = np.concatenate((ret_ic,np.zeros(self.numstrains - len(ret_ic),dtype=float)))
+        elif len(ret_ic) > self.numstrains:
+            ret_ic = ret_ic[:self.numstrains]
+        return ret_ic
         
 
     def getGrowth(self,initialcells = None):
@@ -147,9 +239,9 @@ class GrowthDynamics:
     
         
     def getSingleStrainFixedPoints(self):
-        t = 1./self.growthrates * np.log(1./self.dilution)
-        y = np.array([ self.yieldrates[i] if t[i] <= self.mixingtime else 0. for i in range(len(self.yieldrates))])
-        return self.dilution / (1. - self.dilution) * self.substrate * y
+        t = 1./self.growthrates * np.log(1./self.env.dilution)
+        y = np.array([ self.yieldfactors[i] if t[i] <= self.mixingtime else 0. for i in range(self.numstrains)])
+        return self.env.dilution / (1. - self.env.dilution) * self.env.substrate * y
     
             
             
@@ -161,35 +253,50 @@ class GrowthDynamics:
                 t[i,j] = self.__getTimeToDepletion(initialcells = np.array([i,j]))
         return t
 
-
     
-    def setGrowthRates(self,growthrates):
-        if isinstance(growthrates,np.ndarray):
-            self.growthrates = growthrates
-        elif isinstance(growthrates,(int,float)):
-            self.growthrates = np.array([float(growthrates)])
-        elif isinstance(growthrates,(list,tuple)):
-            self.growthrates = np.array(growthrates)
+    def __getattr__(self,key):
+        if key == "numstrains":
+            return len(self.strains)
+        elif key == "growthrates":
+            return np.array([self.strains[i].growthrate for i in range(self.numstrains)])
+        elif key == "yieldfactors":
+            return np.array([self.strains[i].yieldfactor for i in range(self.numstrains)])
+        elif key == "deathrates":
+            return np.array([self.strains[i].deathrate for i in range(self.numstrains)])
     
-    def setYieldRates(self,yieldrates):
-        if isinstance(yieldrates,np.ndarray):
-            self.yieldrates = yieldrates
-        elif isinstance(yieldrates,float):
-            self.yieldrates = np.array([yieldrates])
-        elif isinstance(yieldrates,(list,tuple)):
-            self.yieldrates = np.array(yieldrates)
+    def __setattr__(self,key,value):
+        if key == "growthrates":
+            try:
+                tmp = np.array(value,dtype=float)
+            except:
+                raise ValueError
+            assert len(tmp) == self.numstrains
+            for i in range(self.numstrains):
+                self.strains[i].growthrate = tmp[i]
+        elif key == "yieldfactors":
+            try:
+                tmp = np.array(value,dtype=float)
+            except:
+                raise ValueError
+            assert len(tmp) == self.numstrains
+            for i in range(self.numstrains):
+                self.strains[i].yieldfactor = tmp[i]
+        elif key == "deathrates":
+            try:
+                tmp = np.array(value,dtype=float)
+            except:
+                raise ValueError
+            assert len(tmp) == self.numstrains
+            for i in range(self.numstrains):
+                self.strains[i].deathrate = tmp[i]
+            
 
     def setMixingTime(self,mixingtime):
-        if isinstance(mixingtime,(int,float)):
-            self.mixingtime = 1.*mixingtime
-    
+            self.env.mixingtime = mixingtime
     def setSubstrate(self,substrate):
-        if isinstance(substrate,(int,float)):
-            self.substrate = 1.*substrate
-    
+            self.env.substrate = substrate
     def setDilution(self,dilution):
-        if isinstance(dilution,(int,float)):
-            self.dilution = 1.*dilution
+            self.env.dilution = dilution
         
     def __str__(self):
         return "growthclass object"
