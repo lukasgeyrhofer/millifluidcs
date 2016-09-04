@@ -199,7 +199,7 @@ class GrowthDynamics:
         return ret_ic
         
 
-    def getGrowth(self,initialcells = None):
+    def Growth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
         return self.env.dilution * ic * np.exp( self.growthrates * self.__getTimeToDepletion(ic) )
 
@@ -304,39 +304,38 @@ class GrowthDynamics:
 
 
 class StochasticGrowthDynamics(GrowthDynamics):
-    
-    def __init__(self,growthrates = np.array([2.,1.]), yieldrates = np.array([1.,2.]), dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
-        self.attributes = ['growthrates','yieldrates','dilution','mixingtime','substrate','numstrains']
-        self.growthrates = growthrates
-        self.yieldrates = yieldrates
-        self.dilution = dilution
-        self.mixingtime = mixingtime
-        self.substrate = substrate
-        
-        assert len(self.growthrates) == len(self.yieldrates)        
-        
-        self.__NR = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
-        
-        self.numstrains = len(self.growthrates)
-        
-    
+    def __init__(self,**kwargs):
+        GrowthDynamics.__init__(self,kwargs)
+        self.__lastgrowthtime = np.nan
+
     def __getNextDivision(self,population):
         totalrate = np.dot(population,self.growthrates[:len(population)])
         return np.random.choice(len(population),p = population*self.growthrates[:len(population)]/totalrate),np.random.exponential(1./totalrate)
     
+    def checkInitialCells(self, initialcells = None):
+        return np.array(GrowthDynamics.checkInitialCells(initialcells),dtype=int)
+    
     def Growth(self,initialcells = None):
-        n = np.array(GrowthDynamics.checkInitialCells(self,initialcells),dtype=int)
+        n = self.checkInitialCells(self,initialcells)
         t = 0
-        s = self.substrate
+        s = self.env.substrate
         while True:
             i,dt  = self.__getNextDivision(n)
             
-            if s-self.yieldrates[i] < 0: break
+            if s-self.yieldfactor[i] < 0: break
             if t+dt > self.mixingtime: break
 
             t += dt
             n[i] += 1
             s -= self.yieldrates[i]
-
-        return min(t,self.mixingtime),n
-
+        self.__lastgrowthtime = min(t,self.env.mixingtime)
+        return n
+    
+    def __getattr__(self,key):
+        if key == "lastgrowthtime":
+            if self.__lastgrowthtime is np.nan:
+                raise ValueError("StochasticGrowthDynamics.Growth(initialcells) was not yet called")
+            else:
+                return self.__lastgrowthtime
+        else:
+            super().__getattr__(self,key)
