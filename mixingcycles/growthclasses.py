@@ -71,21 +71,25 @@ class MicrobialStrain():
             return self.__deathrate
     
     def __setattr__(self,key,value):
-        if not isinstance(value,(float,np.float,np.float64)):
+        def checkfloat(value,lowerbound = None,upperbound = None):
             try:
                 checkedvalue = float(value)
             except:
                 raise ValueError
-        else:
-            checkedvalue = value
-        if checkedvalue < 0.:
-            checkedvalue = 0.
+            if not lowerbound is None:
+                if checkedvalue < lowerbound:
+                    checkedvalue = lowerbound
+            if not upperbound is None:
+                if checkedvalue > upperbound:
+                    checkedvalue = upperbound
+            return checkedvalue
+        
         if key == "growthrate":
-            self.__growthrate = checkedvalue
+            self.__growthrate  = checkfloat(value,lowerbound = 0.)
         elif key == "yieldfactor":
-            self.__yieldfactor = checkedvalue
+            self.__yieldfactor = checkfloat(value,lowerbound = 0.)
         elif key == "deathrate":
-            self.__deathrate = checkedvalue
+            self.__deathrate   = checkfloat(value,lowerbound = 0.)
         else:
             super().__setattr__(key,value)
 
@@ -108,29 +112,25 @@ class Environment():
             return self.__numdroplets
     
     def __setattr__(self,key,value):
+        def checkfloat(value,lowerbound = None,upperbound = None):
+            try:
+                checkedvalue = float(value)
+            except:
+                raise ValueError
+            if not lowerbound is None:
+                if checkedvalue < lowerbound:
+                    checkedvalue = lowerbound
+            if not upperbound is None:
+                if checkedvalue > upperbound:
+                    checkedvalue = upperbound
+            return checkedvalue
+
         if key == "substrate":
-            try:
-                self.__substrate = float(value)
-            except:
-                raise ValueError
-            if self.__substrate < 0.:
-                self.__substrate = 0
+            self.__substrate  = checkfloat(value,lowerbound = 0.)
         elif key == "dilution":
-            try:
-                self.__dilution = float(value)
-            except:
-                raise ValueError
-            if self.__dilution < 0.:
-                self.__dilution = 0.
-            if self.__dilution > 1.:
-                self.dilution = 1.
+            self.__dilution   = checkfloat(value,lowerbound = 0.,upperbound = 1.)
         elif key == "mixingtime":
-            try:
-                self.__mixingtime = float(value)
-            except:
-                raise ValueError
-            if self.__mixingtime < 0.:
-                self.__mixingtime = 0.
+            self.__mixingtime = checkfloat(value,lowerbound = 0.)
         elif key == "numdroplets":
             try:
                 self.__numdroplets = int(value)
