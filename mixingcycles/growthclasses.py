@@ -1,8 +1,32 @@
 #!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+
+
+'''
+==================================
+=  growthclasses.py
+==================================
+
+  Contains code that generates the dynamics during a
+  single cycle of the droplet dilution. Both, deterministic
+  and stochastic, growth types are included as their own
+  classes.
+  
+  In addition, several helper routines help with heavily reused
+  code, to reduce the length of actual scripts that compute
+  interesting properties of the dynamics.
+
+
+  Lukas Geyrhofer, l.geyrhofer@technion.ac.il, 2016
+
+'''
+
+
 
 import numpy as np
 import argparse
 from scipy.stats import poisson
+
 
 def RungeKutta4(func,xx,tt,step):
   # 4th order Runge-Kutta integration scheme
@@ -14,7 +38,7 @@ def RungeKutta4(func,xx,tt,step):
 
 
 def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = False,dilution = False):
-    # Helper routine to generate all cmdline parameters
+    # Helper routine to generate all cmdline parameters for microbial growth
     gp = p.add_argument_group(description = "Parameters for growth in droplets")
     gp.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
     gp.add_argument("-y","--yieldfactors",type=float,nargs="*",default=[1.,2.])
@@ -27,6 +51,16 @@ def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = Fal
     if allparams or numdroplets:
         gp.add_argument("-K","--numdroplets",type=int,default=1000)
     return p
+
+
+def AddNRParameters(p):
+    # Helper routine to generate cmdline parameters to change default behaviour of NR iterations
+    nrp = p.add_argument_group(description = "Parameters for Newton-Raphson iterations to estimate saturation time")
+    nrp.add_argument("-A","--NR_alpha",type=float,default=1.)
+    nrp.add_argument("-P","--NR_precision",type=float,default=1e-10)
+    nrp.add_argument("-M","--NR_maxsteps",type=int,default=10000)
+    return p
+
 
 def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
     if n[0] > 0:
