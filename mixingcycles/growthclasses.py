@@ -14,6 +14,7 @@ def RungeKutta4(func,xx,tt,step):
 
 
 def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = False,dilution = False):
+    # Helper routine to generate all cmdline parameters
     gp = p.add_argument_group(description = "Parameters for growth in droplets")
     gp.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
     gp.add_argument("-y","--yieldfactors",type=float,nargs="*",default=[1.,2.])
@@ -57,6 +58,20 @@ def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
 
 
 class MicrobialStrain():
+    '''
+    Stores all characteristics of a microbial strain
+    mostly used to have always a consitent set of parameters
+    (a strain has to bi initialized with each parameter)
+    and also to check upon correct values when initializing
+    or changing these parameters later
+    
+    so far, we implemented:
+        * growth rate
+        * yield factor
+    other parameters are already here for future reference, but not implemented
+        * death rate
+        
+    '''
     def __init__(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0.):
         self.growthrate  = growthrate
         self.yieldfactor = yieldfactor
@@ -95,11 +110,18 @@ class MicrobialStrain():
 
             
 class Environment():
+    '''
+    Class to store environmental parameters
+    '''
     def __init__(self,substrate = 1e4,dilution = 1.,mixingtime = 10.,numdroplets = 1000):
         self.substrate   = substrate
         self.dilution    = dilution
         self.mixingtime  = mixingtime
-        self.numdroplets = numdroplets
+        if not numdroplets is None:
+            self.numdroplets = numdroplets
+            self.__usenumdroplets = True
+        else:
+            self.__usenumdroplets = False
         
     def __getattr__(self,key):
         if key == "substrate":
@@ -109,7 +131,10 @@ class Environment():
         elif key == "mixingtime":
             return self.__mixingtime
         elif key == "numdroplets":
-            return self.__numdroplets
+            if self.__usenumdroplets:
+                return self.__numdroplets
+            else:
+                return None
     
     def __setattr__(self,key,value):
         def checkfloat(value,lowerbound = None,upperbound = None):
@@ -131,7 +156,7 @@ class Environment():
             self.__dilution   = checkfloat(value,lowerbound = 0.,upperbound = 1.)
         elif key == "mixingtime":
             self.__mixingtime = checkfloat(value,lowerbound = 0.)
-        elif key == "numdroplets":
+        elif key == "numdroplets" and self.__usenumdroplets:
             try:
                 self.__numdroplets = int(value)
             except:
@@ -142,23 +167,32 @@ class Environment():
             super().__setattr__(key,value)
     
     def getParams():
-        return {"substrate":self.__substrate,"dilution":self.__dilution,"mixingtime":self.__mixingtime,"numdroplets":self.__numdroplets}
+        return {"substrate":self.substrate,"dilution":self.dilution,"mixingtime":self.mixingtime,"numdroplets":self.numdroplets}
 
 
 class GrowthDynamics:
-    def __init__(self,growthrates = np.array([2.,1.]), yieldfactors = np.array([2.,1.]), deathrates = None, dilution = 1., mixingtime = 100., substrate = 1e4,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000 ):
+    def __init__(self,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000,**kwargs):
         
+        growthrates  = kwargs.get("growthrates",np.ones(1))
+        yieldfactors = kwargs.get("yieldfactors",np.ones(1))
         assert len(growthrates) == len(yieldfactors)
-        if deathrates is None:
-            deathrates = np.zeros(len(growthrates))
-        else:
-            assert len(growthrates) == len(deathrates)
         
+        if hasattr(kwargs,"deathrates"):
+            deathrates = kwargs.get("deathrates")
+            assert len(growthrates) == len(deathrates)
+            self.__usedeathreates = True
+        else:
+            self.__usedeathreates = False
+            deathrates = np.zeros(self.numstrains)
+
         self.strains = list()
         for a,y,d in zip(growthrates,yieldfactors,deathrates):
             self.strains.append(MicrobialStrain(growthrate = a,yieldfactor = y,deathrate = d))
             
-        self.env = Environment(dilution = dilution,mixingtime = mixingtime, substrate = substrate)
+        self.env = Environment( dilution = kwargs.get("dilution"),
+                                mixingtime = kwargs.get("mixingtime",10),
+                                substrate = kwargs.get("substrateconcentration",1e4),
+                                numdroplets = kwargs.get("numdroplets") )
         self.NR  = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
     
     def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
