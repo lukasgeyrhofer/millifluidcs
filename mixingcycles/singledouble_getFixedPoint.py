@@ -28,14 +28,15 @@ parser.add_argument("-A","--NRalpha",type=float,default=1.)
 args = parser.parse_args()
 
 
-#print growth1,growth2
+g = gc.GrowthDynamics(**vars(args))
 
 for yexp in np.arange(-1,1,args.delta):
+    y = np.array([10**yexp,1.])
+    g.yieldfactors = y
     for aexp in np.arange(-1,1,args.delta):
-        y = np.array([10**yexp,1.])
         a = np.array([10**aexp,1.])
-        #print y,a
-        g = gc.GrowthDynamics(growthrates = a,yieldrates = y,dilution = 1, mixingtime = args.mixingtime, substrate = args.substrateconcentration)
+        g.growthrates = a
+
         growth1,growth2 = g.getGrowthMatrix(3)
         
         curr = 0.5

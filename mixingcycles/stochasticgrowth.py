@@ -5,7 +5,6 @@ import sys,math
 
 import growthclasses as gc
 
-from scipy.stats import beta,binom
 
 parser = argparse.ArgumentParser()
 parser = gc.addgrowthparameters(parser)
@@ -14,7 +13,7 @@ parser.add_argument("-I","--initialconditions",default=[1.,1.])
 args = parser.parse_args()
 
 
-g = gc.StochasticGrowthDynamics(growthrates = np.array(args.growthrates), yieldrates = np.array(args.yieldrates), mixingtime = args.mixingtime, dilution = args.dilutionfactor, substrate = args.substrateconcentration)
+g = gc.StochasticGrowthDynamics(**vars(args))
 
 
 for i in range(args.count):

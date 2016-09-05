@@ -14,7 +14,7 @@ def im(x):
 
 
 parser = argparse.ArgumentParser()
-parser = gc.addgrowthparameters(parser)
+parser = gc.AddGrowthParameters(parser)
 
 parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ===")
 parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False,help = "Plain iteration of dynamics or try to use NR to estimate fixed point")
@@ -32,14 +32,11 @@ args = parser.parse_args()
 if args.verbose:
     print >> sys.stderr,"# initializing growth matrix ..."
 
-g = gc.growthdynamics(growthrates = np.array(args.growthrates), yieldrates = np.array(args.yieldrates), mixingtime = args.mixingtime, dilution = args.dilutionfactor, substrate = args.substrateconcentration)
+g       = gc.growthdynamics(**vars(args))
 gm1,gm2 = g.getGrowthMatrix(size = args.maxM)
-m = np.arange(args.maxM)
-n  = g.getSingleStrainFixedPoints()
 
-#px,py = gc.PoissonSeedingVectors(m,np.array((.6,0)))
-#print np.dot(py,np.dot(px,gm1)),np.dot(py,np.dot(px,gm2)),n[0],n[1]
-#exit(1)
+n       = g.getSingleStrainFixedPoints()
+m       = np.arange(args.maxM)
 
 
 # initial condition are the respective fixed points on the axis

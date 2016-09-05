@@ -4,16 +4,15 @@ import numpy as np
 import argparse
 import sys
 
-from growthclasses import growthdynamics
-from growthclasses import addgrowthparameters
+import growthclasses as gc
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m","--maxM",type=float,default=1e6)
-parser = addgrowthparameters(parser)
+parser = gc.AddGrowthParameters(parser)
 args = parser.parse_args()
 
-g     = growthdynamics(growthrates = np.array(args.growthrates), yieldrates = np.array(args.yieldrates), mixingtime = args.mixingtime, dilution = args.dilutionfactor, substrate = args.substrateconcentration)
+g = gc.GrowthDynamics(**vars(args))
 
 m = np.arange(100)
 step = 1
