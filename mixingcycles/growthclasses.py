@@ -205,25 +205,29 @@ class Environment():
 
 
 class GrowthDynamics:
-    def __init__(self,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000,**kwargs):
+    def __init__(self,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000,numstrains = None,**kwargs):
         
-        growthrates  = kwargs.get("growthrates",np.ones(1))
-        yieldfactors = kwargs.get("yieldfactors",np.ones(1))
+        if not numstrains is None:
+            defaultlength = numstrains
+        else:
+            defaultlength = 1
+        growthrates  = kwargs.get("growthrates",np.ones(defaultlength))
+        yieldfactors = kwargs.get("yieldfactors",np.ones(defaultlength))
         assert len(growthrates) == len(yieldfactors)
-        
+        defaultlength = len(growthrates)
         if hasattr(kwargs,"deathrates"):
             deathrates = kwargs.get("deathrates")
             assert len(growthrates) == len(deathrates)
             self.__usedeathreates = True
         else:
             self.__usedeathreates = False
-            deathrates = np.zeros(self.numstrains)
+            deathrates = np.zeros(defaultlength)
 
         self.strains = list()
         for a,y,d in zip(growthrates,yieldfactors,deathrates):
             self.strains.append(MicrobialStrain(growthrate = a,yieldfactor = y,deathrate = d))
             
-        self.env = Environment( dilution = kwargs.get("dilution"),
+        self.env = Environment( dilution = kwargs.get("dilution",1),
                                 mixingtime = kwargs.get("mixingtime",10),
                                 substrate = kwargs.get("substrateconcentration",1e4),
                                 numdroplets = kwargs.get("numdroplets") )
@@ -333,7 +337,6 @@ class GrowthDynamics:
             return np.array([self.strains[i].yieldfactor for i in range(self.numstrains)])
         elif key == "deathrates":
             return np.array([self.strains[i].deathrate for i in range(self.numstrains)])
-        
 
     def __setattr__(self,key,value):
         if key == "growthrates":
