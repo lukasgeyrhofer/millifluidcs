@@ -30,7 +30,7 @@ g1,g2,g3 = g.getGrowthMultipleStrains(size = args.maxseeding,nstrains = g.numstr
 
 m = np.arange(args.maxseeding)
 J = np.zeros((3,3))
-i=0
+i = 0
 
 n  = g.getSingleStrainFixedPoints()
 dn = n
@@ -87,5 +87,9 @@ J[2,2] = np.dot(dpx[2], np.dot( px[1], np.dot( px[0],g3)))
 
 w,v = np.linalg.eig(J)
 
-print("{growthrate1:5.3f} {yieldfactor1:5.3f} {growthrate2:5.3f} {yieldfactor2:5.3f} {fixedpoint0:10.6f} {fixedpoint1:10.6f} {fixedpoint2:10.6f} {eigenvalue0:10.6f} {eigenvalue1:10.6f} {eigenvalue2:10.6f} {iterationtime:5d}".format(g.growthrates[1],g.yieldfactors[1],g.growthrates[2],g.yieldfactors[2],n[0],n[1],n[2],re(w[0]),re(w[1]),re(w[2]),i))
+print("{:5.3f} {:5.3f} {:5.3f} {:5.3f} \t {:10.6f} {:10.6f} {:10.6f} \t {:10.6f} {:10.6f} {:10.6f} {:10.6f} {:10.6f} {:10.6f} \t {:5d}".format(
+          g.growthrates[1], g.yieldfactors[1], g.growthrates[2], g.yieldfactors[2],
+          n[0], n[1], n[2],
+          re(w[0]), im(w[0]), re(w[1]), im(w[1]), re(w[2]), im(w[2]),
+          i))
 
