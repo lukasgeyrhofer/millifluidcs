@@ -85,7 +85,7 @@ def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
         return px
 
 
-class MicrobialStrain():
+class MicrobialStrain(object):
     '''
     Stores all characteristics of a microbial strain
     mostly used to have always a consitent set of parameters
@@ -134,10 +134,10 @@ class MicrobialStrain():
         elif key == "deathrate":
             self.__deathrate   = checkfloat(value,lowerbound = 0.)
         else:
-            super().__setattr__(key,value)
+            super(MicrobialStrain,self).__setattr__(key,value)
 
             
-class Environment():
+class Environment(object):
     '''
     Class to store environmental parameters
     '''
@@ -192,13 +192,13 @@ class Environment():
             if self.__numdroplets < 1:
                 self.__numdroplets = 1
         else:
-            super().__setattr__(key,value)
+            super(Environment,self).__setattr__(key,value)
     
     def getParams():
         return {"substrate":self.substrate,"dilution":self.dilution,"mixingtime":self.mixingtime,"numdroplets":self.numdroplets}
 
 
-class GrowthDynamics:
+class GrowthDynamics(object):
     def __init__(self,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000,numstrains = None,**kwargs):
         
         if not numstrains is None:
@@ -366,7 +366,7 @@ class GrowthDynamics:
             for i in range(self.numstrains):
                 self.strains[i].deathrate = tmp[i]
         else:
-            super().__setattr__(key,value)
+            super(GrowthDynamics,self).__setattr__(key,value)
         
     def setMixingTime(self,mixingtime):
             self.env.mixingtime = mixingtime
@@ -411,4 +411,4 @@ class StochasticGrowthDynamics(GrowthDynamics):
             else:
                 return self.__lastgrowthtime
         else:
-            super().__getattr__(self,key)
+            super(StochasticGrowthDynamics,self).__getattr__(self,key)
