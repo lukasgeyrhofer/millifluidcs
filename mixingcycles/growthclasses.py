@@ -37,19 +37,21 @@ def RungeKutta4(func,xx,tt,step):
   return xx + (k1+2*k2+2*k3+k4)/6.
 
 
-def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = False,dilution = False):
+def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = False,dilution = False,
+                        defaultgrowthrates = [2.,1.],defaultyieldfactors = [1.,2.],defaultdeathrates = [0.,0.],
+                        defaultsubstrate = 1e4, defaultmixingtime = 12.,defaultdilution = 2e-4, defaultnumdroplets = 1000):
     # Helper routine to generate all cmdline parameters for microbial growth
     gp = p.add_argument_group(description = "Parameters for growth in droplets")
-    gp.add_argument("-a","--growthrates",type=float,nargs="*",default=[2.,1.])
-    gp.add_argument("-y","--yieldfactors",type=float,nargs="*",default=[1.,2.])
+    gp.add_argument("-a","--growthrates",type=float,nargs="*",default=defaultgrowthrates)
+    gp.add_argument("-y","--yieldfactors",type=float,nargs="*",default=defaultyieldfactors)
     if allparams or deathrates:
-        gp.add_argument("-d","--deathrates",type=float,nargs="*",default=[0.,0.])
-    gp.add_argument("-S","--substrateconcentration",type=float,default=1e4)
-    gp.add_argument("-T","--mixingtime",type=float,default=12.)
+        gp.add_argument("-d","--deathrates",type=float,nargs="*",default=defaultdeathrates)
+    gp.add_argument("-S","--substrateconcentration",type=float,default=defaultsubstrate)
+    gp.add_argument("-T","--mixingtime",type=float,default=defaultmixingtime)
     if allparams or dilution:
-        gp.add_argument("-D","--dilution",type=float,default=2e-4)
+        gp.add_argument("-D","--dilution",type=float,default=defaultdilution)
     if allparams or numdroplets:
-        gp.add_argument("-K","--numdroplets",type=int,default=1000)
+        gp.add_argument("-K","--numdroplets",type=int,default=defaultnumdroplets)
     return p
 
 
@@ -63,32 +65,24 @@ def AddNRParameters(p):
 
 
 def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
-    if n[0] > 0:
-        px = poisson.pmf(m,n[0])
-        px[px<cutoff] = 0.
-        px[-1] += (1. - np.sum(px))
-        if diff:
-            dpx = (m/n[0] - 1.)*px
-    else:
-        px = np.zeros(len(m))
-        px[0] = 1
-        if diff:
-            dpx = -px
-    if n[1] > 0:
-        py = poisson.pmf(m,n[1])
-        py[py<cutoff] = 0.
-        py[-1] += (1. - np.sum(py))
-        if diff:
-            dpy = (m/n[1] - 1.)*py
-    else:
-        py = np.zeros(len(m))
-        py[0] = 1
-        if diff:
-            dpy = -py
+    px = np.zeros((len(n),len(m)))
     if diff:
-        return px,py,dpx,dpy
+        dpx = np.zeros((len(n),len(m)))
+    for i in range(len(n)):
+        if n[i] > 0:
+            px[i] = poisson.pmf(m,n[i])
+            px[i,px[i,:]<cutoff] = 0.
+            px[i,-1] += (1. - np.sum(px[i]))
+            if diff:
+                dpx[i] = (m/n[i] - 1.)*px[i]
+        else:
+            px[i,0] = 1.
+            if diff:
+                dpx[i,0] = -1.
+    if diff:
+        return px,dpx
     else:
-        return px,py
+        return px
 
 
 class MicrobialStrain():
@@ -311,10 +305,12 @@ class GrowthDynamics:
                 return g[:,:,0],g[:,:,1]
                 
     
-    def getGrowthMultipleStrains(self,size,nstrains):
-        g = np.repeat(np.zeros(np.repeat(size,nstrains)),nstrains)
+    def getGrowthMultipleStrains(self,size,nstrains=2):
+        g = [np.zeros(np.repeat(size,nstrains)) for i in range(nstrains)]
         for ic in itertools.product(range(size),repeat=nstrains):
-            g[:][ic] = self.Growth(ic)
+            tmpgrowth = self.Growth(ic)
+            for i in range(nstrains):
+                g[i][ic] = tmpgrowth[i]
         return g
     
         
