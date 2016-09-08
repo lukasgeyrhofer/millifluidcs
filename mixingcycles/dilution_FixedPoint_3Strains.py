@@ -28,7 +28,7 @@ m = np.arange(args.maxseeding)
 J = np.zeros((3,3))
 i=0
 
-n  = np.ones(g.numstrains) * g.env.dilution * np.mean(g.yieldfactors) * g.env.substrate
+n  = g.getSingleStrainFixedPoints()
 dn = n
 
 while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
@@ -38,7 +38,7 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
     growth2 = np.dot(px[2],np.dot(px[1],np.dot(px[0],g2)))
     growth3 = np.dot(px[2],np.dot(px[1],np.dot(px[0],g3)))
     
-    fn = np.array([growth1,growth2,growth2]) - n
+    fn = np.array([growth1,growth2,growth3]) - n
     
     if args.newtonraphson:
         
@@ -46,13 +46,13 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
         J[0,1] = np.dot( px[2], np.dot(dpx[1], np.dot( px[0],g1)))
         J[0,2] = np.dot(dpx[2], np.dot( px[1], np.dot( px[0],g1)))
                                                        
-        J[1,0] = np.dot( px[2], np.dot( px[1], np.dot(dpx[0],g1)))
-        J[1,1] = np.dot( px[2], np.dot(dpx[1], np.dot( px[0],g1)))-1.
-        J[1,2] = np.dot(dpx[2], np.dot( px[1], np.dot( px[0],g1)))
+        J[1,0] = np.dot( px[2], np.dot( px[1], np.dot(dpx[0],g2)))
+        J[1,1] = np.dot( px[2], np.dot(dpx[1], np.dot( px[0],g2)))-1.
+        J[1,2] = np.dot(dpx[2], np.dot( px[1], np.dot( px[0],g2)))
                                                        
-        J[2,0] = np.dot( px[2], np.dot( px[1], np.dot(dpx[0],g1)))
-        J[2,1] = np.dot( px[2], np.dot(dpx[1], np.dot( px[0],g1)))
-        J[2,2] = np.dot(dpx[2], np.dot( px[1], np.dot( px[0],g1)))-1.
+        J[2,0] = np.dot( px[2], np.dot( px[1], np.dot(dpx[0],g3)))
+        J[2,1] = np.dot( px[2], np.dot(dpx[1], np.dot( px[0],g3)))
+        J[2,2] = np.dot(dpx[2], np.dot( px[1], np.dot( px[0],g3)))-1.
         
         dn = -args.alpha * np.dot(np.linalg.inv(J),fn)
     
