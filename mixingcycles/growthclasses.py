@@ -26,7 +26,7 @@
 import numpy as np
 import argparse
 from scipy.stats import poisson
-
+import itertools
 
 def RungeKutta4(func,xx,tt,step):
   # 4th order Runge-Kutta integration scheme
@@ -310,6 +310,12 @@ class GrowthDynamics:
                         g[i,j] = self.getGrowth(initialcells = np.array([m0[i],m1[j]]))
                 return g[:,:,0],g[:,:,1]
                 
+    
+    def getGrowthMultipleStrains(self,size,nstrains):
+        g = np.repeat(np.zeros(np.repeat(size,nstrains)),nstrains)
+        for ic in itertools.product(range(size),repeat=nstrains):
+            g[:][ic] = self.Growth(ic)
+        return g
     
         
     def getSingleStrainFixedPoints(self):
