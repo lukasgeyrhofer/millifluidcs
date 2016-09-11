@@ -14,7 +14,7 @@ def im(x):
 
 
 parser = argparse.ArgumentParser()
-parser = gc.AddGrowthParameters(parser)
+parser = gc.AddGrowthParameters(parser,dilution=True)
 
 parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ===")
 parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False,help = "Plain iteration of dynamics or try to use NR to estimate fixed point")
@@ -32,7 +32,7 @@ args = parser.parse_args()
 if args.verbose:
     print >> sys.stderr,"# initializing growth matrix ..."
 
-g       = gc.growthdynamics(**vars(args))
+g       = gc.GrowthDynamics(**vars(args))
 gm1,gm2 = g.getGrowthMatrix(size = args.maxM)
 
 n       = g.getSingleStrainFixedPoints()
@@ -53,22 +53,22 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
         print >> sys.stderr,"{:4d} {:12.8e} {:12.8e}".format(i,n[0],n[1])
     
     # probabilities for seeding new droplets, assumed to be poissonian
-    px,py,dpx,dpy = gc.PoissonSeedingVectors(m,n,cutoff = args.cutoff,diff=True)
+    px,dpx = gc.PoissonSeedingVectors(m,n,cutoff = args.cutoff,diff=True)
     
     # construct iteration function for growth and dilution
     # by weighting growth with the probability of how droplets are seeded
-    growth1 = np.dot(py,np.dot(px,gm1))
-    growth2 = np.dot(py,np.dot(px,gm2))
+    growth1 = np.dot(px[1],np.dot(px[0],gm1))
+    growth2 = np.dot(px[1],np.dot(px[0],gm2))
     fn = np.array([growth1,growth2]) - n
     
     if args.newtonraphson:
         # NR iterations 
 
         # get jacobian of dynamics
-        j[0,0] = np.dot(py, np.dot(dpx,gm1))-1.
-        j[0,1] = np.dot(dpy,np.dot(px, gm1))
-        j[1,0] = np.dot(py, np.dot(dpx,gm2))
-        j[1,1] = np.dot(dpy,np.dot(px, gm2))-1.
+        j[0,0] = np.dot(px[1], np.dot(dpx[0],gm1))-1.
+        j[0,1] = np.dot(dpx[1],np.dot(px[0], gm1))
+        j[1,0] = np.dot(px[1], np.dot(dpx[0],gm2))
+        j[1,1] = np.dot(dpx[1],np.dot(px[0], gm2))-1.
         
         # calculate step in NR iteration
         dn = -args.alpha * np.dot(np.linalg.inv(j),fn)
@@ -88,17 +88,17 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
 
 
 # stability of fixed point is checked with jacobian
-px,py,dpx,dpy = gc.PoissonSeedingVectors(m,n,cutoff = args.cutoff,diff=True)
+px,dpx = gc.PoissonSeedingVectors(m,n,cutoff = args.cutoff,diff=True)
 
-j[0,0] = np.dot(py ,np.dot(dpx,gm1))
-j[0,1] = np.dot(dpy,np.dot(px ,gm1))
-j[1,0] = np.dot(py ,np.dot(dpx,gm2))
-j[1,1] = np.dot(dpy,np.dot( px,gm2))
+j[0,0] = np.dot(px[1], np.dot(dpx[0],gm1))
+j[0,1] = np.dot(dpx[1],np.dot(px[0], gm1))
+j[1,0] = np.dot(px[1], np.dot(dpx[0],gm2))
+j[1,1] = np.dot(dpx[1],np.dot(px[0], gm2))
 
 w,v = np.linalg.eig(j)
 
 # final output
-print "{:10.6f} {:10.6f} {:14.8e} {:14.8e} {:6d}".format(g.growthrates[0]/g.growthrates[1],g.yieldrates[0]/g.yieldrates[1],n[0],n[1],i),
+print "{:10.6f} {:10.6f} {:14.8e} {:14.8e} {:6d}".format(g.growthrates[1]/g.growthrates[0],g.yieldfactors[1]/g.yieldfactors[0],n[0],n[1],i),
 print "{:11.6f} {:11.6f}".format(re(w[0]),re(w[1])),
 #print "{:11.6f} {:11.6f}".format(im(w[0]),im(w[1])),
 if args.printeigenvectors:

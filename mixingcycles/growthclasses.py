@@ -317,7 +317,10 @@ class GrowthDynamics(object):
     def getSingleStrainFixedPoints(self):
         t = 1./self.growthrates * np.log(1./self.env.dilution)
         y = np.array([ self.yieldfactors[i] if t[i] <= self.env.mixingtime else 0. for i in range(self.numstrains)])
-        return self.env.dilution / (1. - self.env.dilution) * self.env.substrate * y
+        if self.env.dilution < 1.:
+            return self.env.dilution / (1. - self.env.dilution) * self.env.substrate * y
+        else:
+            return None
     
             
             
