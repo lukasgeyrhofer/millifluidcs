@@ -301,7 +301,7 @@ class GrowthDynamics(object):
                 g = np.zeros((len(m0),len(m1),2))
                 for i in range(len(m0)):
                     for j in range(len(m1)):
-                        g[i,j] = self.getGrowth(initialcells = np.array([m0[i],m1[j]]))
+                        g[i,j] = self.Growth(initialcells = np.array([m0[i],m1[j]]))
                 return g[:,:,0],g[:,:,1]
                 
     
