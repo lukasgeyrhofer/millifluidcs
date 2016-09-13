@@ -78,7 +78,7 @@ def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
         else:
             px[i,0] = 1.
             if diff:
-                dpx[i,0] = -1.
+                dpx[i,1] = 1.
     if diff:
         return px,dpx
     else:
