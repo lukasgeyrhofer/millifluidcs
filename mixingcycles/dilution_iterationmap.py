@@ -9,17 +9,17 @@ from scipy.stats import poisson
 import growthclasses as gc
 
 parser = argparse.ArgumentParser()
-parser = gc.addgrowthparameters(parser)
+parser = gc.AddGrowthParameters(parser,dilution=True)
 
 parser.add_argument("-m","--maxsize",type=int,default=100)
 parser.add_argument("-n","--outputmax",type=float,default=10)
-parser.add_argument("-D","--outputdx",type=float,default=.1)
+parser.add_argument("-d","--outputdx",type=float,default=.1)
 parser.add_argument("-o","--outfile",default=None)
 parser.add_argument("-P","--poissonseeding",default=False,action="store_true")
 
 args = parser.parse_args()
 
-g = gc.growthdynamics(growthrates = np.array(args.growthrates), yieldrates = np.array(args.yieldrates), mixingtime = args.mixingtime, dilution = args.dilutionfactor, substrate = args.substrateconcentration)
+g = gc.GrowthDynamics(**vars(args))
 gm1,gm2 = g.getGrowthMatrix(size = args.maxsize)
 
 m = np.arange(args.maxsize)
