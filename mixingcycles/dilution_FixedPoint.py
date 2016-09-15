@@ -25,6 +25,7 @@ parser_algorithm.add_argument("-A","--alpha",type=float,default=1.,help = "conve
 parser_algorithm.add_argument("-v","--verbose",action="store_true",default=False,help = "output current values every iteration step")
 parser_algorithm.add_argument("-c","--cutoff",type=float,default=1e-100,help = "cutoff probabilities lower than this value [default: 1e-100]")
 parser_algorithm.add_argument("-V","--printeigenvectors",default=False,action="store_true",help = "print eigenvectors of linearized iteration map")
+parser_algorithm.add_argument("-I","--initialconditions",default=None,nargs="*",help="Override initial conditions when set")
 args = parser.parse_args()
 
 
@@ -35,7 +36,11 @@ if args.verbose:
 g       = gc.GrowthDynamics(**vars(args))
 gm1,gm2 = g.getGrowthMatrix(size = args.maxM)
 
-n       = g.getSingleStrainFixedPoints()
+if args.initialconditions is None:
+    n   = g.getSingleStrainFixedPoints()
+else:
+    n   = np.array(args.initialconditions)
+    assert len(n) == g.numstrains
 m       = np.arange(args.maxM)
 
 
