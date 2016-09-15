@@ -107,7 +107,7 @@ print "{:10.6f} {:10.6f} {:14.8e} {:14.8e} {:6d}".format(g.growthrates[1]/g.grow
 print "{:11.6f} {:11.6f}".format(re(w[0]),re(w[1])),
 #print "{:11.6f} {:11.6f}".format(im(w[0]),im(w[1])),
 if args.printeigenvectors:
-    print "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(re(v[0][0]),re(v[1][0]),re(v[0][1]),re(v[1][1])),
+    print "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1])),
     #print "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1])),
 print
 
