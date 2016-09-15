@@ -39,7 +39,7 @@ gm1,gm2 = g.getGrowthMatrix(size = args.maxM)
 if args.initialconditions is None:
     n   = g.getSingleStrainFixedPoints()
 else:
-    n   = np.array(args.initialconditions)
+    n   = np.array(args.initialconditions,dtype=float)
     assert len(n) == g.numstrains
 m       = np.arange(args.maxM)
 
