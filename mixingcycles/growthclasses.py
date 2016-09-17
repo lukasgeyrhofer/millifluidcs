@@ -324,17 +324,17 @@ class GrowthDynamics(object):
     
     def getSingleStrainFixedPointsPoissonSeeding(self,size=100):
         n = self.getSingleStrainFixedPoints()
-        dn = np.ones(self.numstrains)
+        dn = 1.
         m = np.arange(size)
         for i in range(self.numstrains):
             growthi = np.zeros(size)
             for j in range(size):
                 ic = np.zeros(self.numstrains)
                 ic[i] = j
-                growthi[j] = self.Growth(ic)
-            setp = 0
+                growthi[j] = self.Growth(ic)[i]
+            step = 0
             while (dn/n[i])**2 > self.NR['precision2']:
-                px,dpx = PoissonSeedingVectors(np.array([n]),m)
+                px,dpx = PoissonSeedingVectors(m,np.array([n[i]]),diff=True)
                 dn = np.dot(px[0],growthi)/np.dot(dpx[0],growthi)
                 n[i] -= self.NR['alpha'] * dn
                 step += 1

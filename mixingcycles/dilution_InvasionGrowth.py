@@ -18,6 +18,9 @@ m = np.arange(args.maxN)
 
 growth1,growth2 = g.getGrowthMatrix(size=(m,np.array([0,1])))
 
+print(g.getSingleStrainFixedPointsPoissonSeeding(size=args.maxN))
+
+
 
 for i in range(args.maxN):
     px = gc.PoissonSeedingVectors(m,np.array([i]))[0]
