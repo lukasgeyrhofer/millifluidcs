@@ -322,8 +322,26 @@ class GrowthDynamics(object):
         else:
             return None
     
-            
-            
+    def getSingleStrainFixedPointsPoissonSeeding(self,size=100):
+        n = self.getSingleStrainFixedPoints()
+        dn = np.ones(self.numstrains)
+        m = np.arange(size)
+        for i in range(self.numstrains):
+            growthi = np.zeros(size)
+            for j in range(size):
+                ic = np.zeros(self.numstrains)
+                ic[i] = j
+                growthi[j] = self.Growth(ic)
+            setp = 0
+            while (dn/n[i])**2 > self.NR['precision2']:
+                px,dpx = PoissonSeedingVectors(np.array([n]),m)
+                dn = np.dot(px[0],growthi)/np.dot(dpx[0],growthi)
+                n[i] -= self.NR['alpha'] * dn
+                step += 1
+                if step > self.NR['maxsteps']:
+                    break
+        return n
+    
     def getTimeToDepletionMatrix(self,size):
         m = np.arange(size)
         t = np.zeros((size,size))
