@@ -8,22 +8,22 @@ import growthclasses as gc
 
 parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser,dilution=True)
-parser.add_argument("-m","--maxN",type=int,default=200)
+parser.add_argument("-m","--maxN",type=int,default=10)
 args = parser.parse_args()
 
+g         = gc.GrowthDynamics(**vars(args))
+m         = np.arange(args.maxN)
+fp        = g.getSingleStrainFixedPointsPoissonSeeding(size = args.maxN)
+g1m1,g1m2 = g.getGrowthMatrix(size=(m,[0,1]))
+g2m1,g2m2 = g.getGrowthMatrix(size=([0,1],m))
 
-g = gc.GrowthDynamics(**vars(args))
+px,dpx = PoissonSeedingVectors(m,fp,diff=True)
 
-m = np.arange(args.maxN)
+Egm1 = np.dot(g1m1[:,1],px[0])
+Eg1m = np.dot(g2m2[1:,],px[1])
 
-growth1,growth2 = g.getGrowthMatrix(size=(m,np.array([0,1])))
+gamma1 = g.Growth([fp[0],1])/g.Growth([fp[0],0])
+gamma2 = g.Growth([1,fp[1]])/g.Growth([0,fp[1]])
 
-print(g.getSingleStrainFixedPointsPoissonSeeding(size=args.maxN))
-
-
-
-for i in range(args.maxN):
-    px = gc.PoissonSeedingVectors(m,np.array([i]))[0]
-    print("{:5d} {:.10f} {:.10f}".format(i,growth1[i,1],np.dot(px,growth1[:,1])))
-
+print("{:f} {:f} {} {} {} {}".format(g.growthrates[1]/g.growthrates[0],g.yieldfactors[1]/g.yieldfactors[0],Egm1,gamma1,fp[0],Eg1m,gamma2,fp[2]))
 
