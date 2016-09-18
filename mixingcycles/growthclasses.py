@@ -333,9 +333,11 @@ class GrowthDynamics(object):
                 ic[i] = j
                 growthi[j] = self.Growth(ic)[i]
             step = 0
+            dn = 1.
+            # Newton-Raphson iteration to determine fixed point of non-linear equation (with Poisson seeding)
             while (dn/n[i])**2 > self.NR['precision2']:
                 px,dpx = PoissonSeedingVectors(m,np.array([n[i]]),diff=True)
-                dn = np.dot(px[0],growthi)/np.dot(dpx[0],growthi)
+                dn = (np.dot(px[0],growthi) - n[i])/(np.dot(dpx[0],growthi) - 1.)
                 n[i] -= self.NR['alpha'] * dn
                 step += 1
                 if step > self.NR['maxsteps']:
