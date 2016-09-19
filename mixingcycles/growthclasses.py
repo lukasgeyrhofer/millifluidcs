@@ -255,12 +255,16 @@ class GrowthDynamics(object):
 
     def checkInitialCells(self,initialcells = None):
         try:
+            # check if initialcells can be cast to array of floats
             ret_ic = np.array(initialcells,dtype=float)
         except:
+            # fall back to (1,...,1) if cast does not work
             ret_ic = np.ones(self.numstrains,dype=float)
         if len(ret_ic) < self.numstrains:
+            # fill up list of initial conditions with zeros
             ret_ic = np.concatenate((ret_ic,np.zeros(self.numstrains - len(ret_ic),dtype=float)))
         elif len(ret_ic) > self.numstrains:
+            # or crop list if it is too long
             ret_ic = ret_ic[:self.numstrains]
         return ret_ic
         
@@ -316,9 +320,9 @@ class GrowthDynamics(object):
         
     def getSingleStrainFixedPoints(self):
         t = 1./self.growthrates * np.log(1./self.env.dilution)
-        y = np.array([ self.yieldfactors[i] if t[i] <= self.env.mixingtime else 0. for i in range(self.numstrains)])
+        n = np.array([ self.yieldfactors[i] if t[i] <= self.env.mixingtime else 0. for i in range(self.numstrains)])
         if self.env.dilution < 1.:
-            return self.env.dilution / (1. - self.env.dilution) * self.env.substrate * y
+            return self.env.dilution / (1. - self.env.dilution) * self.env.substrate * n
         else:
             return None
     
@@ -439,3 +443,5 @@ class StochasticGrowthDynamics(GrowthDynamics):
                 return self.__lastgrowthtime
         else:
             super(StochasticGrowthDynamics,self).__getattr__(self,key)
+
+
