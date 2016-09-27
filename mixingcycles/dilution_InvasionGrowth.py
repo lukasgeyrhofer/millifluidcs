@@ -22,8 +22,15 @@ px,dpx = gc.PoissonSeedingVectors(m,fp,diff=True)
 Egm1 = np.dot(g1m1[:,1],px[0])
 Eg1m = np.dot(g2m2[1,:],px[1])
 
-gamma1 = g.Growth([fp[0],1])[0]/fp[0]
-gamma2 = g.Growth([1,fp[1]])[1]/fp[1]
+invasion1 = g.Growth([fp[0],1])
+invasion2 = g.Growth([1,fp[1]])
 
-print("{:f} {:f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f}".format(g.growthrates[1]/g.growthrates[0],g.yieldfactors[1]/g.yieldfactors[0],Egm1,gamma1*fp[0],gamma1,fp[0],Eg1m,gamma2*fp[1],gamma2,fp[1]))
+gamma1inv1 = invasion1[0]/fp[0]
+gamma1inv2 = invasion2[0]/fp[0]
+
+gamma2inv1 = invasion1[1]/fp[1]
+gamma2inv2 = invasion2[1]/fp[1]
+
+
+print("{:f} {:f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f}".format(g.growthrates[1]/g.growthrates[0],g.yieldfactors[1]/g.yieldfactors[0],Egm1,Eg1m,invasion1[0],invasion1[1],invasion2[0],invasion2[1],gamma1inv1,gamma1inv2,gamma2inv1,gamma2inv2))
 
