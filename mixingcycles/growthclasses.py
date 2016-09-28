@@ -360,6 +360,43 @@ class GrowthDynamics(object):
                 t[i,j] = self.__getTimeToDepletion(initialcells = np.array([i,j]))
         return t
 
+    def getApproximateGamma(self,initialcells):
+        ic = self.checkInitialCells(initialcells)
+        
+        if (int(ic[0]) == 1) and (int(ic[1]) == 1):
+            if self.growthrates[0] > self.growthrates[1]:
+                invading = 1
+            else:
+                invading = 0
+        elif int(ic[0]) == 1:
+            invading = 0
+        elif int(ic[1]) == 1:
+            invading = 1
+        else:
+            raise ValueError
+        
+        noninvading = 1-invading
+        gamma = np.zeros(2)
+        a = self.growthrates[invading]/self.growthrates[noninvading]
+        
+        if a < 1:
+            gamma[noninvading] = 1. - np.pow(self.env.substrate*self.yieldfactors[noninvading]/ic[noninvading],a)/(self.env.substrate*self.yieldfactor[invading])
+        elif a==1:
+            gamma[noninvading] = ic[noninvading]/(ic[noninvading] + 1)
+        else:
+            gamma[noninvading] = np.pow(ic[noninvading],a/(a-1.))/(self.env.substrate*self.yieldfactors[noninvading])*np.pow(self.yieldfactors[invading]/self.yieldfactors[noninvading],(a+1)/a)*np.pow(self.env.substrate*self.yieldfactors[noninvading]*np.pow(ic[noninvading],-a/(a-1))-1,1/a)
+        
+        gamma[invading] = 1 - gamma[noninvading]
+        
+        return gamma
+            
+            
+    def getApproximateFixedPoints(self):
+        param = self.env.dilution/(1-self.env.dilution) * self.env.substrate * self.yieldfactors
+        fp = param + np.exp(-param+1)
+        fp[param<1] = 0
+        return fp
+
     
     def __getattr__(self,key):
         if key == "numstrains":
