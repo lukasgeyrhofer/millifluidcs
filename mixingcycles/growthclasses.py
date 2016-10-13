@@ -271,7 +271,11 @@ class GrowthDynamics(object):
 
     def Growth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
-        return self.env.dilution * ic * np.exp( self.growthrates * self.__getTimeToDepletion(ic) )
+        ttd = self.__getTimeToDepletion(ic)
+        if self.__usedeathreates:
+            return self.env.dilution * ic * np.exp(self.growthrates * ttd - self.deathrates * (self.env.mixingtime - ttd))
+        else:
+            return self.env.dilution * ic * np.exp( self.growthrates * ttd )
 
 
     def getGrowthMatrix(self,size):
