@@ -19,18 +19,19 @@ args = parser.parse_args()
 
 alist = np.arange(-args.maxA,args.maxA+args.dA,args.dA)
 nlist = np.arange(int(np.ceil(args.maxN/args.dN))+1)*args.dN
-m = np.arange(args.maxM)
+m = np.arange(args.maxM,dtype=float)
 
-mlogm = m
+mlogm = np.arange(args.maxM,dtype=float)
 mlogm[m>0] *= np.log(m[m>0])
 
-for a in alist:
-    for n in nlist:
-        px = gc.PoissonSeedingVectors(m,[n])
-        ma = m**a
+for n in nlist:
+    px = gc.PoissonSeedingVectors(m,[n])
+    for a in alist:
+        ma = np.power(m[m>0],a)
+
         ma[ma is np.nan] = 0
         
-        expo = np.dot(ma,px[0])
+        expo = np.dot(ma,px[0][m>0])
         eps1 = np.dot(m + (a-1)*mlogm,px[0])
         eps0 = np.dot(1 + a*np.log(m[m>0]),px[0][m>0])
         
@@ -38,7 +39,7 @@ for a in alist:
         appreps1 = n*(1+(a-1)*np.log(n))
         appreps0 = 1 + a*np.log(n)
         
-        print("{:5.2f} {:5.2f} {:13.6e} {:13.6e} {:13.6e} {:13.6e} {:13.6e} {:13.6e}".format(aval,nval,expo,eps1,eps0,apprexpo,appreps1,appreps0))
+        print("{:5.2f} {:5.2f} {:13.6e} {:13.6e} {:13.6e} {:13.6e} {:13.6e} {:13.6e}".format(a,n,expo,eps1,eps0,apprexpo,appreps1,appreps0))
     print()
 
 
