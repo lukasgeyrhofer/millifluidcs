@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 
 alist = np.arange(-args.maxA,args.maxA+args.dA,args.dA)
-nlist = np.arange(int(np.ceil(args.maxN/args.dN))+1)*args.dN
+nlist = (np.arange(int(np.ceil(args.maxN/args.dN)))+1)*args.dN
 m = np.arange(args.maxM,dtype=float)
 
 mlogm = np.arange(args.maxM,dtype=float)
