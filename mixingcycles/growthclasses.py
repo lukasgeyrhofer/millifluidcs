@@ -96,7 +96,6 @@ class MicrobialStrain(object):
     so far, we implemented:
         * growth rate
         * yield factor
-    other parameters are already here for future reference, but not implemented
         * death rate
         
     '''
@@ -219,7 +218,7 @@ class GrowthDynamics(object):
 
         self.strains = list()
         for a,y,d in zip(growthrates,yieldfactors,deathrates):
-            self.strains.append(MicrobialStrain(growthrate = a,yieldfactor = y,deathrate = d))
+            self.addStrain(growthrate = a,yieldfactor = y,deathrate = d)
             
         self.env = Environment( dilution = kwargs.get("dilution",1),
                                 mixingtime = kwargs.get("mixingtime",10),
@@ -253,7 +252,7 @@ class GrowthDynamics(object):
             return 0.
       
 
-    def checkInitialCells(self,initialcells = None):
+    def __checkInitialCells(self,initialcells = None):
         try:
             # check if initialcells can be cast to array of floats
             ret_ic = np.array(initialcells,dtype=float)
@@ -270,12 +269,9 @@ class GrowthDynamics(object):
         
 
     def Growth(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ttd = self.__getTimeToDepletion(ic)
-        if self.__usedeathreates:
-            return self.env.dilution * ic * np.exp(self.growthrates * ttd - self.deathrates * (self.env.mixingtime - ttd))
-        else:
-            return self.env.dilution * ic * np.exp( self.growthrates * ttd )
+        ic  = self.__checkInitialCells(initialcells) # generate list with same dimensions as number of microbial strains
+        ttd = self.__getTimeToDepletion(ic)          # time to depletion
+        return self.env.dilution * ic * np.exp(self.growthrates * ttd - self.deathrates * self.env.mixingtime)
 
 
     def getGrowthMatrix(self,size):
