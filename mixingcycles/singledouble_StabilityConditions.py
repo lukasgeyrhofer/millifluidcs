@@ -11,7 +11,12 @@ def write_contours(contours,filename,y,a):
     fp = open(filename,"w")
     for c in contours:
         for i in range(len(c)):
-            print >> fp,y[c[i,0]],a[c[i,1]]
+            idxy = int(np.floor(c[i,0]))
+            idxa = int(np.floor(c[i,1]))
+            try:
+                print >> fp,((c[i,0]-idxy)*y[idxy] + (idxy + 1 - c[i,0])*y[idxy+1])/(y[idxy] - y[idxy+1]),((c[i,1]-idxa)*a[idxa] + (idxa + 1 - c[i,1])*a[idxa+1])/(a[idxa] - a[idxa+1])
+            except:
+                pass
         print >> fp
     fp.close()
 
@@ -35,11 +40,8 @@ avalues = np.unique(data[:,1])
 y =              np.repeat([yvalues],len(avalues),axis=0)
 a = np.transpose(np.repeat([avalues],len(yvalues),axis=0))
 
-
-
 gamma = (data[:,2]).reshape(np.shape(y))
 G = 1 - 2*gamma
-
 
 p = args.dp
 while p <= 1:
@@ -52,6 +54,7 @@ while p <= 1:
     try:
         contours0p = measure.find_contours(stab0, 1.)
         contours0m = measure.find_contours(stab0,-1.)
+        
         write_contours(contours0p,"cont.stab0.+1.p%5.3f.txt"%p,yvalues,avalues)
         write_contours(contours0m,"cont.stab0.-1.p%5.3f.txt"%p,yvalues,avalues)
     except:
