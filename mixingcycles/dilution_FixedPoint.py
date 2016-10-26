@@ -102,8 +102,6 @@ j[0,1] = np.dot(dpx[1], np.dot( px[0], gm1))
 j[1,0] = np.dot( px[1], np.dot(dpx[0], gm2))
 j[1,1] = np.dot(dpx[1], np.dot( px[0], gm2))
 
-print j
-
 
 w,v = np.linalg.eig(j)
 
