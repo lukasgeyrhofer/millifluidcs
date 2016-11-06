@@ -219,8 +219,8 @@ class GrowthDynamics(object):
         self.strains = list()
         for a,y,d in zip(growthrates,yieldfactors,deathrates):
             self.addStrain(growthrate = a,yieldfactor = y,deathrate = d)
-            
-        self.env = Environment( dilution = kwargs.get("dilution",1),
+        
+        self.env = Environment( dilution = kwargs.get("dilution",1e-4),
                                 mixingtime = kwargs.get("mixingtime",10),
                                 substrate = kwargs.get("substrateconcentration",1e4),
                                 numdroplets = kwargs.get("numdroplets") )
