@@ -23,7 +23,7 @@ params = {  "growthrates" : np.array([1.,args.growthrateratio]),
             "dilution"    : args.dilution }
 
 if args.logSteps:
-    ylistexp  = np.arange(np.log10(args.minyieldratio),np.log10(args.maxyieldratio),args.stepyield)
+    ylistexp  = np.arange(args.minyieldratio,args.maxyieldratio,args.stepyield)
     ylist     = np.power(10,ylistexp)
 else:
     ylist     = np.arange(args.minyieldratio,args.maxyieldratio,args.stepyield)
