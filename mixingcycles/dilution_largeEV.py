@@ -14,13 +14,14 @@ parser.add_argument("-D","--dilution",default=2e-4,type=float)
 parser.add_argument("-d","--stepyield",default=.01,type=float)
 parser.add_argument("-m","--maxM",default=100,type=float)
 parser.add_argument("-L","--logSteps",action="store_true",default=False)
+parser.add_argument("-S","--substrateconcentration",default=1e4,type=float)
 args = parser.parse_args()
 
-
 m      = np.arange(args.maxM)
-params = {  "growthrates" : np.array([1.,args.growthrateratio]),
-            "yieldfactors": np.ones(2,dtype=np.float),
-            "dilution"    : args.dilution }
+params = { "growthrates"            : np.array([1.,args.growthrateratio]),
+           "yieldfactors"           : np.ones(2,dtype=np.float),
+           "dilution"               : args.dilution,
+           "substrateconcentration" : args.substrateconcentration}
 
 if args.logSteps:
     ylistexp  = np.arange(args.minyieldratio,args.maxyieldratio,args.stepyield)
@@ -33,7 +34,6 @@ for y in ylist:
     params["yieldfactors"][1] = y
     g = gc.GrowthDynamics(**params)
     n = g.getSingleStrainFixedPointsPoissonSeeding(size=args.maxM)
-
 
     growth2_atFP1 = (g.getGrowthMatrix(size = np.array([m,np.ones(1)]))[1]).flatten()
     growth1_atFP2 = (g.getGrowthMatrix(size = np.array([np.ones(1),m]))[0]).flatten()
