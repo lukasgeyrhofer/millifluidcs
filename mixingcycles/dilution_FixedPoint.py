@@ -39,14 +39,14 @@ g       = gc.GrowthDynamics(**vars(args))
 gm1,gm2 = g.getGrowthMatrix(size = args.maxM)
 m       = np.arange(args.maxM)
 
+
+# initial condition are the respective fixed points on the axis
 if args.initialconditions is None:
-    n   = g.getSingleStrainFixedPoints()
+    n   = g.getSingleStrainFixedPointsApproximate()
 else:
     n   = np.array(args.initialconditions,dtype=float)
     assert len(n) == g.numstrains
 
-
-# initial condition are the respective fixed points on the axis
 dn = n
 j = np.zeros((2,2))
 i = 0
@@ -114,4 +114,5 @@ if args.printeigenvectors:
     #print "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1])),
 print
 
+# have yet to find complex eigenvalues
 

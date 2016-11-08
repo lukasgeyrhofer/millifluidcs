@@ -329,9 +329,9 @@ class GrowthDynamics(object):
     def getSingleStrainFixedPointsApproximate(self):
         # approximate Poisson seeding with single strains.
         param = self.getSingleStrainFixedPoints()
-        fp = param - np.exp(-param+1)
-        fp[param<1] = 0
-        return fp
+        n = param - np.exp(-param+1)
+        n[param<1] = 0
+        return n
     
     def getSingleStrainFixedPointsPoissonSeeding(self,size=100):
         n = self.getSingleStrainFixedPointsApproximate()
