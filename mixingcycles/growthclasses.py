@@ -325,9 +325,16 @@ class GrowthDynamics(object):
             return self.env.dilution / (1. - self.env.dilution) * self.env.substrate * n
         else:
             return None
+
+    def getSingleStrainFixedPointsApproximate(self):
+        # approximate Poisson seeding with single strains.
+        param = self.getSingleStrainFixedPoints()
+        fp = param - np.exp(-param+1)
+        fp[param<1] = 0
+        return fp
     
     def getSingleStrainFixedPointsPoissonSeeding(self,size=100):
-        n = self.getSingleStrainFixedPoints()
+        n = self.getSingleStrainFixedPointsApproximate()
         dn = 1.
         m = np.arange(size)
         for i in range(self.numstrains):
@@ -347,7 +354,7 @@ class GrowthDynamics(object):
                     step += 1
                     if step > self.NR['maxsteps']:
                         break
-                    if n[i] < 0:
+                    if n[i] <= 0:
                         n[i] = 0
                         break
         return n
@@ -391,13 +398,6 @@ class GrowthDynamics(object):
         return gamma
             
             
-    def getApproximateFixedPoints(self):
-        param = self.env.dilution/(1-self.env.dilution) * self.env.substrate * self.yieldfactors
-        fp = param + np.exp(-param+1)
-        fp[param<1] = 0
-        return fp
-
-    
     def __getattr__(self,key):
         if key == "numstrains":
             return len(self.strains)
