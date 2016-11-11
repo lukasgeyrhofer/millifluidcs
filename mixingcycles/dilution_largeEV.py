@@ -15,6 +15,7 @@ parser.add_argument("-d","--stepyield",default=.01,type=float)
 parser.add_argument("-m","--maxM",default=100,type=float)
 parser.add_argument("-L","--logSteps",action="store_true",default=False)
 parser.add_argument("-S","--substrateconcentration",default=1e4,type=float)
+parser.add_argument("-T","--mixingtime",default=1000,type=float)
 args = parser.parse_args()
 
 m      = np.arange(args.maxM)
@@ -22,7 +23,7 @@ params = { "growthrates"            : np.array([1.,args.growthrateratio]),
            "yieldfactors"           : np.ones(2,dtype=np.float),
            "dilution"               : args.dilution,
            "substrateconcentration" : args.substrateconcentration,
-           "mixingtime"             : 200}
+           "mixingtime"             : args.mixingtime}
 
 if args.logSteps:
     ylistexp  = np.arange(args.minyieldratio,args.maxyieldratio,args.stepyield)
