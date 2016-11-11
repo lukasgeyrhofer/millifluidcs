@@ -21,7 +21,8 @@ m      = np.arange(args.maxM)
 params = { "growthrates"            : np.array([1.,args.growthrateratio]),
            "yieldfactors"           : np.ones(2,dtype=np.float),
            "dilution"               : args.dilution,
-           "substrateconcentration" : args.substrateconcentration}
+           "substrateconcentration" : args.substrateconcentration,
+           "mixingtime"             : 200}
 
 if args.logSteps:
     ylistexp  = np.arange(args.minyieldratio,args.maxyieldratio,args.stepyield)

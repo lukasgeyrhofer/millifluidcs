@@ -39,7 +39,7 @@ def RungeKutta4(func,xx,tt,step):
 
 def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = False,dilution = False,
                         defaultgrowthrates = [2.,1.],defaultyieldfactors = [1.,2.],defaultdeathrates = [0.,0.],
-                        defaultsubstrate = 1e4, defaultmixingtime = 12.,defaultdilution = 2e-4, defaultnumdroplets = 1000):
+                        defaultsubstrate = 1e4, defaultmixingtime = None,defaultdilution = 2e-4, defaultnumdroplets = 1000):
     # Helper routine to generate all cmdline parameters for microbial growth
     gp = p.add_argument_group(description = "Parameters for growth in droplets")
     gp.add_argument("-a","--growthrates",type=float,nargs="*",default=defaultgrowthrates)
@@ -198,7 +198,7 @@ class Environment(object):
 
 
 class GrowthDynamics(object):
-    def __init__(self,NR_alpha = 1.,NR_precision = 1e-10, NR_maxsteps = 10000,numstrains = None,**kwargs):
+    def __init__(self,NR_alpha = 1.,NR_precision = 1e-14, NR_maxsteps = 10000,numstrains = None,**kwargs):
         
         if not numstrains is None:
             defaultlength = numstrains
@@ -221,7 +221,7 @@ class GrowthDynamics(object):
             self.addStrain(growthrate = a,yieldfactor = y,deathrate = d)
         
         self.env = Environment( dilution = kwargs.get("dilution",1e-4),
-                                mixingtime = kwargs.get("mixingtime",10),
+                                mixingtime = kwargs.get("mixingtime",12),
                                 substrate = kwargs.get("substrateconcentration",1e4),
                                 numdroplets = kwargs.get("numdroplets") )
         self.NR  = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}

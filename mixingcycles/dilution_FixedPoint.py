@@ -54,7 +54,6 @@ i = 0
 if args.verbose:
     print >> sys.stderr,"# starting iterations ..."
 
-
 while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
     if args.verbose:
         print >> sys.stderr,"{:4d} {:12.8e} {:12.8e}".format(i,n[0],n[1])
