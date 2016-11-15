@@ -31,7 +31,7 @@ args = parser.parse_args()
 
 m = np.arange(args.maxM)
 n = np.arange(0,args.maxN+args.dN,args.dN)
-tmix = np.arange(args.TmixMin,args.TmixMax,args.dTmix)
+tmix = np.arange(args.TmixMin,args.TmixMax+args.dTmix,args.dTmix)
 
 params = {  'growthrates':            np.array([args.growthrate]),
             'yieldfactors':           np.array([args.yieldfactor]),
