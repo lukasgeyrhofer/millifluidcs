@@ -274,6 +274,19 @@ class GrowthDynamics(object):
         return self.env.dilution * ic * np.exp(self.growthrates * ttd - self.deathrates * self.env.mixingtime)
 
 
+    def getGrowthVector(self,size):
+        if isinstance(size,(int,np.int,np.int32,np.int64)):
+            g = np.zeros(size)
+            for i in np.arange(size):
+                g[i] = self.Growth([i])
+        elif isinstance(size,np.ndarray):
+            g = np.zeros(len(size))
+            i = 0
+            for m in size:
+                g[i] = self.Growth([m])
+                i += 1
+        return g
+
     def getGrowthMatrix(self,size):
         if isinstance(size,int):
             m = np.arange(size)
