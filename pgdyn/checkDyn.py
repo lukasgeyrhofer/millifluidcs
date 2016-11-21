@@ -67,6 +67,7 @@ def DynWithPG(time,x,params):
     y = notneg(1+params['delta']*x[2])
     if x[1]==0:
         a = 0
+        
     return np.array( [
         a * x[0],
         -a/y * x[0],
@@ -79,6 +80,7 @@ def DynDirect(time,x,params):
     y = notneg(1+params['delta']*x[0])
     if x[1]==0:
         a = 0
+        
     return np.array([
         a*x[0],
         -a/y*x[0]
@@ -91,6 +93,7 @@ def DynTwoStrainWithPG(time,x,params):
     y2 = notneg(1 + params['delta'] * x[3])
     if x[2] == 0:
         a1 = a2 = 0
+        
     return np.array([
         a1 * x[0],
         a2 * x[1],
@@ -105,6 +108,7 @@ def DynTwoStrainDirect(time,x,params):
     y2 = notneg(1 + params['delta'] * x[0])
     if x[2] == 0:
         a1 = a2 = 0
+        
     return np.array([
         a1 * x[0],
         a2 * x[1],
