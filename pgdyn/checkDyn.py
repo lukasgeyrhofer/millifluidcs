@@ -90,17 +90,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e","--epsilon",type=float,default=1e-6)
     parser.add_argument("-d","--delta",type=float,default=1e-6)
-    parser.add_argument("-k","--kappa",type=float,default=1e-1)
+    parser.add_argument("-k","--kappa",type=float,default=1e0)
     
-    parser.add_argument("-T","--maxtime",type=float,default=12)
+    parser.add_argument("-T","--maxtime",type=float,default=20)
     parser.add_argument("-t","--timestep",type=float,default=.1)
+    parser.add_argument("-i","--integratetimestep",type=float,default=1e-3)
     
     args = parser.parse_args()
     
     params = {"eps":args.epsilon,"delta":args.delta,"kappa":args.kappa}
 
-    d1 = DynWithPG(initialconditions = np.array([1,1e4,0]),params = params)
-    d2 = DynDirect(initialconditions = np.array([1,1e4]),params = params)
+    d1 = DynWithPG(step = args.integratetimestep, initialconditions = np.array([1,1e4,0]), params = params)
+    d2 = DynDirect(step = args.integratetimestep, initialconditions = np.array([1,1e4]),   params = params)
     
     t = 0
     while t < args.maxtime:
