@@ -66,9 +66,14 @@ class DynWithPG(Dynamics):
         assert len(self.x) == 3
     
     def dyn(self,time,x):
+        # dependence on concentration of public good
+        a = 1+self.params['eps']*x[2]
+        y = 1+self.params['delta']*x[2]
+        if x[1]==0:
+            a = 0
         return np.array( [
-            (1. + self.params['eps'] * x[2])*x[0],
-            -(1. + self.params['eps'] * x[2])/(1. + self.params['delta'] * x[2]) * x[0],
+            a * x[0],
+            -a/y * x[0],
             self.params['kappa']*x[0]
             ])
 
@@ -80,9 +85,14 @@ class DynDirect(Dynamics):
         assert len(self.x) == 2
     
     def dyn(self,time,x):
+        # dependence directly on population size
+        a = 1+self.params['eps']*x[0]
+        y = 1+self.params['delta']*x[0]
+        if x[1]==0:
+            a = 0
         return np.array([
-            (1+self.params['eps']*x[0])*x[0],
-            -(1+self.params['eps']*x[0])/(1+self.params['delta']*x[0])*x[0]
+            a*x[0],
+            -a/y*x[0]
             ])
     
 
