@@ -526,27 +526,3 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
