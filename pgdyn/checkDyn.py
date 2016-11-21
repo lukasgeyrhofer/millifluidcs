@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 
 import numpy as np
@@ -23,12 +23,12 @@ class Dynamics:
         self.globaltime = globaltime
         
     
-    def dyn(time,x):
+    def dyn(self,time,x):
         #dummy
         return np.zeros(len(x))
 
 
-    def RungeKutta4(xx,tt):
+    def RungeKutta4(self,xx,tt):
         # 4th order Runge-Kutta integration scheme
         k1 = self.__step * self.dyn( tt        , xx )
         k2 = self.__step * self.dyn( tt+self.__step/2., xx+k1/2. )
@@ -57,29 +57,29 @@ class Dynamics:
             
 
     def __str__(self):
-        return (" ".join(["{:10.6f}"]*len(x))).format(*x)
+        return (" ".join(["{:14.6e}"]*len(self.x))).format(*self.x)
 
 
 class DynWithPG(Dynamics):
     def __init__(self,**kwargs):
-        super(Dynamics,self).__init__(**kwargs)
+        Dynamics.__init__(self,**kwargs)
         assert len(self.x) == 3
     
-    def dyn(time,x):
+    def dyn(self,time,x):
         return np.array( [
-            (1. + params['eps'] * x[2])*x[0],
-            -(1. + params['eps'] * x[2])/(1. + self.params['delta'] * x[2]) * x[0]
-            params['kappa']*x[0]
+            (1. + self.params['eps'] * x[2])*x[0],
+            -(1. + self.params['eps'] * x[2])/(1. + self.params['delta'] * x[2]) * x[0],
+            self.params['kappa']*x[0]
             ])
 
 
 
 class DynDirect(Dynamics):
     def __init__(self,**kwargs):
-        super(Dynamics,self).__init__(**kwargs)
+        Dynamics.__init__(self,**kwargs)
         assert len(self.x) == 2
     
-    def dyn(time,x):
+    def dyn(self,time,x):
         return np.array([
             (1+self.params['eps']*x[0])*x[0],
             -(1+self.params['eps']*x[0])/(1+self.params['delta']*x[0])*x[0]
@@ -88,8 +88,8 @@ class DynDirect(Dynamics):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e","--epsilon",type=float,default=1e-3)
-    parser.add_argument("-d","--delta",type=float,default=1e-3)
+    parser.add_argument("-e","--epsilon",type=float,default=1e-6)
+    parser.add_argument("-d","--delta",type=float,default=1e-6)
     parser.add_argument("-k","--kappa",type=float,default=1e-1)
     
     parser.add_argument("-T","--maxtime",type=float,default=12)
@@ -103,11 +103,11 @@ def main():
     d2 = DynDirect(initialconditions = np.array([1,1e4]),params = params)
     
     t = 0
-    while t <= args.maxtime:
+    while t < args.maxtime:
         d1.IntegrateTime(args.timestep)
         d2.IntegrateTime(args.timestep)
         t += args.timestep
-        print t,d1,d2
+        print("{:6.2f}".format(t),d1,d2)
     
     
 if __name__ == "__main__":
