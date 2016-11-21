@@ -495,3 +495,58 @@ class StochasticGrowthDynamics(GrowthDynamics):
             super(StochasticGrowthDynamics,self).__getattr__(self,key)
 
 
+class PublicGoods():
+    def __init__(self,numstrains = None,**kwargs):
+        if numstrains is None:
+            raise ValueError
+        
+        self.__production = np.zeros(numstrains)
+        self.__growthrate_coeff = np.zeros((numstrains,1))
+        self.__yield_coeff = np.zeros((numstrains,1))
+        self.__deathrate_coeff = np.zeros((numstrains,1))
+    
+    def ChangeInGrowthRate(self,populations):
+        return np.zeros(numstrains)
+    
+    def ChangeInYieldRate(self,populations):
+        return np.zeros(numstrains)
+    
+    def ChangeInDeathRates(self,populations):
+        return np.zeros(numstrains)
+
+
+class GrowthDynamicsPublicGoods(GrowthDynamics):
+    def __init__(self,numstrains = None,**kwargs):
+        super(GrowthDynamics,self).__init__(numstrains = numstrains,**kwargs)
+        pg = PublicGoods(numstrain = self.numstrains, **kwargs)
+    
+    def Growth(self,initialcells = None):
+        ic = self.checkInitialCells(initialcells)
+        return ic*np.exp(self.growthrates*self.env.mixingtime)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
