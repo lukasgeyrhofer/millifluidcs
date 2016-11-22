@@ -497,16 +497,6 @@ class StochasticGrowthDynamics(GrowthDynamics):
 
 
 
-
-
-
-
-
-
-
-
-
-
 class TimeIntegrator(object):
     # General forward integration of dynamics with Runge-Kutta method of 4th order
     # allows definition of multiple endconditions, currently implemented maximum time and one of the populations reaching zero
@@ -631,32 +621,35 @@ class TimeIntegrator(object):
 
 class GrowthDynamicsPublicGoods(GrowthDynamics):
     def __init__(self,numstrains = None,**kwargs):
-        super(GrowthDynamics,self).__init__(numstrains = numstrains,**kwargs)
         
-        #params = kwargs.get("params",None)
+        if kwargs.get("mixingtime") is None:
+            kwargs["mixingtime"] = 12.
         
-        dyn = TimeIntegrator(dyn = self.PGdyn,initialconditions = np.ones(self.numstrains+2),params = params)
-        dyn.SetEndCondition("maxtime",self.env.mixingtime)
-        dyn.SetEndCondition("reachzero",self.numstrains)
+        super(GrowthDynamicsPublicGoods,self).__init__(self,numstrains = numstrains,**kwargs)
         
-        self.__PGInteractionGrowthRates = kwargs.get("pginteractiongrowthrates",np.zeros(self.numstrains))
-        self.__PGInteractionYieldFactor = kwargs.get("pginteractionyieldfactor",np.zeros(self.numstrains))
+        
+        self.__PGInteractionGrowthRates = np.array(kwargs.get("pginteractiongrowthrates",np.zeros(self.numstrains)),dtype=np.float64)
+        self.__PGInteractionYieldFactor = np.array(kwargs.get("pginteractionyieldfactor",np.zeros(self.numstrains)),dtype=np.float64)
         self.__PGGrowthRatesOrder = len(self.__PGInteractionGrowthRates)/self.numstrains
         self.__PGYieldFactorOrder = len(self.__PGInteractionYieldFactor)/self.numstrains
-        self.__PGInteractionGrowthRates = np.reshape(self.__PGInteractionGrowthRates,size = (self.numstrains,self.__PGGrowthRatesOrder))
-        self.__PGInteractionYieldFactor = np.reshape(self.__PGInteractionYieldFactor,size = (self.numstrains,self.__PGYieldFactorOrder))
+        self.__PGInteractionGrowthRates = np.reshape(self.__PGInteractionGrowthRates,(self.numstrains,self.__PGGrowthRatesOrder))
+        self.__PGInteractionYieldFactor = np.reshape(self.__PGInteractionYieldFactor,(self.numstrains,self.__PGYieldFactorOrder))
         
-        self.__PGProduction = np.array(kwargs.get("pgproduction",np.zeros(self.numstrains)))
-        assert len(self.pgproduction) == self.numstrains
+        self.__PGProduction = np.array(kwargs.get("pgproduction",np.zeros(self.numstrains)),dtype=np.float64)
+        assert len(self.__PGProduction) == self.numstrains, "production of public goods does not match number of strains"
+        assert sum(self.__PGProduction) > 0, "no public goods produced"
+
+        dyn = TimeIntegrator(dynamics = self.PGdyn,initialconditions = np.ones(self.numstrains+2),params = None)
+        dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        dyn.SetEndCondition("reachzero",self.numstrains)
     
     # dynamics for all strains, then substrate, then public good
-    def PGdyn(t,x,None):
-        
+    def PGdyn(self,t,x,params):
         # public good can influence growth rates and yield
         a = self.growthrates  + self.ChangedGrowthRates(x)
         y = self.yieldfactors + self.ChangedYieldFactors(x)
         
-        return np.concatenate(a*x[:-2],np.array([-np.sum(a/y*x[:-2]),self.pgproduction*x[:-2]])) # cellcounts, substrate, pg
+        return np.concatenate([a*x[:-2],np.array([-np.sum(a/y*x[:-2]),np.sum(self.__PGProduction*x[:-2])])]) # cellcounts, substrate, pg
     
     
     def Growth(self,initialcells = None):
@@ -669,13 +662,16 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
     # polynomial dependence on public good concentration
     def ChangedGrowthRates(self,populations):
         da = np.zeros(self.numstrains)
+        # start with highest order and go back to first
         for i in range(1,self.__PGGrowthRatesOrder+1):
             da += self.__PGInteractionGrowthRates[:,-i]
             da *= populations[-1]
         return da
     
-    def ChangedYieldFactors(self,populatiopns):
+    # polynomial dependence on public good concentration
+    def ChangedYieldFactors(self,populations):
         dy = np.zeros(self.numstrains)
+        # start with highest order and go back to first
         for i in range(1,self.__PGYieldFactorOrder+1):
             dy += self.__PGInteractionYieldFactor[:,-i]
             dy *= populations[-1]
