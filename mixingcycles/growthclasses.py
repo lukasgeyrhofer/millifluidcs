@@ -252,7 +252,7 @@ class GrowthDynamics(object):
             return 0.
       
 
-    def __checkInitialCells(self,initialcells = None):
+    def checkInitialCells(self,initialcells = None):
         try:
             # check if initialcells can be cast to array of floats
             ret_ic = np.array(initialcells,dtype=float)
@@ -269,7 +269,7 @@ class GrowthDynamics(object):
         
 
     def Growth(self,initialcells = None):
-        ic  = self.__checkInitialCells(initialcells) # generate list with same dimensions as number of microbial strains
+        ic  = self.checkInitialCells(initialcells) # generate list with same dimensions as number of microbial strains
         ttd = self.__getTimeToDepletion(ic)          # time to depletion
         return self.env.dilution * ic * np.exp(self.growthrates * ttd - self.deathrates * self.env.mixingtime)
 
@@ -639,9 +639,9 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
         assert len(self.__PGProduction) == self.numstrains, "production of public goods does not match number of strains"
         assert sum(self.__PGProduction) > 0, "no public goods produced"
 
-        dyn = TimeIntegrator(dynamics = self.PGdyn,initialconditions = np.ones(self.numstrains+2),params = None)
-        dyn.SetEndCondition("maxtime",self.env.mixingtime)
-        dyn.SetEndCondition("reachzero",self.numstrains)
+        self.dyn = TimeIntegrator(dynamics = self.PGdyn,initialconditions = np.ones(self.numstrains+2),params = None)
+        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        self.dyn.SetEndCondition("reachzero",self.numstrains)
     
     # dynamics for all strains, then substrate, then public good
     def PGdyn(self,t,x,params):
@@ -654,10 +654,10 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
     
     def Growth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate(ic,np.array([self.env.substrate,0])) # cellcounts, substrate, pg
+        ic = np.concatenate([ic,np.array([self.env.substrate,0])]) # cellcounts, substrate, pg
         self.dyn.ResetInitialConditions(ic)
         self.dyn.IntegrateToEndConditions()
-        return self.dyn[:-2] # return only cell count
+        return self.dyn.populations[:-2] # return only cell count
     
     # polynomial dependence on public good concentration
     def ChangedGrowthRates(self,populations):

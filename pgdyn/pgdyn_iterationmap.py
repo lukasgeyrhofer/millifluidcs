@@ -21,7 +21,7 @@ parser.add_argument("-m","--maxsize",type=int,default=100)
 parser.add_argument("-n","--outputmax",type=float,default=10)
 parser.add_argument("-d","--outputdx",type=float,default=.1)
 parser.add_argument("-o","--outfile",default=None)
-parser.add_argument("-P","--poissonseeding",default=False,action="store_true")
+parser.add_argument("-p","--poissonseeding",default=False,action="store_true")
 
 args = parser.parse_args()
 
