@@ -8,6 +8,7 @@ import sys,math
 
 class TimeIntegrator:
     # General forward integration of dynamics with Runge-Kutta method of 4th order
+    # allows definition of multiple endconditions, currently implemented maximum time and one of the populations reaching zero
     def __init__(self,step = 1e-3,requiredpositive = True,initialconditions = None,dynamics = None,globaltime = 0,**kwargs):
         self.__step = step
         self.__requiredpositive = requiredpositive
@@ -21,7 +22,8 @@ class TimeIntegrator:
         
         assert len(self.x) == len(self.dyn(0,self.x,self.params)), "Initial conditions and dynamics do not have identical dimensions"
             
-        self.globaltime = globaltime
+        self.globaltime = globaltime        
+        self.__EndConditions = list()
         
     def RungeKutta4(self,xx,tt):
         # 4th order Runge-Kutta integration scheme
@@ -48,10 +50,57 @@ class TimeIntegrator:
                 self.x[self.x<=0]=0
             t += self.__step
         self.globaltime += t
-            
+        
+    def ResetInitialConditions(self,initialconditions):
+        self.x = np.array(initialconditions,dtype=np.float64)
+        assert len(self.x) == len(self.dyn(0,self.x,self.params)), "Initial conditions do not match dynamics"
+        self.globaltime = 0
+
+    def SetEndConditionMaxTime(self,maxtime):
+        if float(maxtime) >= 0:
+            self.__EndConditions.append(["maxtime",float(maxtime)])
+        else:
+            raise ValueError
+    
+    def SetEndConditionReachZero(self,populationindex):
+        if len(self.x) <= populationindex:
+            raise IndexError
+        self.__EndConditions.append(["reachzero",populationindex])
+
+    def HasEnded(self):
+        terminateInteration = False
+        for ec in self.__EndConditions:
+            if ec[0] == "maxtime":
+                if ec[1] > self.globaltime:
+                    terminateInteration = True
+            elif ec[0] == "reachzero":
+                if self.x[ec[1]] <= 0.:
+                    terminateInteration = True
+            else:
+                raise NotImplementedError
+        return terminateInteration
+    
+    def IntegrateToEndConditions(self):
+        if self.CountEndCond > 0:
+            while not self.HasEnded():
+                self.x = self.RungeKutta4(self.x,self.globaltime)
+                if self.__requiredpositive:
+                    self.x[self.x<=0]=0
+                self.globaltime += self.__step
+        else:
+            raise NotImplementedError
 
     def __str__(self):
         return (" ".join(["{:14.6e}"]*len(self.x))).format(*self.x)
+    
+    
+    def __getattr__(self,key):
+        if key == "CountEndConditions":
+            return len(self.endconditions)
+        elif key == "populations":
+            return self.x
+        else:
+            super(TimeIntegrator,self).__getattr__(self,key)
 
 
 def notneg(a):
