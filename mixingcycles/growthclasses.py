@@ -495,34 +495,195 @@ class StochasticGrowthDynamics(GrowthDynamics):
             super(StochasticGrowthDynamics,self).__getattr__(self,key)
 
 
-class PublicGoods():
-    def __init__(self,numstrains = None,**kwargs):
-        if numstrains is None:
-            raise ValueError
+
+
+
+
+
+
+
+
+
+
+
+
+class TimeIntegrator(object):
+    # General forward integration of dynamics with Runge-Kutta method of 4th order
+    # allows definition of multiple endconditions, currently implemented maximum time and one of the populations reaching zero
+    def __init__(self,step = 1e-3,requiredpositive = True,initialconditions = None,dynamics = None,globaltime = 0,**kwargs):
+        self.__step = step
+        self.__requiredpositive = requiredpositive
+
+        self.params = kwargs.get('params',None)
         
-        self.__production = np.zeros(numstrains)
-        self.__growthrate_coeff = np.zeros((numstrains,1))
-        self.__yield_coeff = np.zeros((numstrains,1))
-        self.__deathrate_coeff = np.zeros((numstrains,1))
+        if initialconditions is None:   raise ValueError
+        else:                           self.x   = np.array(initialconditions)
+        if dynamics is None:            raise NotImplementedError
+        else:                           self.dyn = dynamics
+        
+        assert len(self.x) == len(self.dyn(0,self.x,self.params)), "Dimensions of initial conditions and dynamics do not match"
+            
+        self.__globaltime = globaltime        
+        self.__EndConditions = list()
+        self.__triggeredEndConditions = list()
+        
+    def RungeKutta4(self,xx,tt):
+        # 4th order Runge-Kutta integration scheme
+        k1 = self.__step * self.dyn( tt               , xx      , self.params )
+        k2 = self.__step * self.dyn( tt+self.__step/2., xx+k1/2., self.params )
+        k3 = self.__step * self.dyn( tt+self.__step/2., xx+k2/2., self.params )
+        k4 = self.__step * self.dyn( tt+self.__step   , xx+k3   , self.params )
+        return xx + (k1+2*k2+2*k3+k4)/6.
+
+    def IntegrationStep(self,time):
+        self.__triggeredEndConditions = list()
+        t = 0
+        while t <= time:
+            self.x = self.RungeKutta4(self.x,self.__globaltime + t)
+            if self.__requiredpositive:
+                self.x[self.x<=0]=0
+            t += self.__step
+        self.__globaltime += time
     
-    def ChangeInGrowthRate(self,populations):
-        return np.zeros(numstrains)
+    def IntegrateToZero(self,index):
+        t = 0
+        while self.x[index] > 0:
+            self.x = self.RungeKutta4(self.x,self.__globaltime + t)
+            if self.__requiredpositive:
+                self.x[self.x<=0]=0
+            t += self.__step
+        self.__globaltime += t
+        self.__triggeredEndConditions = list(["reachzero",index])
+        
+    def ResetInitialConditions(self,initialconditions,globaltime = 0):
+        self.x = np.array(initialconditions,dtype=np.float64)
+        assert len(self.x) == len(self.dyn(0,self.x,self.params)), "Dimensions of initial conditions and dynamics do not match"
+        self.__globaltime = globaltime
+        self.__triggeredEndConditions = list()
+
+    def SetEndConditionMaxTime(self,maxtime):
+        if float(maxtime) >= 0:
+            self.__EndConditions.append(["maxtime",float(maxtime)])
+        else:
+            raise ValueError
     
-    def ChangeInYieldRate(self,populations):
-        return np.zeros(numstrains)
+    def SetEndConditionReachZero(self,populationindex):
+        if len(self.x) <= populationindex:
+            raise IndexError
+        self.__EndConditions.append(["reachzero",populationindex])
+        
+    def SetEndCondition(self,condition,value):
+        if str(condition).lower() == "maxtime":
+            if float(value) >= 0:
+                self.__EndConditions.append(["maxtime",float(value)])
+        elif str(condition).lower() == "reachzero":
+            if len(self.x) > int(value):
+                self.__EndConditions.append(["reachzero",int(value)])
+        else:
+            raise NotImplementedError
+
+    def HasEnded(self):
+        terminateInteration = False
+        if np.isnan(self.x).any():
+            terminateInteration = True
+        else:
+            for ec in self.__EndConditions:
+                if ec[0] == "maxtime":
+                    if ec[1] < self.__globaltime:
+                        terminateInteration = True
+                        self.__triggeredEndConditions.append(ec)
+                elif ec[0] == "reachzero":
+                    if self.x[ec[1]] <= 0.:
+                        terminateInteration = True
+                        self.__triggeredEndConditions.append(ec)
+                else:
+                    raise NotImplementedError
+        return terminateInteration
     
-    def ChangeInDeathRates(self,populations):
-        return np.zeros(numstrains)
+    def IntegrateToEndConditions(self):
+        if self.CountEndConditions > 0:
+            while not self.HasEnded():
+                self.x = self.RungeKutta4(self.x,self.__globaltime)
+                if self.__requiredpositive:
+                    self.x[self.x<=0]=0
+                self.__globaltime += self.__step
+        else:
+            raise NotImplementedError
+
+    def __str__(self):
+        return (" ".join(["{:14.6e}"]*len(self.x))).format(*self.x)
+    
+    
+    def __getattr__(self,key):
+        if key == "CountEndConditions":
+            return len(self.__EndConditions)
+        elif key == "populations":
+            return self.x
+        elif key == "time":
+            return self.__globaltime
+        else:
+            super(TimeIntegrator,self).__getattr__(self,key)
+    
+    def __getitem__(self,key):
+        if int(key) < len(self.x):
+            return self.x[int(key)]
 
 
 class GrowthDynamicsPublicGoods(GrowthDynamics):
     def __init__(self,numstrains = None,**kwargs):
         super(GrowthDynamics,self).__init__(numstrains = numstrains,**kwargs)
-        pg = PublicGoods(numstrain = self.numstrains, **kwargs)
+        
+        #params = kwargs.get("params",None)
+        
+        dyn = TimeIntegrator(dyn = self.PGdyn,initialconditions = np.ones(self.numstrains+2),params = params)
+        dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        dyn.SetEndCondition("reachzero",self.numstrains)
+        
+        self.__PGInteractionGrowthRates = kwargs.get("pginteractiongrowthrates",np.zeros(self.numstrains))
+        self.__PGInteractionYieldFactor = kwargs.get("pginteractionyieldfactor",np.zeros(self.numstrains))
+        self.__PGGrowthRatesOrder = len(self.__PGInteractionGrowthRates)/self.numstrains
+        self.__PGYieldFactorOrder = len(self.__PGInteractionYieldFactor)/self.numstrains
+        self.__PGInteractionGrowthRates = np.reshape(self.__PGInteractionGrowthRates,size = (self.numstrains,self.__PGGrowthRatesOrder))
+        self.__PGInteractionYieldFactor = np.reshape(self.__PGInteractionYieldFactor,size = (self.numstrains,self.__PGYieldFactorOrder))
+        
+        self.__PGProduction = np.array(kwargs.get("pgproduction",np.zeros(self.numstrains)))
+        assert len(self.pgproduction) == self.numstrains
+    
+    # dynamics for all strains, then substrate, then public good
+    def PGdyn(t,x,None):
+        
+        # public good can influence growth rates and yield
+        a = self.growthrates  + self.ChangedGrowthRates(x)
+        y = self.yieldfactors + self.ChangedYieldFactors(x)
+        
+        return np.concatenate(a*x[:-2],np.array([-np.sum(a/y*x[:-2]),self.pgproduction*x[:-2]])) # cellcounts, substrate, pg
+    
     
     def Growth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
-        return ic*np.exp(self.growthrates*self.env.mixingtime)
+        ic = np.concatenate(ic,np.array([self.env.substrate,0])) # cellcounts, substrate, pg
+        self.dyn.ResetInitialConditions(ic)
+        self.dyn.IntegrateToEndConditions()
+        return self.dyn[:-2] # return only cell count
+    
+    # polynomial dependence on public good concentration
+    def ChangedGrowthRates(self,populations):
+        da = np.zeros(self.numstrains)
+        for i in range(1,self.__PGGrowthRatesOrder+1):
+            da += self.__PGInteractionGrowthRates[:,-i]
+            da *= populations[-1]
+        return da
+    
+    def ChangedYieldFactors(self,populatiopns):
+        dy = np.zeros(self.numstrains)
+        for i in range(1,self.__PGYieldFactorOrder+1):
+            dy += self.__PGInteractionYieldFactor[:,-i]
+            dy *= populations[-1]
+        return dy
     
     
-    
+
+
+
+
+

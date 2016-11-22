@@ -24,6 +24,7 @@ class TimeIntegrator(object):
             
         self.__globaltime = globaltime        
         self.__EndConditions = list()
+        self.__triggeredEndConditions = list()
         
     def RungeKutta4(self,xx,tt):
         # 4th order Runge-Kutta integration scheme
@@ -34,6 +35,7 @@ class TimeIntegrator(object):
         return xx + (k1+2*k2+2*k3+k4)/6.
 
     def IntegrationStep(self,time):
+        self.__triggeredEndConditions = list()
         t = 0
         while t <= time:
             self.x = self.RungeKutta4(self.x,self.__globaltime + t)
@@ -50,11 +52,13 @@ class TimeIntegrator(object):
                 self.x[self.x<=0]=0
             t += self.__step
         self.__globaltime += t
+        self.__triggeredEndConditions = list(["reachzero",index])
         
     def ResetInitialConditions(self,initialconditions,globaltime = 0):
         self.x = np.array(initialconditions,dtype=np.float64)
         assert len(self.x) == len(self.dyn(0,self.x,self.params)), "Dimensions of initial conditions and dynamics do not match"
         self.__globaltime = globaltime
+        self.__triggeredEndConditions = list()
 
     def SetEndConditionMaxTime(self,maxtime):
         if float(maxtime) >= 0:
@@ -86,9 +90,11 @@ class TimeIntegrator(object):
                 if ec[0] == "maxtime":
                     if ec[1] < self.__globaltime:
                         terminateInteration = True
+                        self.__triggeredEndConditions.append(ec)
                 elif ec[0] == "reachzero":
                     if self.x[ec[1]] <= 0.:
                         terminateInteration = True
+                        self.__triggeredEndConditions.append(ec)
                 else:
                     raise NotImplementedError
         return terminateInteration
