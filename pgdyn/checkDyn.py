@@ -66,18 +66,31 @@ class TimeIntegrator:
         if len(self.x) <= populationindex:
             raise IndexError
         self.__EndConditions.append(["reachzero",populationindex])
+        
+    def SetEndCondition(self,condition,value):
+        if condition == "maxtime":
+            if float(value) >= 0:
+                self.__EndConditions.append(["maxtime",float(value)])
+        elif condition == "reachzero":
+            if len(self.x) <= int(value):
+                self.__EndConditions.append(["reachzero",int(value)])
+        else:
+            raise NotImplementedError
 
     def HasEnded(self):
         terminateInteration = False
-        for ec in self.__EndConditions:
-            if ec[0] == "maxtime":
-                if ec[1] > self.globaltime:
-                    terminateInteration = True
-            elif ec[0] == "reachzero":
-                if self.x[ec[1]] <= 0.:
-                    terminateInteration = True
-            else:
-                raise NotImplementedError
+        if np.isnan(self.x).any():
+            terminateInteration = True
+        else:
+            for ec in self.__EndConditions:
+                if ec[0] == "maxtime":
+                    if ec[1] > self.globaltime:
+                        terminateInteration = True
+                elif ec[0] == "reachzero":
+                    if self.x[ec[1]] <= 0.:
+                        terminateInteration = True
+                else:
+                    raise NotImplementedError
         return terminateInteration
     
     def IntegrateToEndConditions(self):
