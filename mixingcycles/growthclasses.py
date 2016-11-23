@@ -642,12 +642,19 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
         self.dyn = TimeIntegrator(dynamics = self.PGdyn,initialconditions = np.ones(self.numstrains+2),params = None)
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         self.dyn.SetEndCondition("reachzero",self.numstrains)
+        
+        self.__onlypositivecoefficients = kwargs.get("onlypositivecoefficients",True)
+        
     
     # dynamics for all strains, then substrate, then public good
     def PGdyn(self,t,x,params):
         # public good can influence growth rates and yield
         a = self.growthrates  + self.ChangedGrowthRates(x)
         y = self.yieldfactors + self.ChangedYieldFactors(x)
+        
+        if self.__onlypositivecoefficients:
+            a[a<0] = 0
+            y[y<1e-300] = 1e-300
         
         return np.concatenate([a*x[:-2],np.array([-np.sum(a/y*x[:-2]),np.sum(self.__PGProduction*x[:-2])])]) # cellcounts, substrate, pg
     
