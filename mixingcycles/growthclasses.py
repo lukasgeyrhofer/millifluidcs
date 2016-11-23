@@ -627,13 +627,48 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
         
         super(GrowthDynamicsPublicGoods,self).__init__(self,numstrains = numstrains,**kwargs)
         
-        
-        self.__PGInteractionGrowthRates = np.array(kwargs.get("pginteractiongrowthrates",np.zeros(self.numstrains)),dtype=np.float64)
-        self.__PGInteractionYieldFactor = np.array(kwargs.get("pginteractionyieldfactor",np.zeros(self.numstrains)),dtype=np.float64)
-        self.__PGGrowthRatesOrder = len(self.__PGInteractionGrowthRates)/self.numstrains
-        self.__PGYieldFactorOrder = len(self.__PGInteractionYieldFactor)/self.numstrains
-        self.__PGInteractionGrowthRates = np.reshape(self.__PGInteractionGrowthRates,(self.numstrains,self.__PGGrowthRatesOrder))
-        self.__PGInteractionYieldFactor = np.reshape(self.__PGInteractionYieldFactor,(self.numstrains,self.__PGYieldFactorOrder))
+        if kwargs.get("polynomialinteraction",True):
+            # polynomial coefficients for interaction with public good
+            # a = Sum_n a_n G^n
+            # y = Sum_n y_n G^n
+            self.__PGInteractionGrowthRates = np.array(kwargs.get("pginteractiongrowthrates",np.zeros(self.numstrains)),dtype=np.float64)
+            self.__PGInteractionYieldFactor = np.array(kwargs.get("pginteractionyieldfactor",np.zeros(self.numstrains)),dtype=np.float64)
+            self.__PGGrowthRatesOrder = len(self.__PGInteractionGrowthRates)/self.numstrains
+            self.__PGYieldFactorOrder = len(self.__PGInteractionYieldFactor)/self.numstrains
+            self.__PGInteractionGrowthRates = np.reshape(self.__PGInteractionGrowthRates,(self.numstrains,self.__PGGrowthRatesOrder))
+            self.__PGInteractionYieldFactor = np.reshape(self.__PGInteractionYieldFactor,(self.numstrains,self.__PGYieldFactorOrder))
+            
+            self.GR = self.PolynomialGrowthRates
+            self.YF = self.PolynomialYieldFactors
+            
+        else:
+            # exponential interaction with public good
+            # a = a * (A + (1-2A) EXP(-eps G))
+            # y = y * (B + (1-2B) EXP(-delta G))
+            # coefficients eps, delta obtained from commandline parameters
+            # if commandline parameters have 2n numbers, second set determines A, B 
+            #         exponentially decreasing for 0, exponentially increasing for 1 (default: vectors of 0)
+            self.__PGInteractionGrowthRates = np.array(kwargs.get("pginteractiongrowthrates",np.zeros(self.numstrains)),dtype=np.float64)
+            self.__PGInteractionYieldFactor = np.array(kwargs.get("pginteractionyieldfactor",np.zeros(self.numstrains)),dtype=np.float64)
+            
+            if len(self.__PGInteractionGrowthRates) == self.numstrains:
+                self.__PGInteractionGrowthRates = np.array([self.__PGInteractionGrowthRates,np.zeros(self.numstrains)])
+            elif len(self.__PGInteractionGrowthRates) == 2 * self.numstrains:
+                self.__PGInteractionGrowthRates = np.reshape(self.__PGInteractionGrowthRates,(self.numstrains,2))
+            else:
+                raise ValueError
+            
+            if len(self.__PGInteractionYieldFactor) == self.numstrains:
+                self.__PGInteractionYieldFactor = np.array([self.__PGInteractionYieldFactor,np.zeros(self.numstrains)])
+            elif len(self.__PGInteractionYieldFactor) == 2 * self.numstrains:
+                self.__PGInteractionYieldFactor = np.reshape(self.__PGInteractionYieldFactor,(self.numstrains,2))
+            else:
+                raise ValueError
+            
+            self.GR = self.ExponentialGrowthRates
+            self.YF = self.ExponentialYieldFactors
+            
+            
         
         self.__PGProduction = np.array(kwargs.get("pgproduction",np.zeros(self.numstrains)),dtype=np.float64)
         assert len(self.__PGProduction) == self.numstrains, "production of public goods does not match number of strains"
@@ -649,13 +684,8 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
     # dynamics for all strains, then substrate, then public good
     def PGdyn(self,t,x,params):
         # public good can influence growth rates and yield
-        a = self.growthrates  + self.ChangedGrowthRates(x)
-        y = self.yieldfactors + self.ChangedYieldFactors(x)
-        
-        if self.__onlypositivecoefficients:
-            a[a<0] = 0
-            y[y<1e-300] = 1e-300
-        
+        a = self.GR(x)
+        y = self.YF(x)
         return np.concatenate([a*x[:-2],np.array([-np.sum(a/y*x[:-2]),np.sum(self.__PGProduction*x[:-2])])]) # cellcounts, substrate, pg
     
     
@@ -667,23 +697,36 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
         return self.dyn.populations[:-2] # return only cell count
     
     # polynomial dependence on public good concentration
-    def ChangedGrowthRates(self,populations):
+    def PolynomialGrowthRates(self,populations):
         da = np.zeros(self.numstrains)
         # start with highest order and go back to first
         for i in range(1,self.__PGGrowthRatesOrder+1):
             da += self.__PGInteractionGrowthRates[:,-i]
             da *= populations[-1]
-        return da
+        a = self.growthrates + da
+        if self.__onlypositivecoefficients:
+            a[a<0] = 0
+        return a
     
     # polynomial dependence on public good concentration
-    def ChangedYieldFactors(self,populations):
+    def PolynomialYieldFactors(self,populations):
         dy = np.zeros(self.numstrains)
         # start with highest order and go back to first
         for i in range(1,self.__PGYieldFactorOrder+1):
             dy += self.__PGInteractionYieldFactor[:,-i]
             dy *= populations[-1]
-        return dy
+        y = self.yieldfactors + dy
+        if self.__onlypositivecoefficients:
+            y[y<1e-300] = 1e-300
+        return y
     
+    def ExponentialGrowthRates(self,populations):
+        return self.growthrates * (self.__PGInteractionGrowthRates[1,:] + (1-2*self.__PGInteractionGrowthRates[1,:])*np.exp(self.__PGInteractionGrowthRates[0,:] * populations[-1]))
+    
+    def ExponentialYieldFactors(self,populations):
+        return self.yieldfactors * (self.__PGInteractionYieldFactor[1,:] + (1-2*self.__PGInteractionYieldFactor[1,:])*np.exp(self.__PGInteractionYieldFactor[0,:] * populations[-1]))
+    
+                            
     
 
 
