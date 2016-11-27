@@ -30,8 +30,14 @@ m = np.arange(args.maxsize)
 
 gm1 = g.getGrowthVector(args.maxsize)
 
-
-for a,b in zip(m,gm1):
+if args.poissonseeding:
+    out    = np.arange(0,args.outputmax+args.outputdx,args.outputdx)
+    p      = gc.PoissonSeedingVectors(m,out)
+    growth = np.dot(p,gm1)
+else:
+    out = m[:]
+    growth = gm1[:]
+for a,b in zip(out,growth):
     print a,b
 
 
