@@ -676,7 +676,8 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
 
         self.dyn = TimeIntegrator(dynamics = self.PGdyn,initialconditions = np.ones(self.numstrains+2),params = None)
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
-        self.dyn.SetEndCondition("reachzero",self.numstrains)
+        self.dyn.SetEndCondition("reachzero",self.numstrains)   # vector contains all populations, then substrate, then public good
+                                                                # thus stop, if substrate is depleted
         
         self.__onlypositivecoefficients = kwargs.get("onlypositivecoefficients",True)
         
