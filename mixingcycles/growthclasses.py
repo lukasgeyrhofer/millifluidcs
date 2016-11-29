@@ -732,5 +732,47 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
 
 
 
-
+class GrowthDynamicsAntibiotics(GrowthDynamics):
+    def __init__(self,**kwargs):
+        super(GrowthDynamicsAntibiotics,self).__init__(self,**kwargs)
+        
+        self.dyn = TimeIntegrator(dynamics = self.dynAB,initialconditions = np.zeros(self.numstrains + 3),params = None)
+        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        self.dyn.SetEndCondition("reachzero",self.numstrains)
+        
+        self.ABparams = {   'kappa' :         kwargs.get("kappa",1),
+                            'logkill' :       kwargs.get("logkill",2),
+                            'PGproduction' :  kwargs.get("PGproduction",np.zeros(self.numstrains)),
+                            'PGreductionAB' : kwargs.get("PGreductionAB",1),
+                            'PGconc' :        kwargs.get("PGconc",0),   # initial condition PG concentration
+                            'ABconc' :        kwargs.get("ABconc",.5)}  # initial concentration antibiotics measured in zMIC
+        
+        assert len(ABparams['PGproduction']) == self.numstrains, "PG production not defined correctly"
+        assert sum(ABparams['PGproduction']) > 0, "PG is not produced"
+        
+    
+    def beta(self,abconc):
+        bk = np.power(abconc,self.ABparams['kappa'])
+        return 1 - (1+self.ABparams['logkill'])*bk/(bk + self.ABparams['logkill'])
+    
+    def dynAB(self,t,x,params):
+        a = self.growthrates * self.beta(x[-1])
+        return np.concatenate([a*x[:-3]],                                                   # growth of strains
+                              np.array( [-np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
+                                         np.sum(self.ABparams['PGproduction']*x[:-3]),      # production of public good
+                                         -self.ABparams['PGreductionAB']*x[-1]*x[-2]])])    # reduction of antibiotics by public good
+    
+    def Growth(self,initialcells = None):
+        ic = self.checkInitialCells(initialcells)
+        ic = np.concatenate([ic,np.array([self.env.substrate,self.ABparams['PGconc'],self.ABparams['ABconc']])])
+        self.dyn.ResetInitialConditions(ic)
+        self.dyn.IntegrateToEndConditions()
+        return self.dyn.populations[:-3]
+                                          
+    
+        
+        
+        
+        
+        
 
