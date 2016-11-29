@@ -742,7 +742,7 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
         
         self.ABparams = {   'kappa' :         kwargs.get("kappa",1),
                             'logkill' :       kwargs.get("logkill",2),
-                            'PGproduction' :  kwargs.get("PGproduction",np.zeros(self.numstrains)),
+                            'PGproduction' :  np.array(kwargs.get("PGproduction",np.zeros(self.numstrains)),dtype=np.float64),
                             'PGreductionAB' : kwargs.get("PGreductionAB",1),
                             'PGconc' :        kwargs.get("PGconc",0),   # initial condition PG concentration
                             'ABconc' :        kwargs.get("ABconc",.5)}  # initial concentration antibiotics measured in zMIC
@@ -757,7 +757,7 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
     
     def dynAB(self,t,x,params):
         a = self.growthrates * self.beta(x[-1])
-        return np.concatenate([a*x[:-3]],                                                   # growth of strains
+        return np.concatenate(a*x[:-3],                                                     # growth of strains
                               np.array( [-np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
                                          np.sum(self.ABparams['PGproduction']*x[:-3]),      # production of public good
                                          -self.ABparams['PGreductionAB']*x[-1]*x[-2]])])    # reduction of antibiotics by public good
