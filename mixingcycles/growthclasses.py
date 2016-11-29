@@ -274,16 +274,20 @@ class GrowthDynamics(object):
         return self.env.dilution * ic * np.exp(self.growthrates * ttd - self.deathrates * self.env.mixingtime)
 
 
-    def getGrowthVector(self,size):
+    def getGrowthVector(self,size,strainID = 0):
         if isinstance(size,(int,np.int,np.int32,np.int64)):
             g = np.zeros(size)
+            m = np.zeros(self.numstrains)
             for i in np.arange(size):
-                g[i] = self.Growth([i])
+                m[strainID] = i
+                g[i] = self.Growth(m)[strainID]
         elif isinstance(size,np.ndarray):
             g = np.zeros(len(size))
+            m = np.zeros(self.numstrains)
             i = 0
-            for m in size:
-                g[i] = self.Growth([m])
+            for j in size:
+                m[strainID] = j
+                g[i] = self.Growth(m)[strainID]
                 i += 1
         return g
 
@@ -734,11 +738,12 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
 
 class GrowthDynamicsAntibiotics(GrowthDynamics):
     def __init__(self,**kwargs):
+
+        if kwargs.get("mixingtime") is None:
+            kwargs["mixingtime"] = 12.
+
         super(GrowthDynamicsAntibiotics,self).__init__(self,**kwargs)
         
-        self.dyn = TimeIntegrator(dynamics = self.dynAB,initialconditions = np.zeros(self.numstrains + 3),params = None)
-        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
-        self.dyn.SetEndCondition("reachzero",self.numstrains)
         
         self.ABparams = {   'kappa' :         kwargs.get("kappa",1),
                             'logkill' :       kwargs.get("logkill",2),
@@ -746,10 +751,13 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
                             'PGreductionAB' : kwargs.get("PGreductionAB",1),
                             'PGconc' :        kwargs.get("PGconc",0),   # initial condition PG concentration
                             'ABconc' :        kwargs.get("ABconc",.5)}  # initial concentration antibiotics measured in zMIC
+
+        assert len(self.ABparams['PGproduction']) == self.numstrains, "PG production not defined correctly"
+        assert sum(self.ABparams['PGproduction']) > 0, "PG is not produced"
         
-        assert len(ABparams['PGproduction']) == self.numstrains, "PG production not defined correctly"
-        assert sum(ABparams['PGproduction']) > 0, "PG is not produced"
-        
+        self.dyn = TimeIntegrator(dynamics = self.dynAB,initialconditions = np.zeros(self.numstrains + 3),params = None)
+        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        self.dyn.SetEndCondition("reachzero",self.numstrains)
     
     def beta(self,abconc):
         bk = np.power(abconc,self.ABparams['kappa'])
@@ -757,10 +765,10 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
     
     def dynAB(self,t,x,params):
         a = self.growthrates * self.beta(x[-1])
-        return np.concatenate(a*x[:-3],                                                     # growth of strains
-                              np.array( [-np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
-                                         np.sum(self.ABparams['PGproduction']*x[:-3]),      # production of public good
-                                         -self.ABparams['PGreductionAB']*x[-1]*x[-2]])])    # reduction of antibiotics by public good
+        return np.concatenate([ a*x[:-3],                                                      # growth of strains
+                                np.array( [ -np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
+                                            np.sum(self.ABparams['PGproduction']*x[:-3]),      # production of public good
+                                            -self.ABparams['PGreductionAB']*x[-1]*x[-2] ])])   # reduction of antibiotics by public good
     
     def Growth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)

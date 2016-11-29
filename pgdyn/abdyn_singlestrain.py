@@ -5,7 +5,7 @@ import argparse
 import sys,math
 
 
-sys.path.append(sys.path[0] + '/../mixingcyclyes')
+sys.path.append(sys.path[0] + '/../mixingcycles')
 import growthclasses as gc
 
 
