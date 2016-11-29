@@ -15,8 +15,8 @@ parser = gc.AddGrowthParameters(parser)
 parserAB = parser.add_argument_group(description = "Parameters for interactions with antibiotics")
 parserAB.add_argument("-k","--kappa",type=float,default=1)
 parserAB.add_argument("-l","--logkill",type=float,default=2)
-parserAB.add_argument("-P","--PGproduction",nargs="*")
 parserAB.add_argument("-A","--ABconc",type=float,default=.5)
+parserAB.add_argument("-P","--PGproduction",nargs="*")
 parserAB.add_argument("-R","--PGreductionAB",type=float,default=1)
 
 parser.add_argument("-m","--maxsize",type=int,default=100)
@@ -29,6 +29,7 @@ args = parser.parse_args()
 
 g = gc.GrowthDynamicsAntibiotics(**vars(args))
 m = np.arange(args.maxsize)
+
 
 gm1 = g.getGrowthVector(args.maxsize)
 

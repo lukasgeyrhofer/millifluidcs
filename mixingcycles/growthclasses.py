@@ -744,7 +744,6 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
 
         super(GrowthDynamicsAntibiotics,self).__init__(self,**kwargs)
         
-        
         self.ABparams = {   'kappa' :         kwargs.get("kappa",1),
                             'logkill' :       kwargs.get("logkill",2),
                             'PGproduction' :  np.array(kwargs.get("PGproduction",np.zeros(self.numstrains)),dtype=np.float64),
