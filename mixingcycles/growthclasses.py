@@ -691,7 +691,9 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
         # public good can influence growth rates and yield
         a = self.GR(x)
         y = self.YF(x)
-        return np.concatenate([a*x[:-2],np.array([-np.sum(a/y*x[:-2]),np.sum(self.__PGProduction*x[:-2])])]) # cellcounts, substrate, pg
+        return np.concatenate(  [   a*x[:-2],                                           # growth of strains
+                                    np.array([  -np.sum(a/y*x[:-2]),                    # decay of nutrients
+                                                np.sum(self.__PGProduction*x[:-2])]) ]) # pg
     
     
     def Growth(self,initialcells = None):
