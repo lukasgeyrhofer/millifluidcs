@@ -45,9 +45,10 @@ parser.add_argument("-N","--initialN",default=1,type=float)
 global args
 args = parser.parse_args()
 
-args.growthrates = np.array(args.growthrates)
-args.yieldfactors  = np.array(args.yieldfactors)
-args.PGproduction = np.array(args.PGproduction)
+args.growthrates = np.array(args.growthrates,dtype=np.float64)
+args.yieldfactors  = np.array(args.yieldfactors,dtype=np.float64)
+args.PGproduction = np.array(args.PGproduction,dtype=np.float64)
+args.PGreductionAB = np.array(args.PGreductionAB,dtype=np.float64)
 numstrains = len(args.growthrates)
 
 ic = np.concatenate([np.ones(numstrains) * args.initialN, np.array([args.substrateconcentration,0,args.ABconc])])
