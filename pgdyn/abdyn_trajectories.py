@@ -17,7 +17,7 @@ def monod(substr):
 
 
 def dynAB(t,x,params):
-    a = args.growthrates * monod(x[-3]) * beta(x[-1])
+    a = args.growthrates  * beta(x[-1]) # * monod(x[-3])
     if x[-3] == 0:
         a = np.zeros(len(args.growthrates))
     return np.concatenate([ a*x[:-3],                                                      # growth of strains
