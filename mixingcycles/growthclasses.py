@@ -781,7 +781,4 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
     
         
         
-        
-        
-        
 
