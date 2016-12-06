@@ -14,7 +14,9 @@ def deathrate(abconc):
 
 
 def dyn(t,xx,parameter):
-    gr = params['growthrate'] if x[2] > 0 else 0
+    gr = params['growthrate']
+    if xx[2] < 1e-200:
+        gr = 0
     return np.array([   gr * ( 1 - deathrate(xx[4]))* xx[0],    # 0: alive cells
                         gr * deathrate(xx[4]) * xx[0],          # 1: dead cells
                         -gr * xx[0]/params['yield'],            # 2: substrate
@@ -60,6 +62,7 @@ d = gc.TimeIntegrator(dynamics = dyn,initialconditions = x,step = args.integrati
 while d.time <= maxtime:
     print "{:.2f} {:11.4e} {:11.4e} {:11.4e} {:11.4e} {:11.4e}".format(d.time,*d.populations)
     d.IntegrationStep(args.outputstep)
+    if d[0] < 1:d[0]=0
 print "{:.2f} {:11.4e} {:11.4e} {:11.4e} {:11.4e} {:11.4e}".format(d.time,*d.populations)
 
 
