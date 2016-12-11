@@ -13,7 +13,9 @@ def rescale(geom,x,y):
 
 
 class Coexistence(object):
-    def __init__(self,filenames1,filenames2,ExtendToGrowthRates = 10,CutAtYield = 10,WashoutThresholdGrowth = .6,step = 1):
+    def __init__(self,filenames1,filenames2,ExtendToGrowthRates = 10,CutAtYield = 10,WashoutThresholdGrowth = .6,step = 1,verbose = False):
+        
+        self.__verbose = verbose
         
         if filenames1 is None:
             raise ValueError
@@ -43,9 +45,9 @@ class Coexistence(object):
             indexCenter1,indexCenter2 = self.getIndexCenter(key)
             direction1 = 1
             direction2 = 1
-            if self.__invasioncurves[0][key][indexCenter1 + step,0] < 1:
+            if self.__invasioncurves[0][key][0,0] < 1:
                 direction1 = -1
-            if self.__invasioncurves[1][key][indexCenter2 + step,0] < 1:
+            if self.__invasioncurves[1][key][0,0] < 1:
                 direction2 = -1
             
             # which is the upper curve?
@@ -59,10 +61,10 @@ class Coexistence(object):
             # we know which is the upper curve and have all the raw data
             # construct the polygon out of that
             
-            y1 = self.__invasioncurves[upper][key][::direction1,1]
-            a1 = self.__invasioncurves[upper][key][::direction1,0]
-            y2 = self.__invasioncurves[1-upper][key][::-direction2,1]
-            a2 = self.__invasioncurves[1-upper][key][::-direction2,0]
+            a1 = self.__invasioncurves[upper][key][::-direction1,0]
+            y1 = self.__invasioncurves[upper][key][::-direction1,1]
+            a2 = self.__invasioncurves[1-upper][key][::direction2,0]
+            y2 = self.__invasioncurves[1-upper][key][::direction2,1]
             
             a1 = a1[y1 <= CutAtYield]
             y1 = y1[y1 <= CutAtYield]
@@ -74,7 +76,8 @@ class Coexistence(object):
             a = np.concatenate([a1,np.ones(2)*ExtendToGrowthRates,a2,np.ones(2)*a1[0]])
             y = np.concatenate([y1,np.array([y1[-1],y2[0]]),y2,np.array([y2[-1],y1[0]])])
             
-            
+            if self.__verbose:
+                print "load '{:s}', directions ({:d};{:d}) upper ({:d})".format(key,direction1,direction2,upper)
             self.__coordinates[key] = np.transpose(np.array([a,y]))
             self.__polygons[key] = sg.Polygon(self.__coordinates[key])
             self.__keys.append(float(key))
@@ -110,7 +113,7 @@ class Coexistence(object):
     def __str__(self):
         ret = ""
         for key in self.__polygons:
-            ret += key + " " + str(self.__polygons[key])
+            ret += key + " " + str(self.__polygons[key]) + "\n"
         return ret
 
 
@@ -124,10 +127,15 @@ parser.add_argument("-s","--step",type=int,default=1)
 args = parser.parse_args()
 
 
-data = Coexistence(args.infiles_strain1,args.infiles_strain2,ExtendToGrowthRates = args.ExtendToGrowthRates, WashoutThresholdGrowth = args.WashoutThresholdGrowth, CutAtYield = args.CutAtYield)
+data = Coexistence(args.infiles_strain1,args.infiles_strain2,ExtendToGrowthRates = args.ExtendToGrowthRates, WashoutThresholdGrowth = args.WashoutThresholdGrowth, CutAtYield = args.CutAtYield,verbose = True)
+
+ax = plt.subplot(111)
+ax.set_xscale("log", nonposx='clip')
+ax.set_yscale("log", nonposy='clip')
+
 
 for key in data.keys():
-    plt.plot(data.getCoordinates(key)[:,0],data.getCoordinates(key)[:,1],linewidth=1)
+    ax.plot(data.getCoordinates(key)[:,0],data.getCoordinates(key)[:,1],linewidth=1)
 plt.show()
 
 
