@@ -12,7 +12,7 @@ parser.add_argument("-y","--minyieldratio",default=.4,type=float)
 parser.add_argument("-Y","--maxyieldratio",default=4,type=float)
 parser.add_argument("-D","--dilution",default=2e-4,type=float)
 parser.add_argument("-d","--stepyield",default=.01,type=float)
-parser.add_argument("-m","--maxM",default=100,type=float)
+parser.add_argument("-m","--maxM",default=100,type=int)
 parser.add_argument("-L","--logSteps",action="store_true",default=False)
 parser.add_argument("-S","--substrateconcentration",default=1e4,type=float)
 parser.add_argument("-T","--mixingtime",default=1000,type=float)
@@ -26,10 +26,10 @@ params = { "growthrates"            : np.array([1.,args.growthrateratio]),
            "mixingtime"             : args.mixingtime}
 
 if args.logSteps:
-    ylistexp  = np.arange(args.minyieldratio,args.maxyieldratio,args.stepyield)
+    ylistexp  = np.arange(args.minyieldratio,args.maxyieldratio+args.stepyield,args.stepyield)
     ylist     = np.power(10,ylistexp)
 else:
-    ylist     = np.arange(args.minyieldratio,args.maxyieldratio,args.stepyield)
+    ylist     = np.arange(args.minyieldratio,args.maxyieldratio+args.stepyield,args.stepyield)
 
 
 for y in ylist:

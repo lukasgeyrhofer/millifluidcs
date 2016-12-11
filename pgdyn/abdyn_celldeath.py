@@ -17,11 +17,11 @@ def dyn(t,xx,parameter):
     gr = params['growthrate']
     if xx[2] < 1e-200:
         gr = 0
-    return np.array([   gr * ( 1 - deathrate(xx[4]))* xx[0],    # 0: alive cells
-                        gr * deathrate(xx[4]) * xx[0],          # 1: dead cells
-                        -gr * xx[0]/params['yield'],            # 2: substrate
-                        params['production'] * xx[0],                             # 3: production public good
-                        -params['degradation'] * xx[3] * xx[4] ])                 # 4: antibiotics
+    return np.array([   gr * ( 1 - deathrate(xx[4]))* xx[0],       # 0: alive cells
+                        gr * deathrate(xx[4]) * xx[0],             # 1: dead cells
+                        -gr * xx[0]/params['yield'],               # 2: substrate
+                        params['production'] * xx[0],              # 3: production public good
+                        -params['degradation'] * xx[3] * xx[4] ])  # 4: antibiotics
                        
 
 parser = argparse.ArgumentParser()
