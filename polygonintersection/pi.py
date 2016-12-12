@@ -9,7 +9,16 @@ import matplotlib.pyplot as plt
 import sys
 
 def rescale(geom,x,y):
-    return sa.affine_transform(geom,[1./x,0,0,1./y,0,0])
+    return sa.affine_transform(geom,[x,0,0,y,0,0])
+
+
+def mima(x):
+    return np.min(x),np.max(x)
+
+
+def plotGraph(axes,polygon,col="#3465a4"):
+    x,y = polygon.exterior.xy
+    axes.plot(x,y,linewidth=2,color=col)
 
 
 class Coexistence(object):
@@ -137,6 +146,21 @@ class Coexistence(object):
         return ret
 
 
+def RandomSamplePoints(polygon,inside = True,count = 1000):
+    samplepoints = list()
+    x0,y0,x1,y1 = polygon.bounds
+    while len(samplepoints) < count:
+        x = np.random.uniform(x0,x1)
+        y = np.random.uniform(y0,y1)
+        p = sg.Point([x,y])
+        if inside:
+            if polygon.contains(p):
+                samplepoints.append(np.array([x,y]))
+        else:
+            samplepoints.append(np.array([x,y]))
+    return samplepoints
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-1","--infiles_strain1",nargs="*")
 parser.add_argument("-2","--infiles_strain2",nargs="*")
@@ -144,24 +168,73 @@ parser.add_argument("-a","--ExtendToGrowthRates",type=float,default=10)
 parser.add_argument("-W","--WashoutThresholdGrowth",type=float,default=.6)
 parser.add_argument("-Y","--CutAtYield",type=float,default=10)
 parser.add_argument("-s","--step",type=int,default=1)
+parser.add_argument("-D","--baseDilutions",type=float,default=2)
+parser.add_argument("-S","--substrate",type=float,default=1e4)
+parser.add_argument("-v","--verbose",action="store_true",default=False)
+parser.add_argument("-R","--resolution",type=int,default=30)
 args = parser.parse_args()
 
 
-data = Coexistence(args.infiles_strain1,args.infiles_strain2,ExtendToGrowthRates = args.ExtendToGrowthRates, WashoutThresholdGrowth = args.WashoutThresholdGrowth, CutAtYield = args.CutAtYield,verbose = True)
+data = Coexistence(args.infiles_strain1,args.infiles_strain2,ExtendToGrowthRates = args.ExtendToGrowthRates, WashoutThresholdGrowth = args.WashoutThresholdGrowth, CutAtYield = args.CutAtYield,verbose = args.verbose)
+
+coexRegion = data.getPolygon(args.baseDilutions/args.substrate)
+baseRegion = data.getPolygon(args.baseDilutions/args.substrate)
+
+centerPoint = sg.Point([1,1])
+
+miA,miY,maA,maY = coexRegion.bounds
+alist = np.exp(np.linspace(np.log(miA),np.log(maA),num=args.resolution))
+ylist = np.exp(np.linspace(np.log(miY),np.log(maY),num=args.resolution))
+
+#for a in alist:
+    #for y in ylist:
+        #curPoint = sg.Point([a,y])
+        #if coexRegion.contains(curPoint):
+            #curRegion = rescale(data.getPolygon(y*args.baseDilutions/args.substrate),a,y)
+            #if curRegion.contains(centerPoint):
+                #print "intersections {} {}".format(a,y)
+                #coexRegion = coexRegion.intersection(curRegion)
+
+fig = plt.figure(1, figsize=(5,5), dpi=90)
+ax = fig.add_subplot(111)
+ax.set_xscale("log")
+ax.set_yscale("log")
+          
+# try random sampling
+haveplotted = False
+samplepoints = RandomSamplePoints(coexRegion,inside = True,count = args.resolution)
+for p in samplepoints:
+    curRegion = rescale(data.getPolygon(p[1]*args.baseDilutions/args.substrate),p[0],p[1])
+    #d = np.sqrt(np.sum((p-1)**2))
+    #if d > .5 and not haveplotted:
+        #print p
+        #plotGraph(ax,curRegion,col="#00ff00")
+        #haveplotted = True
+    
+    if curRegion.contains(centerPoint):
+        try:
+            coexRegion = curRegion.intersection(coexRegion)
+        except:
+            plotGraph(ax,coexRegion,col = "#ff0000")
+            plotGraph(ax,curRegion,col = "#0000ff")
+            plt.show()
+            exit(1)
+        
+        if isinstance(coexRegion,sg.multipolygon.MultiPolygon):
+            print "reduce"
+            for p in coexRegion:
+                if p.contains(centerPoint):
+                    coexRegion = p
 
 
-data.getCoordinates(2e-4)
+a,b = np.transpose(samplepoints)
 
-ax = plt.subplot(111)
-ax.set_xscale("log", nonposx='clip')
-ax.set_yscale("log", nonposy='clip')
-
-
-for key in data.keys():
-    ax.plot(data.getCoordinates(key)[:,0],data.getCoordinates(key)[:,1],linewidth=1,label = key)
-plt.legend()
+ax.plot(a,b,"o")
+if isinstance(coexRegion,sg.Polygon):
+    plotGraph(ax,coexRegion,col = "#ff0000")
+elif isinstance(coexRegion,sg.MultiPolygon):
+    for p in coexRegion:
+        plotGraph(ax,p,col = "#ff0000")
+        
+plotGraph(ax,baseRegion)
 plt.show()
-
-
-
-
