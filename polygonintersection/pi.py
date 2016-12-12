@@ -41,18 +41,18 @@ class Coexistence(object):
         for key in self.__invasioncurves[0]:
             if not self.__invasioncurves[1].has_key(key):
                 raise IndexError
-
+            
             indexCenter1,indexCenter2 = self.getIndexCenter(key)
             direction1 = 1
             direction2 = 1
-            if self.__invasioncurves[0][key][0,0] < 1:
+            if self.__invasioncurves[0][key][indexCenter1 + step,0] < 1 and self.__invasioncurves[0][key][indexCenter1 + step,1] > 1:
                 direction1 = -1
-            if self.__invasioncurves[1][key][0,0] < 1:
+            if self.__invasioncurves[1][key][indexCenter2 + step,0] < 1 and self.__invasioncurves[1][key][indexCenter2 + step,1] > 1:
                 direction2 = -1
             
             # which is the upper curve?
-            slope1 = (self.__invasioncurves[0][key][indexCenter1 + step * direction1,0] - 1) / (self.__invasioncurves[0][key][indexCenter1 + step * direction1,1] - 1)
-            slope2 = (self.__invasioncurves[1][key][indexCenter2 + step * direction2,0] - 1) / (self.__invasioncurves[1][key][indexCenter2 + step * direction2,1] - 1)
+            slope1 = (self.__invasioncurves[0][key][indexCenter1 + step * direction1,1] - self.__invasioncurves[0][key][indexCenter1,1]) / (self.__invasioncurves[0][key][indexCenter1 + step * direction1,0] - self.__invasioncurves[0][key][indexCenter1,0])
+            slope2 = (self.__invasioncurves[1][key][indexCenter2 + step * direction2,1] - self.__invasioncurves[1][key][indexCenter2,1]) / (self.__invasioncurves[1][key][indexCenter2 + step * direction2,0] - self.__invasioncurves[1][key][indexCenter2,0])
             upper = 0
             if slope1 < slope2:
                 upper = 1
@@ -71,10 +71,11 @@ class Coexistence(object):
             a2 = a2[y2 <= CutAtYield]
             y2 = y2[y2 <= CutAtYield]
             
-            a1[a1<=WashoutThresholdGrowth] = WashoutThresholdGrowth
+            a1[a1 <= WashoutThresholdGrowth] = WashoutThresholdGrowth
+            a2[a2 <= WashoutThresholdGrowth] = WashoutThresholdGrowth
             
-            a = np.concatenate([a1,np.ones(2)*ExtendToGrowthRates,a2,np.ones(2)*a1[0]])
-            y = np.concatenate([y1,np.array([y1[-1],y2[0]]),y2,np.array([y2[-1],y1[0]])])
+            a = np.concatenate([a1,np.ones(2)*ExtendToGrowthRates,a2,np.array([a2[-1],a1[0]])])
+            y = np.concatenate([y1,np.array([y1[-1],y2[0]]),y2,np.ones(2)*y1[0]])
             
             if self.__verbose:
                 print "load '{:s}', directions ({:d};{:d}) upper ({:d})".format(key,direction1,direction2,upper)
@@ -86,8 +87,10 @@ class Coexistence(object):
         return filename.split("_")[1]
 
     def getIndexCenter(self,key):
-        i1 = ((self.__invasioncurves[0][key][:,0] - 1)**2).argmin()
-        i2 = ((self.__invasioncurves[1][key][:,0] - 1)**2).argmin()
+        # curves should go through (a,y) = (1,1)
+        # find index of closest point to that values
+        i1 = ((self.__invasioncurves[0][key][:,0] - 1)**2 + (self.__invasioncurves[0][key][:,1] - 1)**2).argmin()
+        i2 = ((self.__invasioncurves[1][key][:,0] - 1)**2 + (self.__invasioncurves[1][key][:,1] - 1)**2).argmin()
         return i1,i2
 
 
@@ -135,7 +138,8 @@ ax.set_yscale("log", nonposy='clip')
 
 
 for key in data.keys():
-    ax.plot(data.getCoordinates(key)[:,0],data.getCoordinates(key)[:,1],linewidth=1)
+    ax.plot(data.getCoordinates(key)[:,0],data.getCoordinates(key)[:,1],linewidth=1,label = key)
+plt.legend()
 plt.show()
 
 
