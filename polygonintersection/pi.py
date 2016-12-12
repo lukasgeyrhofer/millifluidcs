@@ -17,12 +17,20 @@ class Coexistence(object):
         
         self.__verbose = verbose
         
-        if filenames1 is None:
+        if (filenames1 is None) or (filenames2 is None):
             raise ValueError
-        
         assert len(filenames1) == len(filenames2)
         
+        # rawdata
         self.__invasioncurves = np.array([dict(),dict()])
+
+        # store processed data
+        self.__polygons    = dict()
+        self.__coordinates = dict()
+        self.__keys        = list()
+
+
+        # load data
         for fn in filenames1:
             try:
                 self.__invasioncurves[0][self.extractYield(fn)] = np.genfromtxt(fn)
@@ -34,10 +42,7 @@ class Coexistence(object):
             except:
                 pass
         
-        self.__polygons    = dict()
-        self.__coordinates = dict()
-        self.__keys        = list()
-        
+        # construct coordinate arrays and polygons
         for key in self.__invasioncurves[0]:
             if not self.__invasioncurves[1].has_key(key):
                 raise IndexError
@@ -82,7 +87,8 @@ class Coexistence(object):
             self.__coordinates[key] = np.transpose(np.array([a,y]))
             self.__polygons[key] = sg.Polygon(self.__coordinates[key])
             self.__keys.append(float(key))
-            
+    
+    # small helper routines
     def extractYield(self,filename):
         return filename.split("_")[1]
 
@@ -93,26 +99,37 @@ class Coexistence(object):
         i2 = ((self.__invasioncurves[1][key][:,0] - 1)**2 + (self.__invasioncurves[1][key][:,1] - 1)**2).argmin()
         return i1,i2
 
-
-
-    def getPolygon(self,key):
-        if self.__polygons.has_key(key):
-            return self.__polygons[key]
-        else:
-            # should return polygon with nearest key
-            return None
-
-    def getCoordinates(self,key):
-        if self.__coordinates.has_key(key):
-            return self.__coordinates[key]
-        else:
-            # should return coordinates with nearest key
-            return None
-
     def keys(self):
         return list(self.__coordinates.keys())
 
 
+    # return processed data,
+    # if key is a number, get polygon with closest value
+    def getPolygon(self,key):
+        if isinstance(key,str):
+            if self.__polygons.has_key(key):
+                return self.__polygons[key]
+            else:
+                raise KeyError
+        elif isinstance(key,(float,np.float,np.float64)):
+            mk = np.array([(float(k) - key)**2 for k in self.keys()])
+            return self.__polygons[self.keys()[mk.argmin()]]
+
+    # same as above, but with np-coordinate arrays
+    def getCoordinates(self,key):
+        if isinstance(key,str):
+            if self.__coordinates.has_key(key):
+                return self.__coordinates[key]
+            else:
+                raise KeyError
+        elif isinstance(key,(float,np.float,np.float64)):
+            mk = np.array([(float(k) - key)**2 for k in self.keys()])
+            return self.__coordinates[self.keys()[mk.argmin()]]
+
+    # python behavior
+    def __int__(self):
+        return len(self.keys())
+    
     def __str__(self):
         ret = ""
         for key in self.__polygons:
@@ -131,6 +148,9 @@ args = parser.parse_args()
 
 
 data = Coexistence(args.infiles_strain1,args.infiles_strain2,ExtendToGrowthRates = args.ExtendToGrowthRates, WashoutThresholdGrowth = args.WashoutThresholdGrowth, CutAtYield = args.CutAtYield,verbose = True)
+
+
+data.getCoordinates(2e-4)
 
 ax = plt.subplot(111)
 ax.set_xscale("log", nonposx='clip')
