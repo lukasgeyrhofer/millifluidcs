@@ -622,10 +622,10 @@ class TimeIntegrator(object):
         if int(key) < len(self.x):
             return self.x[int(key)]
     
-    def __setitem__(self,key,value):
-        if int(key) < len(self.x):
-            self.x = float(value)
-
+    def setPopulation(self,index,value):
+        if int(index) < len(self.x):
+            self.x[int(index)] = float(value)
+    
 
 class GrowthDynamicsPublicGoods(GrowthDynamics):
     def __init__(self,numstrains = None,**kwargs):

@@ -62,7 +62,7 @@ d = gc.TimeIntegrator(dynamics = dyn,initialconditions = x,step = args.integrati
 while d.time <= maxtime:
     print "{:.2f} {:11.4e} {:11.4e} {:11.4e} {:11.4e} {:11.4e}".format(d.time,*d.populations)
     d.IntegrationStep(args.outputstep)
-    if d[0] < 1:d[0]=0
+    if d[0] < 1:d.setPopulation(0,0)
 print "{:.2f} {:11.4e} {:11.4e} {:11.4e} {:11.4e} {:11.4e}".format(d.time,*d.populations)
 
 
