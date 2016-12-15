@@ -9,7 +9,7 @@ import growthclasses as gc
 
 
 def yieldfactor(pgconc):
-    return params['yield'] + params['changeyield']/(1 + np.exp(-(pgconc - params['yieldhalfeffect'])/params['yieldspread'])
+    return params['yield'] + params['changeyield']/(1 + np.exp(-(pgconc - params['yieldhalfeffect'])/params['yieldspread']))
 
 
 def dyn(t,xx,parameter):
@@ -45,6 +45,7 @@ params = {  'growthrate'        : args.growthrates[0],
             'yield'             : args.yieldfactors[0],
             'yieldhalfeffect'   : args.yieldhalfeffect,
             'yieldspread'       : args.yieldspread,
+            'changeyield'       : args.deltaY,
             'production'        : args.production}
 
 maxtime = args.mixingtime
