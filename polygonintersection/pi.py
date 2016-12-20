@@ -7,18 +7,31 @@ import shapely.geometry as sg
 import shapely.affinity as sa
 import matplotlib.pyplot as plt
 import sys
+import os.path as op
+
 
 def rescale(geom,x,y):
     return sa.affine_transform(geom,[x,0,0,y,0,0])
 
-
-def mima(x):
-    return np.min(x),np.max(x)
-
-
 def plotGraph(axes,polygon,col="#3465a4"):
-    x,y = polygon.exterior.xy
-    axes.plot(x,y,linewidth=2,color=col)
+    if isinstance(polygon,sg.Polygon):
+        x,y = polygon.exterior.xy
+        axes.plot(x,y,linewidth=2,color=col)
+    elif isinstance(polygon,sg.MultiPolygon):
+        for p in polygon:
+            x,y = p.exterior.xy
+            axes.plot(x,y,linewidth=2,color=col)
+
+def PrintGraph(fp,polygon):
+    if isinstance(polygon,sg.Polygon):
+        xlist,ylist = polygon.exterior.xy
+        for x,y in zip(xlist,ylist):
+            print >>fp,"{:.6e} {:.6e}".format(x,y)
+        print >>fp
+    elif isinstance(polygon,sg.MultiPolygon):
+        for p in polygon:
+            PrintGraph(gp,p)
+
 
 
 class Coexistence(object):
@@ -92,14 +105,14 @@ class Coexistence(object):
             y = np.concatenate([y1,np.array([y1[-1],y2[0]]),y2,np.ones(2)*y1[0]])
             
             if self.__verbose:
-                print "load '{:s}', directions ({:d};{:d}) upper ({:d})".format(key,direction1,direction2,upper)
+                print >>sys.stderr,"# Load file '{:s}', directions ({:d};{:d}) upper ({:d})".format(key,direction1,direction2,upper)
             self.__coordinates[key] = np.transpose(np.array([a,y]))
             self.__polygons[key] = sg.Polygon(self.__coordinates[key])
             self.__keys.append(float(key))
     
     # small helper routines
     def extractYield(self,filename):
-        return filename.split("_")[1]
+        return (op.basename(filename)).split("_")[1]
 
     def getIndexCenter(self,key):
         # curves should go through (a,y) = (1,1)
@@ -171,7 +184,9 @@ parser.add_argument("-s","--step",type=int,default=1)
 parser.add_argument("-D","--baseDilutions",type=float,default=2)
 parser.add_argument("-S","--substrate",type=float,default=1e4)
 parser.add_argument("-v","--verbose",action="store_true",default=False)
-parser.add_argument("-R","--resolution",type=int,default=30)
+parser.add_argument("-P","--StrainParameters",type=float,nargs="*",default=None)
+parser.add_argument("-o","--outfile",default=None)
+parser.add_argument("-G","--showGraph",default=False,action="store_true")
 args = parser.parse_args()
 
 
@@ -183,58 +198,50 @@ baseRegion = data.getPolygon(args.baseDilutions/args.substrate)
 centerPoint = sg.Point([1,1])
 
 miA,miY,maA,maY = coexRegion.bounds
-alist = np.exp(np.linspace(np.log(miA),np.log(maA),num=args.resolution))
-ylist = np.exp(np.linspace(np.log(miY),np.log(maY),num=args.resolution))
 
-#for a in alist:
-    #for y in ylist:
-        #curPoint = sg.Point([a,y])
-        #if coexRegion.contains(curPoint):
-            #curRegion = rescale(data.getPolygon(y*args.baseDilutions/args.substrate),a,y)
-            #if curRegion.contains(centerPoint):
-                #print "intersections {} {}".format(a,y)
-                #coexRegion = coexRegion.intersection(curRegion)
+StrainParameters = []
+i = 0
+while i < len(args.StrainParameters):
+    try:
+        StrainParameters.append(np.array([args.StrainParameters[i],args.StrainParameters[i+1]]))
+    except:
+        pass
+    i += 2
 
-fig = plt.figure(1, figsize=(5,5), dpi=90)
-ax = fig.add_subplot(111)
-ax.set_xscale("log")
-ax.set_yscale("log")
-          
-# try random sampling
-haveplotted = False
-samplepoints = RandomSamplePoints(coexRegion,inside = True,count = args.resolution)
-for p in samplepoints:
-    curRegion = rescale(data.getPolygon(p[1]*args.baseDilutions/args.substrate),p[0],p[1])
-    #d = np.sqrt(np.sum((p-1)**2))
-    #if d > .5 and not haveplotted:
-        #print p
-        #plotGraph(ax,curRegion,col="#00ff00")
-        #haveplotted = True
-    
-    if curRegion.contains(centerPoint):
-        try:
-            coexRegion = curRegion.intersection(coexRegion)
-        except:
-            plotGraph(ax,coexRegion,col = "#ff0000")
-            plotGraph(ax,curRegion,col = "#0000ff")
-            plt.show()
-            exit(1)
-        
-        if isinstance(coexRegion,sg.multipolygon.MultiPolygon):
-            print "reduce"
-            for p in coexRegion:
-                if p.contains(centerPoint):
-                    coexRegion = p
+if args.showGraph:
+    fig = plt.figure(1, figsize=(5,5), dpi=90)
+    ax = fig.add_subplot(111)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+
+    plotGraph(ax,coexRegion,col="#ff0000")
+
+for sp in StrainParameters:
+    if coexRegion.contains(sg.Point([sp[0],sp[1]])):
+        curRegion = rescale(data.getPolygon(sp[1]*args.baseDilutions/args.substrate),sp[0],sp[1])
+        if curRegion.contains(centerPoint):
+            coexRegion = coexRegion.intersection(curRegion)
+            if args.showGraph:
+                plotGraph(ax,curRegion,col="#00ff00")
+        else:
+            if args.verbose:
+                print >> sys.stderr, "# Phasediagram of parameters ( {} : {} ) does not contain reference strain ( 1 : 1 ) in their rescaled coexistence region. Skipping ...".format(*sp)
+    else:
+        if args.verbose:
+            print >> sys.stderr, "# Parameters ( {} : {} ) not contained in coexistence region of reference strain. Cannot compute multistrain phasediagram using these parameters. Skipping ...".format(*sp)
+
+if args.showGraph:
+    plotGraph(ax,coexRegion)
+    plt.show()
+
+if args.outfile is None:
+    fp = sys.stderr
+else:
+    try:
+        fp = open(args.outfile,"w")
+    except:
+        fp = sys.stderr
+PrintGraph(fp,coexRegion)
+fp.close()
 
 
-a,b = np.transpose(samplepoints)
-
-ax.plot(a,b,"o")
-if isinstance(coexRegion,sg.Polygon):
-    plotGraph(ax,coexRegion,col = "#ff0000")
-elif isinstance(coexRegion,sg.MultiPolygon):
-    for p in coexRegion:
-        plotGraph(ax,p,col = "#ff0000")
-        
-plotGraph(ax,baseRegion)
-plt.show()
