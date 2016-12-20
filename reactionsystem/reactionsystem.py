@@ -171,7 +171,7 @@ def main():
     r.add_reaction("PR","PP",1.)
     r.add_reaction("NR","NN",1.)
     r.add_reaction("P","PG",1.)
-    r.add_reaction("GR","0",1.)
+    r.add_reaction("GA","0",1.)
     r.add_reaction("PRA","R",1.)
     r.add_reaction("NRA","R",1.)
     r.print_reactions()
