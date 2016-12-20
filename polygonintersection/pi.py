@@ -201,12 +201,13 @@ def main():
 
     StrainParameters = []
     i = 0
-    while i < len(args.StrainParameters):
-        try:
-            StrainParameters.append(np.array([args.StrainParameters[i],args.StrainParameters[i+1]]))
-        except:
-            pass
-        i += 2
+    if not args.StrainParameters is None:
+        while i < len(args.StrainParameters):
+            try:
+                StrainParameters.append(np.array([args.StrainParameters[i],args.StrainParameters[i+1]]))
+            except:
+                pass
+            i += 2
 
     if args.showGraph:
         fig = plt.figure(1, figsize=(5,5), dpi=90)
@@ -214,15 +215,25 @@ def main():
         ax.set_xscale("log")
         ax.set_yscale("log")
 
-        PlotGraph(ax,coexRegion,col="#ff0000")
+        PlotGraph(ax,coexRegion,col="#cc0000")
 
+    PreviousCoexParameters = []
     for sp in StrainParameters:
         if coexRegion.contains(sg.Point([sp[0],sp[1]])):
             curRegion = rescale(data.getPolygon(sp[1]*args.baseDilutions/args.substrate),sp[0],sp[1])
             if curRegion.contains(centerPoint):
-                coexRegion = coexRegion.intersection(curRegion)
+                containsOthers = True
+                for pp in PreviousCoexParameters:
+                    if not curRegion.contains(pp):
+                        containsOthers = False
+                if containsOthers:
+                    coexRegion = coexRegion.intersection(curRegion)
+                    PreviousCoexParameters.append(sg.Point([sp[0],sp[1]]))
+                else:
+                    if args.verbose:
+                        print >> sys.stderr, "# Phasediagram of parameters ( {} : {} ) does not intersect with all previous strains. Skipping ...".format(*sp) 
                 if args.showGraph:
-                    PlotGraph(ax,curRegion,col="#00ff00")
+                    PlotGraph(ax,curRegion,col="#73d216")
             else:
                 if args.verbose:
                     print >> sys.stderr, "# Phasediagram of parameters ( {} : {} ) does not contain reference strain ( 1 : 1 ) in their rescaled coexistence region. Skipping ...".format(*sp)
@@ -235,12 +246,12 @@ def main():
         plt.show()
 
     if args.outfile is None:
-        fp = sys.stderr
+        fp = sys.stdout
     else:
         try:
             fp = open(args.outfile,"w")
         except:
-            fp = sys.stderr
+            fp = sys.stdout
     PrintGraph(fp,coexRegion)
     fp.close()
 
