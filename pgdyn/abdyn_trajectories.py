@@ -32,7 +32,7 @@ parser = gc.AddGrowthParameters(parser,defaultmixingtime = 24)
 parserAB = parser.add_argument_group(description = "Parameters for interactions with antibiotics")
 parserAB.add_argument("-k","--kappa",type=float,default=1)
 parserAB.add_argument("-l","--logkill",type=float,default=2)
-parserAB.add_argument("-A","--ABconc",type=float,default=.5)
+parserAB.add_argument("-B","--ABconc",type=float,default=.5)
 parserAB.add_argument("-P","--PGproduction",nargs="*",default=[1,0])
 parserAB.add_argument("-R","--PGreductionAB",type=float,default=1)
 parserAB.add_argument("-K","--monodKC",type=float,default=1e2)
@@ -61,7 +61,7 @@ d.SetEndCondition("maxtime",args.mixingtime)
 
 while not d.HasEnded():
     d.IntegrationStep(args.integrationstep * args.outputstep)
-    print d.time,d
+    print "%6.3f"%d.time,d
 
 
 
