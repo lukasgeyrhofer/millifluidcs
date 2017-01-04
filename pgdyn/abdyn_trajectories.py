@@ -20,6 +20,8 @@ def dynAB(t,x,params):
     a = args.growthrates  * beta(x[-1]) # * monod(x[-3])
     if x[-3] == 0:
         a = np.zeros(len(args.growthrates))
+    if np.any(x[:-3] < 1):
+        (x[:-3])[x[:-3] < 1] = 0
     return np.concatenate([ a*x[:-3],                                                      # growth of strains
                             np.array( [ -np.sum(a/args.yieldfactors*x[:-3]),               # decay of nutrients
                                         np.sum(args.PGproduction*x[:-3]),      # production of public good
