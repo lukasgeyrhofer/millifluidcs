@@ -61,6 +61,7 @@ d = gc.TimeIntegrator(  dynamics = dynAB ,
 #d.SetEndCondition("reachzero",numstrains)
 d.SetEndCondition("maxtime",args.mixingtime)
 
+print "%6.3f"%d.time,d
 while not d.HasEnded():
     d.IntegrationStep(args.integrationstep * args.outputstep)
     print "%6.3f"%d.time,d
