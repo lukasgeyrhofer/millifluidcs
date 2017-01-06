@@ -49,5 +49,5 @@ for x in outpoints:
         else:
             gx = gm1[x,y]
             gy = gm2[x,y]
-        print "{} {} {} {}".format(x,y,gx,gy)
-    print
+        print >> fp,"{} {} {} {}".format(x,y,gx,gy)
+    print >> fp
