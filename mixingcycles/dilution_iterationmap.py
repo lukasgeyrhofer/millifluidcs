@@ -51,3 +51,6 @@ for x in outpoints:
             gy = gm2[x,y]
         print >> fp,"{} {} {} {}".format(x,y,gx,gy)
     print >> fp
+
+if not args.outfile is None:
+    fp.close()
