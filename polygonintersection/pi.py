@@ -231,15 +231,21 @@ def main():
                     PreviousCoexParameters.append(sg.Point([sp[0],sp[1]]))
                 else:
                     if args.verbose:
-                        print >> sys.stderr, "# Phasediagram of parameters ( {} : {} ) does not intersect with all previous strains. Skipping ...".format(*sp) 
+                        print >> sys.stderr, "# Phasediagram of parameters ( {} : {} ) does not intersect with all previous strains. Skipping ...".format(*sp)
+                    if args.showGraph:
+                        PlotGraph(ax,curRegion,col = "#d3d7cf")
                 if args.showGraph:
                     PlotGraph(ax,curRegion,col="#73d216")
             else:
                 if args.verbose:
                     print >> sys.stderr, "# Phasediagram of parameters ( {} : {} ) does not contain reference strain ( 1 : 1 ) in their rescaled coexistence region. Skipping ...".format(*sp)
+                if args.showGraph:
+                    PlotGraph(ax,curRegion,col = "#d3d7cf")
         else:
             if args.verbose:
                 print >> sys.stderr, "# Parameters ( {} : {} ) not contained in coexistence region of reference strain. Cannot compute multistrain phasediagram using these parameters. Skipping ...".format(*sp)
+            if args.showGraph:
+                PlotGraph(ax,curRegion,col = "#d3d7cf")
 
     if args.showGraph:
         PlotGraph(ax,coexRegion)
