@@ -10,7 +10,7 @@ import growthclasses as gc
 def secondder(p):
     pp = np.concatenate([p[1:],np.array([2*p[-1] - p[-2]])])
     pm = np.concatenate([np.array([2*p[0] - p[1]]),p[:-1]])
-    return (pp - 2*p + pm)/(dx*dx)
+    return (pp - 2.*p + pm)/(dx*dx)
     
 
 def dyn(t,p,params):
