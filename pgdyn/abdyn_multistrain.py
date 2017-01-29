@@ -52,20 +52,22 @@ parser.add_argument("-i","--influx",type=float,default=1)
 parser.add_argument("-o","--outflux",type=float,default=1)
 parser.add_argument("-p","--production",type=float,default=1)
 
-parser.add_argument("-S","--timestep",type=float,default=1e-3)
+parser.add_argument("-S","--integrationstep",type=float,default=1e-3)
 parser.add_argument("-M","--maxtime",type=float,default=20)
 parser.add_argument("-N","--initialnonproducerbacteria",type=float,default=1e3)
 parser.add_argument("-P","--initialproducerbacteria",type=float,default=1e3)
 parser.add_argument("-B","--initialantibiotics",type=float,default=2)
 parser.add_argument("-I","--initialnutrients",type=float,default=1e5)
+parser.add_argument("-O","--outputstep",type=int,default=100)
 
 args = parser.parse_args()
 
 params = vars(args)
 x = np.array([args.initialproducerbacteria,0,0,args.initialnonproducerbacteria,0,args.initialantibiotics,0,args.initialnutrients])
-d = gc.TimeIntegrator(dynamics = dyn, initialconditions = x,step = args.timestep,params = params)
+d = gc.TimeIntegrator(dynamics = dyn, initialconditions = x,step = args.integrationstep,params = params)
 d.SetEndCondition("maxtime",args.maxtime)
 
 while not d.HasEnded():
-    print d
+    d.IntegrationStep(args.integrationstep * args.outputstep)
+    print d.time,d
     
