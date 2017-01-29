@@ -13,8 +13,6 @@ def dyn(t,x,params):
             -params['eta']*x[1]*x[0]
            ])
 
-
-
 parser = argparse.ArgumentParser()
 parser.add_argument("-b","--antibiotics",default=2,type=float)
 parser.add_argument("-n","--bacteria",default=10,type=float)
