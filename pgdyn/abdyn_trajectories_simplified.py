@@ -22,7 +22,7 @@ def dynAB(t,x,params):
         a = np.zeros(len(args.growthrates))
     if np.any(x[:-2] < 1):
         (x[:-2])[x[:-2] < 1] = 0
-    return np.concatenate([ a*x[:-3],                                          # growth of strains
+    return np.concatenate([ a*x[:-2],                                          # growth of strains
                             np.array( [ -np.sum(a/args.yieldfactors*x[:-2]),   # decay of nutrients
                                         -args.PGreductionAB*args.PGproduction*x[-1]*np.sum(x[:-2]) ])])   # reduction of antibiotics by public good
 
