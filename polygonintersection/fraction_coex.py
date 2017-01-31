@@ -8,7 +8,7 @@ import shapely.geometry as sg
 import polygonclasses as pc
 
 def strainparameters(dist,angle):
-    return dist*np.cos(angle),dist*np.sin(angle)
+    return np.exp(dist*np.cos(angle)),np.exp(dist*np.sin(angle))
 
 def main():
     parser = argparse.ArgumentParser()
@@ -24,8 +24,8 @@ def main():
     parser.add_argument("-v","--verbose",action="store_true",default=False)
 
 
-    parser.add_argument("-d","--dx",type=float,default=.1)
-    parser.add_argument("-M","--maxdist",type=float,default=10)
+    parser.add_argument("-d","--dx",type=float,default=1e-2)
+    parser.add_argument("-M","--maxdist",type=float,default=1.2)
     parser.add_argument("-P","--samplepoints",type=int,default=1000)
 
     args = parser.parse_args()
