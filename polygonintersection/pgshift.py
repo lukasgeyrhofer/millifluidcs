@@ -76,10 +76,12 @@ def main():
                 newRegion = data.getPolygon(args.baseDilutions/args.substrate * sample[1])
                 ProdStrain = sg.Point(ProdStrainParam/sample)
                 if newRegion.contains(ProdStrain):
-                    print "inside",sample
+                    if args.verbose:
+                        print "inside",sample
                     inside = np.concatenate([inside,np.array([sample])])
                 else:
-                    print "outside",sample
+                    if args.verbose:
+                        print "outside",sample
                     outside = np.concatenate([outside,np.array([sample])])
             
             ax.add_patch(patches.Rectangle((1,1),MaxVal[0],MaxVal[1],facecolor='None'))
