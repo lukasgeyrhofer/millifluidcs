@@ -52,6 +52,10 @@ class Coexistence(object):
         self.__keys        = list()
 
 
+        self.ExtendToGrowthRates = ExtendToGrowthRates
+        self.WashoutThresholdGrowth = WashoutThresholdGrowth
+        self.CutAtYield = CutAtYield
+
         # load data
         for fn in filenames1:
             try:
@@ -69,45 +73,11 @@ class Coexistence(object):
             if not self.__invasioncurves[1].has_key(key):
                 raise IndexError
             
-            indexCenter1,indexCenter2 = self.getIndexCenter(key)
-            direction1 = 1
-            direction2 = 1
-            if self.__invasioncurves[0][key][indexCenter1 + step,0] < 1 and self.__invasioncurves[0][key][indexCenter1 + step,1] > 1:
-                direction1 = -1
-            if self.__invasioncurves[1][key][indexCenter2 + step,0] < 1 and self.__invasioncurves[1][key][indexCenter2 + step,1] > 1:
-                direction2 = -1
-            
-            # which is the upper curve?
-            slope1 = (self.__invasioncurves[0][key][indexCenter1 + step * direction1,1] - self.__invasioncurves[0][key][indexCenter1,1]) / (self.__invasioncurves[0][key][indexCenter1 + step * direction1,0] - self.__invasioncurves[0][key][indexCenter1,0])
-            slope2 = (self.__invasioncurves[1][key][indexCenter2 + step * direction2,1] - self.__invasioncurves[1][key][indexCenter2,1]) / (self.__invasioncurves[1][key][indexCenter2 + step * direction2,0] - self.__invasioncurves[1][key][indexCenter2,0])
-            upper = 0
-            if slope1 < slope2:
-                upper = 1
-            
-            
-            # we know which is the upper curve and have all the raw data
-            # construct the polygon out of that
-            
-            a1 = self.__invasioncurves[upper][key][::-direction1,0]
-            y1 = self.__invasioncurves[upper][key][::-direction1,1]
-            a2 = self.__invasioncurves[1-upper][key][::direction2,0]
-            y2 = self.__invasioncurves[1-upper][key][::direction2,1]
-            
-            a1 = a1[y1 <= CutAtYield]
-            y1 = y1[y1 <= CutAtYield]
-            a2 = a2[y2 <= CutAtYield]
-            y2 = y2[y2 <= CutAtYield]
-            
-            a1[a1 <= WashoutThresholdGrowth] = WashoutThresholdGrowth
-            a2[a2 <= WashoutThresholdGrowth] = WashoutThresholdGrowth
-            
-            a = np.concatenate([a1,np.ones(2)*ExtendToGrowthRates,a2,np.array([a2[-1],a1[0]])])
-            y = np.concatenate([y1,np.array([y1[-1],y2[0]]),y2,np.ones(2)*y1[0]])
             
             if self.__verbose:
                 print >>sys.stderr,"# Load file '{:s}', directions ({:d};{:d}) upper ({:d})".format(key,direction1,direction2,upper)
-            self.__coordinates[key] = np.transpose(np.array([a,y]))
-            self.__polygons[key] = sg.Polygon(self.__coordinates[key])
+            #self.__coordinates[key] = np.transpose(np.array([a,y]))
+            self.__polygons[key] = self.makePolygon(self.__invasioncurves[0][key],self.__invasioncurves[1][key])
             self.__keys.append(float(key))
     
     # small helper routines
@@ -124,6 +94,49 @@ class Coexistence(object):
     def keys(self):
         return list(self.__coordinates.keys())
 
+
+    def makePolygon(self,contour1,contour2):
+        indexCenter1 = ((contour1[:,0] - 1)**2 + (contour1[:,1] - 1)**2).argmin()
+        indexCenter2 = ((contour2[:,0] - 1)**2 + (contour2[:,1] - 1)**2).argmin()
+
+        direction1 = 1
+        direction2 = 1
+        if contour1[indexCenter1 + step,0] < 1 and contour1[indexCenter1 + step,1] > 1:
+            direction1 = -1
+        if contour2[indexCenter2 + step,0] < 1 and contour2[indexCenter2 + step,1] > 1:
+            direction2 = -1
+        
+        # which is the upper curve?
+        slope1 = (contour1[indexCenter1 + step * direction1,1] - contour1[indexCenter1,1]) / (contour1[indexCenter1 + step * direction1,0] - contour1[indexCenter1,0])
+        slope2 = (contour2[indexCenter2 + step * direction2,1] - contour2[indexCenter2,1]) / (contour2[indexCenter2 + step * direction2,0] - contour2[indexCenter2,0])
+        
+        if slope1 < slope2:
+            a1 = contour2[::-direction1,0]
+            y1 = contour2[::-direction1,1]
+            a2 = contour1[::direction2,0]
+            y2 = contour1[::direction2,1]
+        else:
+            a1 = contour2[::-direction1,0]
+            y1 = contour2[::-direction1,1]
+            a2 = contour1[::direction2,0]
+            y2 = contour1[::direction2,1]
+        
+        
+        # we know which is the upper curve and have all the raw data
+        # construct the polygon out of that
+        
+        
+        a1 = a1[y1 <= self.CutAtYield]
+        y1 = y1[y1 <= self.CutAtYield]
+        a2 = a2[y2 <= self.CutAtYield]
+        y2 = y2[y2 <= self.CutAtYield]
+        
+        a1[a1 <= self.WashoutThresholdGrowth] = self.WashoutThresholdGrowth
+        a2[a2 <= self.WashoutThresholdGrowth] = self.WashoutThresholdGrowth
+        
+        a = np.concatenate([a1,np.ones(2)*self.ExtendToGrowthRates,a2,np.array([a2[-1],a1[0]])])
+        y = np.concatenate([y1,np.array([y1[-1],y2[0]]),y2,np.ones(2)*y1[0]])
+        return sg.Polygon(np.transpose(np.array([a,y])))
 
     # return processed data,
     # if key is a number, get polygon with closest value
