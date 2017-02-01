@@ -31,6 +31,7 @@ def main():
     parser.add_argument("-D","--baseDilutions",type=float,default=2)
     parser.add_argument("-S","--substrate",type=float,default=1e4)
     parser.add_argument("-v","--verbose",action="store_true",default=False)
+    
     parser.add_argument("-P","--StrainParameters",type=float,nargs="*",default=None)
     parser.add_argument("-o","--outfile",default=None)
     parser.add_argument("-G","--showGraph",default=False,action="store_true")
