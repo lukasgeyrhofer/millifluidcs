@@ -41,7 +41,7 @@ class Coexistence(object):
         
         if (filenames1 is None) or (filenames2 is None):
             raise ValueError,"filenames empty!"
-        assert len(filenames1) == len(filenames2)
+        assert len(filenames1) == len(filenames2), "each polygon needs two countour files"
         
         # rawdata
         self.__invasioncurves = np.array([dict(),dict()])
@@ -73,10 +73,10 @@ class Coexistence(object):
                 raise IndexError,"Countour keys do not match"
             
             
-            if self.__verbose:
-                print >>sys.stderr,"# Loaded file '{:s}', directions ({:d};{:d}) upper ({:d})".format(key,direction1,direction2,upper)
             self.__polygons[key] = self.makePolygon(self.__invasioncurves[0][key],self.__invasioncurves[1][key])
             self.__keys.append(key)
+            if self.__verbose:
+                print >>sys.stderr,"# Generated polygon with key '{:s}'".format(key)
         
         self.__keyssorted = np.sort(np.array([float(k) for k in self.__keys]))
     
@@ -169,7 +169,7 @@ class Coexistence(object):
                 if key < float(self.keys()[closestIndex]):
                     # is the closest key the smallest?
                     if closestIndex == (np.array([float(k) for k in self.keys()])).argmin():
-                        return ValueError,"Cannot interpolate outside data range"
+                        raise ValueError,"Cannot interpolate outside data range"
                     
                     
                     
