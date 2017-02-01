@@ -70,15 +70,15 @@ class Coexistence(object):
         # construct coordinate arrays and polygons
         for key in self.__invasioncurves[0]:
             if not self.__invasioncurves[1].has_key(key):
-                raise IndexError
+                raise IndexError,"Countour keys do not match"
             
             
             if self.__verbose:
-                print >>sys.stderr,"# Load file '{:s}', directions ({:d};{:d}) upper ({:d})".format(key,direction1,direction2,upper)
+                print >>sys.stderr,"# Loaded file '{:s}', directions ({:d};{:d}) upper ({:d})".format(key,direction1,direction2,upper)
             self.__polygons[key] = self.makePolygon(self.__invasioncurves[0][key],self.__invasioncurves[1][key])
-            self.__keys.append(float(key))
+            self.__keys.append(key)
         
-        self.__keys = np.sort(self.__keys)
+        self.__keyssorted = np.sort(np.array([float(k) for k in self.__keys]))
     
     # small helper routines
     def extractYield(self,filename):
@@ -93,6 +93,7 @@ class Coexistence(object):
 
     def keys(self):
         return self.__keys
+
 
 
     def makePolygon(self,contour1,contour2):
@@ -138,6 +139,19 @@ class Coexistence(object):
         y = np.concatenate([y1,np.array([y1[-1],y2[0]]),y2,np.ones(2)*y1[0]])
         return sg.Polygon(np.transpose(np.array([a,y])))
 
+
+    def dist(Point1,ListPoints2):
+        # log distance in fitness space
+        return np.array([np.linalg.norm(np.log(Point1)-np.log(Point2)) for Point2 in ListPoints2])
+
+    def interpolateContour(self,contour1,contour2,mixing = .5):
+        # start with first entry
+        newcontour = np.array([mixing * contour1[0] + (1-mixing) * contour2[self.dist(contour1[0],contour2).argmin()]])
+        # then iterate over others
+        for Point1 in contour1[1:]:
+            newcontour = np.concatenate([newcontour,np.array([mixing * Point1 + (1-mixing) * contour2[self.dist(Point1,contour2).argmin()]])])
+        return newcontour
+
     # return processed data,
     # if key is a number, get polygon with closest value
     def getPolygon(self,key):
@@ -147,9 +161,21 @@ class Coexistence(object):
             else:
                 raise KeyError
         elif isinstance(key,(float,np.float,np.float64)):
-            mk = np.array([(float(k) - key)**2 for k in self.keys()])
-            return self.__polygons[self.keys()[mk.argmin()]]
-
+            # check first before starting expensive calculations
+            if self.__polygons.has_key(str(key)):
+                return self.__polygons[str(key)]
+            else:
+                closestIndex = np.array([(float(k) - key)**2 for k in self.keys()]).argmin()
+                if key < float(self.keys()[closestIndex]):
+                    # is the closest key the smallest?
+                    if closestIndex == (np.array([float(k) for k in self.keys()])).argmin():
+                        return ValueError,"Cannot interpolate outside data range"
+                    
+                    
+                    
+                
+                return self.makePolygon(contour1,contour2)
+            
     # same as above, but with np-coordinate arrays
     def getCoordinates(self,key,multipolygonindex = 0):
         return np.array(sg.mapping(self.getPolygon(key))['coordinates'])
