@@ -48,7 +48,6 @@ class Coexistence(object):
 
         # store processed data
         self.__polygons    = dict()
-        self.__coordinates = dict()
         self.__keys        = list()
 
 
@@ -76,9 +75,10 @@ class Coexistence(object):
             
             if self.__verbose:
                 print >>sys.stderr,"# Load file '{:s}', directions ({:d};{:d}) upper ({:d})".format(key,direction1,direction2,upper)
-            #self.__coordinates[key] = np.transpose(np.array([a,y]))
             self.__polygons[key] = self.makePolygon(self.__invasioncurves[0][key],self.__invasioncurves[1][key])
             self.__keys.append(float(key))
+        
+        self.__keys = np.sort(self.__keys)
     
     # small helper routines
     def extractYield(self,filename):
@@ -92,7 +92,7 @@ class Coexistence(object):
         return i1,i2
 
     def keys(self):
-        return list(self.__coordinates.keys())
+        return self.__keys
 
 
     def makePolygon(self,contour1,contour2):
@@ -151,15 +151,8 @@ class Coexistence(object):
             return self.__polygons[self.keys()[mk.argmin()]]
 
     # same as above, but with np-coordinate arrays
-    def getCoordinates(self,key):
-        if isinstance(key,str):
-            if self.__coordinates.has_key(key):
-                return self.__coordinates[key]
-            else:
-                raise KeyError
-        elif isinstance(key,(float,np.float,np.float64)):
-            mk = np.array([(float(k) - key)**2 for k in self.keys()])
-            return self.__coordinates[self.keys()[mk.argmin()]]
+    def getCoordinates(self,key,multipolygonindex = 0):
+        return np.array(sg.mapping(self.getPolygon(key))['coordinates'])
 
     # python behavior
     def __int__(self):
