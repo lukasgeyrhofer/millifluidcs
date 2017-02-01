@@ -7,7 +7,19 @@ import sys,math
 import shapely.geometry as sg
 import shapely.affinity as sa
 
+import matplotlib.pyplot  as plt
+import matplotlib.patches as patches
+
 import polygonclasses as pc
+
+
+
+def samplepoints(count = 10000,MaxVal = np.array([2,2])):
+    if MaxVal[0] > 1 and MaxVal[1] > 1:
+        return np.array([np.exp(np.random.uniform(0,np.log(MaxVal[0]),size=count)),np.exp(np.random.uniform(0,np.log(MaxVal[1]),size=count))]).transpose()
+    else:
+        return None
+
 
 
 def main():
@@ -23,31 +35,62 @@ def main():
     parser.add_argument("-S","--substrate",type=float,default=1e4)
     parser.add_argument("-v","--verbose",action="store_true",default=False)
 
-    parser.add_argument("-P","--strainparameters",type=float,nargs="*",default=[1.2,0.8])
+    parser.add_argument("-P","--StrainParameters",type=float,nargs="*",default=[1.2,0.8])
+    parser.add_argument("-M","--maxsamples",type=int,default=10000)
     args = parser.parse_args()
     
     data = pc.Coexistence(args.infiles_strain1,args.infiles_strain2,ExtendToGrowthRates = args.ExtendToGrowthRates, WashoutThresholdGrowth = args.WashoutThresholdGrowth, CutAtYield = args.CutAtYield,verbose = args.verbose)
     
-    
     baseRegion = data.getPolygon(args.baseDilutions/args.substrate)
+    minA,minY,maxA,maxY = baseRegion.bounds
     
     StrainParameters = []
     i = 0
     if not args.StrainParameters is None:
         while i < len(args.StrainParameters):
             try:
-                StrainParameters.append(np.array([args.StrainParameters[i],args.StrainParameters[i+1]]))
+                if minA < args.StrainParameters[i] < maxA and minY < args.StrainParameters[i+1] < maxY:
+                    StrainParameters.append(np.array([args.StrainParameters[i],args.StrainParameters[i+1]]))
             except:
                 pass
             i += 2
 
+    fig = plt.figure(1, figsize=(5,5), dpi=90)
+    ax = fig.add_subplot(111)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
 
-    for s in StrainParameters:
-        prodStrain = sg.Point(s)
+
+    pc.PlotGraph(ax,baseRegion)
+
+    for ProdStrainParam in StrainParameters:
+        prodStrain = sg.Point(ProdStrainParam)
+        inside = np.array([ProdStrainParam])
+        outside = np.array([ProdStrainParam])
         if baseRegion.contains(prodStrain):
-            print "yey",s
-
-
+            if ProdStrainParam[0] < 1 and ProdStrainParam[1] > 1:
+                MaxVal = np.array([ProdStrainParam[0]/minA,ProdStrainParam[1]])
+            else:
+                MaxVal = np.array([ProdStrainParam[0],ProdStrainParam[1]/minY])
+            for sample in samplepoints(args.maxsamples,MaxVal):
+                newRegion = data.getPolygon(args.baseDilutions/args.substrate * sample[1])
+                ProdStrain = sg.Point(ProdStrainParam/sample)
+                if newRegion.contains(ProdStrain):
+                    print "inside",sample
+                    inside = np.concatenate([inside,np.array([sample])])
+                else:
+                    print "outside",sample
+                    outside = np.concatenate([outside,np.array([sample])])
+            
+            ax.add_patch(patches.Rectangle((1,1),MaxVal[0],MaxVal[1],facecolor='None'))
+            #print inside
+            #print outside
+            ax.scatter(inside[:,0],inside[:,1],s=3,zorder=2,c='Green')
+            #ax.scatter(outside[:,0],outside[:,1],s=3,zorder=3)
+                         
+                    
+            
+    plt.show()
 
 
 if __name__ == "__main__":
