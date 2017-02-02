@@ -35,7 +35,7 @@ def PrintGraph(fp,polygon):
 
 
 class Coexistence(object):
-    def __init__(self,filenames1,filenames2,ExtendToGrowthRates = 10,CutAtYield = 10,WashoutThresholdGrowth = .6,step = 1,verbose = False):
+    def __init__(self,filenames1,filenames2,ExtendToGrowthRates = 10,CutAtYield = 10,WashoutThresholdGrowth = .6,step = 1, DirectReturnThreshold = 1e-100, verbose = False):
         
         self.__verbose = verbose
         
@@ -47,13 +47,16 @@ class Coexistence(object):
         self.__invasioncurves = np.array([dict(),dict()])
 
         # store processed data
-        self.__polygons    = dict()
+        self.__polygons    = list()
         self.__keys        = list()
+        self.__indices     = dict()
 
 
         self.ExtendToGrowthRates = ExtendToGrowthRates
         self.WashoutThresholdGrowth = WashoutThresholdGrowth
         self.CutAtYield = CutAtYield
+        self.step = step
+        self.DirectReturnThreshold = DirectReturnThreshold
 
         # load data
         for fn in filenames1:
@@ -73,12 +76,16 @@ class Coexistence(object):
                 raise IndexError,"Countour keys do not match"
             
             
-            self.__polygons[key] = self.makePolygon(self.__invasioncurves[0][key],self.__invasioncurves[1][key])
+            self.__polygons.append( self.makePolygon(self.__invasioncurves[0][key],self.__invasioncurves[1][key]) )
             self.__keys.append(key)
+            self.__indices[key] = len(self.__keys)-1
             if self.__verbose:
                 print >>sys.stderr,"# Generated polygon with key '{:s}'".format(key)
         
-        self.__keyssorted = np.sort(np.array([float(k) for k in self.__keys]))
+        self.__keysfloat = np.array([float(k) for k in self.__keys])
+        self.__keysindex = np.transpose(np.array([np.arange(len(self.__keys)),self.__keysfloat,np.log(self.__keysfloat) ] ))
+        
+        #print self.__keysindex
     
     # small helper routines
     def extractYield(self,filename):
@@ -102,14 +109,14 @@ class Coexistence(object):
 
         direction1 = 1
         direction2 = 1
-        if contour1[indexCenter1 + step,0] < 1 and contour1[indexCenter1 + step,1] > 1:
+        if contour1[indexCenter1 + self.step,0] < 1 and contour1[indexCenter1 + self.step,1] > 1:
             direction1 = -1
-        if contour2[indexCenter2 + step,0] < 1 and contour2[indexCenter2 + step,1] > 1:
+        if contour2[indexCenter2 + self.step,0] < 1 and contour2[indexCenter2 + self.step,1] > 1:
             direction2 = -1
         
         # which is the upper curve?
-        slope1 = (contour1[indexCenter1 + step * direction1,1] - contour1[indexCenter1,1]) / (contour1[indexCenter1 + step * direction1,0] - contour1[indexCenter1,0])
-        slope2 = (contour2[indexCenter2 + step * direction2,1] - contour2[indexCenter2,1]) / (contour2[indexCenter2 + step * direction2,0] - contour2[indexCenter2,0])
+        slope1 = (contour1[indexCenter1 + self.step * direction1,1] - contour1[indexCenter1,1]) / (contour1[indexCenter1 + self.step * direction1,0] - contour1[indexCenter1,0])
+        slope2 = (contour2[indexCenter2 + self.step * direction2,1] - contour2[indexCenter2,1]) / (contour2[indexCenter2 + self.step * direction2,0] - contour2[indexCenter2,0])
         
         if slope1 < slope2:
             a1 = contour2[::-direction1,0]
@@ -122,10 +129,8 @@ class Coexistence(object):
             a2 = contour1[::direction2,0]
             y2 = contour1[::direction2,1]
         
-        
         # we know which is the upper curve and have all the raw data
         # construct the polygon out of that
-        
         
         a1 = a1[y1 <= self.CutAtYield]
         y1 = y1[y1 <= self.CutAtYield]
@@ -140,7 +145,7 @@ class Coexistence(object):
         return sg.Polygon(np.transpose(np.array([a,y])))
 
 
-    def dist(Point1,ListPoints2):
+    def dist(self,Point1,ListPoints2):
         # log distance in fitness space
         return np.array([np.linalg.norm(np.log(Point1)-np.log(Point2)) for Point2 in ListPoints2])
 
@@ -156,23 +161,27 @@ class Coexistence(object):
     # if key is a number, get polygon with closest value
     def getPolygon(self,key):
         if isinstance(key,str):
-            if self.__polygons.has_key(key):
-                return self.__polygons[key]
+            if key in self.__keys:
+                return self.__polygons[np.where(self.__keys == key)]
             else:
                 raise KeyError
         elif isinstance(key,(float,np.float,np.float64)):
             # check first before starting expensive calculations
-            if self.__polygons.has_key(str(key)):
-                return self.__polygons[str(key)]
+                
+            indexdata = np.transpose(np.array([self.__keysindex[:,0],(self.__keysindex[:,1] - key)**2]) )
+            indexdata = indexdata[indexdata[:,1].argsort()]
+            
+            closestIndex = int(indexdata[0,0])
+            secondIndex  = int(indexdata[1,0])
+            
+            if indexdata[0,1] < self.DirectReturnThreshold:
+                return self.__polygons[closestIndex]
             else:
-                closestIndex = np.array([(float(k) - key)**2 for k in self.keys()]).argmin()
-                if key < float(self.keys()[closestIndex]):
-                    # is the closest key the smallest?
-                    if closestIndex == (np.array([float(k) for k in self.keys()])).argmin():
-                        raise ValueError,"Cannot interpolate outside data range"
-                    
-                    
-                    
+                #print closestIndex,secondIndex
+            
+                mixing = (np.log(key) - self.__keysindex[closestIndex,2]) / (self.__keysindex[secondIndex,2] - self.__keysindex[closestIndex,2])
+                contour1 = self.interpolateContour(self.__invasioncurves[0][self.__keys[closestIndex]],self.__invasioncurves[0][self.__keys[secondIndex]],mixing)
+                contour2 = self.interpolateContour(self.__invasioncurves[1][self.__keys[closestIndex]],self.__invasioncurves[1][self.__keys[secondIndex]],mixing)
                 
                 return self.makePolygon(contour1,contour2)
             

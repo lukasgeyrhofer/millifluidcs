@@ -35,7 +35,7 @@ def main():
     parser.add_argument("-S","--substrate",type=float,default=1e4)
     parser.add_argument("-v","--verbose",action="store_true",default=False)
 
-    parser.add_argument("-P","--StrainParameters",type=float,nargs="*",default=[1.2,0.8])
+    parser.add_argument("-P","--StrainParameters",type=float,nargs="*",default=[1.2,0.65])
     parser.add_argument("-M","--maxsamples",type=int,default=10000)
     args = parser.parse_args()
     
@@ -73,7 +73,9 @@ def main():
             else:
                 MaxVal = np.array([ProdStrainParam[0],ProdStrainParam[1]/minY])
             for sample in samplepoints(args.maxsamples,MaxVal):
+                
                 newRegion = data.getPolygon(args.baseDilutions/args.substrate * sample[1])
+                
                 ProdStrain = sg.Point(ProdStrainParam/sample)
                 if newRegion.contains(ProdStrain):
                     if args.verbose:
@@ -84,11 +86,8 @@ def main():
                         print "outside",sample
                     outside = np.concatenate([outside,np.array([sample])])
             
-            ax.add_patch(patches.Rectangle((1,1),MaxVal[0],MaxVal[1],facecolor='None'))
-            #print inside
-            #print outside
+            ax.add_patch(patches.Rectangle((1,1),MaxVal[0]-1,MaxVal[1]-1,facecolor='None'))
             ax.scatter(inside[:,0],inside[:,1],s=3,zorder=2,c='Green')
-            #ax.scatter(outside[:,0],outside[:,1],s=3,zorder=3)
                          
                     
             
