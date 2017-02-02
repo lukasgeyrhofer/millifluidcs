@@ -179,7 +179,7 @@ class Coexistence(object):
             else:
                 #print closestIndex,secondIndex
             
-                mixing = (np.log(key) - self.__keysindex[closestIndex,2]) / (self.__keysindex[secondIndex,2] - self.__keysindex[closestIndex,2])
+                mixing = (np.log(key) - self.__keysindex[secondIndex,2]) / (self.__keysindex[closestIndex,2] - self.__keysindex[secondIndex,2])
                 contour1 = self.interpolateContour(self.__invasioncurves[0][self.__keys[closestIndex]],self.__invasioncurves[0][self.__keys[secondIndex]],mixing)
                 contour2 = self.interpolateContour(self.__invasioncurves[1][self.__keys[closestIndex]],self.__invasioncurves[1][self.__keys[secondIndex]],mixing)
                 
