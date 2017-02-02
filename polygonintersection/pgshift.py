@@ -91,9 +91,9 @@ def main():
                          
                     
             
+    print len(inside),len(outside),args.maxsamples
     plt.show()
     
-    print len(inside),len(outside),args.maxsamples
 
 
 if __name__ == "__main__":
