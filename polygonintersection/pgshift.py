@@ -14,12 +14,12 @@ import polygonclasses as pc
 
 
 
-def samplepoints(count = 10000,MaxVal = np.array([2,2]),allquadrants = False):
+def samplepoints(count = 10000,MaxVal = np.array([2,2]),allquadrants = False, extension = 1.):
     if MaxVal[0] > 1 and MaxVal[1] > 1:
         if allquadrants:
-            return np.array([np.exp(np.random.uniform(0,np.log(MaxVal[0]),size=count)),np.exp(np.random.uniform(0,np.log(MaxVal[1]),size=count))]).transpose()
+            return np.array([np.exp(np.random.uniform(np.log(1/(MaxVal[0]*extenstion)),np.log(MaxVal[0]*extension),size=count)),np.exp(np.random.uniform(np.log(1/(MaxVal[1]*extenstion)),np.log(MaxVal[1]*extension),size=count))]).transpose()
         else:
-            return np.array([np.exp(np.random.uniform(0,np.log(MaxVal[0]),size=count)),np.exp(np.random.uniform(0,np.log(MaxVal[1]),size=count))]).transpose()
+            return np.array([np.exp(np.random.uniform(0,np.log(MaxVal[0]*extension),size=count)),np.exp(np.random.uniform(0,np.log(MaxVal[1]*extension),size=count))]).transpose()
     else:
         return None
 
@@ -41,6 +41,7 @@ def main():
     parser.add_argument("-P","--StrainParameters",type=float,nargs="*",default=[1.2,0.65])
     parser.add_argument("-M","--maxsamples",type=int,default=10000)
     parser.add_argument("-Q","--allquadrants",default=False,action="store_true")
+    parser.add_argument("-E","--extension",default=1,type=float)
     args = parser.parse_args()
     
     data = pc.Coexistence(args.infiles_strain1,args.infiles_strain2,ExtendToGrowthRates = args.ExtendToGrowthRates, WashoutThresholdGrowth = args.WashoutThresholdGrowth, CutAtYield = args.CutAtYield,verbose = args.verbose)
@@ -76,7 +77,7 @@ def main():
                 MaxVal = np.array([ProdStrainParam[0]/minA,ProdStrainParam[1]])
             else:
                 MaxVal = np.array([ProdStrainParam[0],ProdStrainParam[1]/minY])
-            for sample in samplepoints(args.maxsamples,MaxVal,args.allquadrants):
+            for sample in samplepoints(args.maxsamples,MaxVal,args.allquadrants,args.extension):
                 
                 newRegion = data.getPolygon(args.baseDilutions/args.substrate * sample[1])
                 
@@ -92,9 +93,9 @@ def main():
             
             
             if args.allquadrants:
-                ax.add_patch(patches.Rectangle(1/MaxVal,MaxVal[0]-1/MaxVal[0],MaxVal[1]-1/MaxVal[1],facecolor='None'))
+                ax.add_patch(patches.Rectangle(1/(MaxVal*args.extension),MaxVal[0]*args.extension-1/(MaxVal[0]*args.extension),MaxVal[1]*args.extension-1/(MaxVal[1]*args.extension),facecolor='None'))
             else:
-                ax.add_patch(patches.Rectangle((1,1),MaxVal[0]-1,MaxVal[1]-1,facecolor='None'))
+                ax.add_patch(patches.Rectangle((1,1),MaxVal[0]*args.extension-1,MaxVal[1]*args.extension-1,facecolor='None'))
             ax.scatter(inside[:,0],inside[:,1],s=3,zorder=2,c='Green')
                          
                     
