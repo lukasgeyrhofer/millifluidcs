@@ -17,7 +17,7 @@ import polygonclasses as pc
 def samplepoints(count = 10000,MaxVal = np.array([2,2]),allquadrants = False, extension = 1.):
     if MaxVal[0] > 1 and MaxVal[1] > 1:
         if allquadrants:
-            return np.array([np.exp(np.random.uniform(np.log(1/(MaxVal[0]*extenstion)),np.log(MaxVal[0]*extension),size=count)),np.exp(np.random.uniform(np.log(1/(MaxVal[1]*extenstion)),np.log(MaxVal[1]*extension),size=count))]).transpose()
+            return np.array([np.exp(np.random.uniform(np.log(1/(MaxVal[0]*extension)),np.log(MaxVal[0]*extension),size=count)),np.exp(np.random.uniform(np.log(1/(MaxVal[1]*extension)),np.log(MaxVal[1]*extension),size=count))]).transpose()
         else:
             return np.array([np.exp(np.random.uniform(0,np.log(MaxVal[0]*extension),size=count)),np.exp(np.random.uniform(0,np.log(MaxVal[1]*extension),size=count))]).transpose()
     else:
@@ -96,7 +96,9 @@ def main():
                 ax.add_patch(patches.Rectangle(1/(MaxVal*args.extension),MaxVal[0]*args.extension-1/(MaxVal[0]*args.extension),MaxVal[1]*args.extension-1/(MaxVal[1]*args.extension),facecolor='None'))
             else:
                 ax.add_patch(patches.Rectangle((1,1),MaxVal[0]*args.extension-1,MaxVal[1]*args.extension-1,facecolor='None'))
-            ax.scatter(inside[:,0],inside[:,1],s=3,zorder=2,c='Green')
+            ax.scatter(inside[:,0],inside[:,1],s=3,zorder=2,c='g')
+            
+            ax.scatter(np.array([ProdStrainParam[0]]),np.array([ProdStrainParam[1]]),s=5,zorder=1,c='r')
                          
                     
             
