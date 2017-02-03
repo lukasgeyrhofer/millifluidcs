@@ -14,9 +14,12 @@ import polygonclasses as pc
 
 
 
-def samplepoints(count = 10000,MaxVal = np.array([2,2])):
+def samplepoints(count = 10000,MaxVal = np.array([2,2]),allquadrants = False):
     if MaxVal[0] > 1 and MaxVal[1] > 1:
-        return np.array([np.exp(np.random.uniform(0,np.log(MaxVal[0]),size=count)),np.exp(np.random.uniform(0,np.log(MaxVal[1]),size=count))]).transpose()
+        if allquadrants:
+            return np.array([np.exp(np.random.uniform(0,np.log(MaxVal[0]),size=count)),np.exp(np.random.uniform(0,np.log(MaxVal[1]),size=count))]).transpose()
+        else:
+            return np.array([np.exp(np.random.uniform(0,np.log(MaxVal[0]),size=count)),np.exp(np.random.uniform(0,np.log(MaxVal[1]),size=count))]).transpose()
     else:
         return None
 
@@ -37,6 +40,7 @@ def main():
 
     parser.add_argument("-P","--StrainParameters",type=float,nargs="*",default=[1.2,0.65])
     parser.add_argument("-M","--maxsamples",type=int,default=10000)
+    parser.add_argument("-Q","--allquadrants",default=False,action="store_true")
     args = parser.parse_args()
     
     data = pc.Coexistence(args.infiles_strain1,args.infiles_strain2,ExtendToGrowthRates = args.ExtendToGrowthRates, WashoutThresholdGrowth = args.WashoutThresholdGrowth, CutAtYield = args.CutAtYield,verbose = args.verbose)
@@ -72,7 +76,7 @@ def main():
                 MaxVal = np.array([ProdStrainParam[0]/minA,ProdStrainParam[1]])
             else:
                 MaxVal = np.array([ProdStrainParam[0],ProdStrainParam[1]/minY])
-            for sample in samplepoints(args.maxsamples,MaxVal):
+            for sample in samplepoints(args.maxsamples,MaxVal,args.allquadrants):
                 
                 newRegion = data.getPolygon(args.baseDilutions/args.substrate * sample[1])
                 
@@ -86,7 +90,11 @@ def main():
                         print "outside",sample
                     outside = np.concatenate([outside,np.array([sample])])
             
-            ax.add_patch(patches.Rectangle((1,1),MaxVal[0]-1,MaxVal[1]-1,facecolor='None'))
+            
+            if args.allquadrants:
+                ax.add_patch(patches.Rectangle(1/MaxVal,MaxVal[0]-1/MaxVal[0],MaxVal[1]-1/MaxVal[1],facecolor='None'))
+            else:
+                ax.add_patch(patches.Rectangle((1,1),MaxVal[0]-1,MaxVal[1]-1,facecolor='None'))
             ax.scatter(inside[:,0],inside[:,1],s=3,zorder=2,c='Green')
                          
                     
