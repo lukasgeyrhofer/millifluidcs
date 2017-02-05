@@ -75,13 +75,18 @@ def main():
         if baseRegion.contains(prodStrain):
             if ProdStrainParam[0] < 1 and ProdStrainParam[1] > 1:
                 MaxVal = np.array([ProdStrainParam[0]/minA,ProdStrainParam[1]])
-            else:
+            elif ProdStrainParam[0] > 1 and ProdStrainParam[1] < 1:
                 MaxVal = np.array([ProdStrainParam[0],ProdStrainParam[1]/minY])
+            else:
+                MaxVal = np.ones(2)
+                if args.verbose:
+                    print "# production strain not in trade-off quadrants"
+                    
             for sample in samplepoints(args.maxsamples,MaxVal,args.allquadrants,args.extension):
                 
                 newRegion = data.getPolygon(args.baseDilutions/args.substrate * sample[1])
-                
                 ProdStrain = sg.Point(ProdStrainParam/sample)
+                
                 if newRegion.contains(ProdStrain):
                     if args.verbose:
                         print "inside",sample
@@ -92,12 +97,13 @@ def main():
                     outside = np.concatenate([outside,np.array([sample])])
             
             
+            # graphical output
             if args.allquadrants:
                 ax.add_patch(patches.Rectangle(1/(MaxVal*args.extension),MaxVal[0]*args.extension-1/(MaxVal[0]*args.extension),MaxVal[1]*args.extension-1/(MaxVal[1]*args.extension),facecolor='None'))
             else:
                 ax.add_patch(patches.Rectangle((1,1),MaxVal[0]*args.extension-1,MaxVal[1]*args.extension-1,facecolor='None'))
-            ax.scatter(inside[:,0],inside[:,1],s=3,zorder=2,c='g')
             
+            ax.scatter(inside[:,0],inside[:,1],s=3,zorder=2,c='g')
             ax.scatter(np.array([ProdStrainParam[0]]),np.array([ProdStrainParam[1]]),s=5,zorder=1,c='r')
                          
                     
