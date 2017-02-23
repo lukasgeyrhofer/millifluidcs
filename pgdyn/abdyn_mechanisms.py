@@ -41,7 +41,7 @@ def dyn_bnd(t,x,params):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-N","--initialbacteria",type=float,default=1e3)
-parser.add_argument("-B","--initialantibiotics",type=float,default=1)
+parser.add_argument("-B","--initialantibiotics",type=float,default=2)
 
 parser.add_argument("-g","--gamma",type=float,default=2)
 parser.add_argument("-k","--kappa",type=float,default=2)
@@ -49,7 +49,7 @@ parser.add_argument("-t","--tau",type=float,default=1e-3)
 
 parser.add_argument("-S","--integrationstep",type=float,default=1e-3)
 parser.add_argument("-O","--outputstep",type=int,default=100)
-parser.add_argument("-T","--maxtime",type=float,default=10)
+parser.add_argument("-T","--maxtime",type=float,default=24)
 parser.add_argument("-F","--outputbasefilename",default="out")
 args = parser.parse_args()
 
