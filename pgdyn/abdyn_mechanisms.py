@@ -28,8 +28,8 @@ def dyn_int(t,x,params):
 def dyn_enz(t,x,params):
     return np.array([
         abgrowth(x[1],params['gamma'],params['kappa'])*x[0],
-        -params['tau']*x[1]*x[2],
-        params['tau']*x[0]
+        -np.sqrt(params['tau'])*x[1]*x[2],
+        np.sqrt(params['tau'])*x[0]
         ])
 
 def dyn_bnd(t,x,params):
