@@ -35,7 +35,7 @@ def dyn_enz(t,x,params):
 def dyn_bnd(t,x,params):
     return np.array([
         abgrowth(x[1],params['gamma'],params['kappa'])*x[0],
-        -params['tau']*(abgrowth(x[1],params['gamma'],params['kappa'])*x[0]
+        -params['tau']*(abgrowth(x[1],params['gamma'],params['kappa'])-1)*x[0]
         ])
 
 
