@@ -50,7 +50,7 @@ parser.add_argument("-t","--tau",type=float,default=1e-3)
 parser.add_argument("-S","--integrationstep",type=float,default=1e-3)
 parser.add_argument("-O","--outputstep",type=int,default=100)
 parser.add_argument("-T","--maxtime",type=float,default=24)
-parser.add_argument("-F","--outputbasefilename",default="out")
+parser.add_argument("-F","--outfilename",default=None)
 args = parser.parse_args()
 
 d1 = gc.TimeIntegrator(dynamics = dyn_env,initialconditions = np.array([args.initialbacteria,args.initialantibiotics])  ,step = args.integrationstep,params = {'kappa':args.kappa,'gamma':args.gamma,'tau':args.tau})
@@ -63,36 +63,18 @@ d2.SetEndCondition("maxtime",args.maxtime)
 d3.SetEndCondition("maxtime",args.maxtime)
 d4.SetEndCondition("maxtime",args.maxtime)
 
-f1 = args.outputbasefilename + '_env'
-fp = open(f1,'w')
-print >> fp,d1.time,d1
-while not d1.HasEnded():
+if args.outfilename is None:
+    fp = sys.stdout
+else:
+    fp = open(args.outfilename,'w')
+    
+print >> fp,np.max([d1.time,d2.time,d3.time,d4.time]),d1,d2,d3,d4
+while not (d1.HasEnded() and d2.HasEnded() and d3.HasEnded() and d4.HasEnded()):
     d1.IntegrationStep(args.integrationstep * args.outputstep)
-    print >>fp, d1.time,d1
-fp.close()
-
-f2 = args.outputbasefilename + '_int'
-fp = open(f2,'w')
-print >> fp,d2.time,d2
-while not d2.HasEnded():
     d2.IntegrationStep(args.integrationstep * args.outputstep)
-    print >>fp, d2.time,d2
-fp.close()
-
-f3 = args.outputbasefilename + '_enz'
-fp = open(f3,'w')
-print >> fp,d3.time,d3
-while not d3.HasEnded():
     d3.IntegrationStep(args.integrationstep * args.outputstep)
-    print >>fp, d3.time,d3
-fp.close()
-
-f4 = args.outputbasefilename + '_bnd'
-fp = open(f4,'w')
-print >> fp,d4.time,d4
-while not d4.HasEnded():
     d4.IntegrationStep(args.integrationstep * args.outputstep)
-    print >>fp, d4.time,d4
-fp.close()
+    print >>fp, np.max([d1.time,d2.time,d3.time,d4.time]),d1,d2,d3,d4
 
-
+if not args.outfilename is None:
+    fp.close()
