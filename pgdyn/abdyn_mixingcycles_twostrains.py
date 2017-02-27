@@ -42,7 +42,7 @@ parser_ic = parser.add_argument_group(description = "=== Initial conditions ==="
 parser_ic.add_argument("-N","--populationsize",type=float,default=1e2)
 parser_ic.add_argument("-B","--antibioticconcentration",type=float,default=2)
 parser_ic.add_argument("-S","--substrate",type=float,default=1e5)
-parser_ic.add_argument("-P","--fractionreducers",type=float,default=.5)
+parser_ic.add_argument("-F","--fractionreducers",type=float,default=.5)
 
 parser_alg = parser.add_argument_group(description = "=== Algorithm parameters ===")
 parser_alg.add_argument("-T","--mixingtime",type=float,default=24.)
