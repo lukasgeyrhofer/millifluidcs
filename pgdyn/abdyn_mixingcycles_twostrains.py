@@ -25,7 +25,7 @@ def dyn(t,x,params):
         params['phi'] * growth(x[3],x[2],params) * x[1],
         -growthrate(x[2],params)*(x[0] + params['phi']*x[1])/params['yieldfactor'],
         -params['sigma'] * x[3] * x[1],
-        growthrate[x[2],params] * death(x[3],params) * (x[0] + params['phi']*x[1])
+        growthrate(x[2],params) * death(x[3],params) * (x[0] + params['phi']*x[1])
     ])
 
 parser = argparse.ArgumentParser()
@@ -38,7 +38,7 @@ parser_params.add_argument("-k","--kappa",type=float,default=2)
 parser_params.add_argument("-s","--sigma",type=float,default=1e-3)
 parser_params.add_argument("-p","--phi",type=float,default=1-1e-2)
     
-parser_ic = parser.add_argument(description = "=== Initial conditions ===")
+parser_ic = parser.add_argument_group(description = "=== Initial conditions ===")
 parser_ic.add_argument("-N","--populationsize",type=float,default=1e2)
 parser_ic.add_argument("-B","--antibioticconcentration",type=float,default=2)
 parser_ic.add_argument("-S","--substrate",type=float,default=1e5)
@@ -51,8 +51,8 @@ parser_alg.add_argument("-O","--outputstep",type=int,default=100)
 
 args = parser.parse_args()
 
-d = gc.TimeIntegrator(dynamics = dyn,initialconditions = np.array([args.populationsize * (1-args.fractionreducers),args.populationsize*args.fractionreducers,args.substrate,args.antibioticconcentration,0]), params = {'growthrate':args.growthrate,'yieldfactor':args.yieldfactor,'gamma':args.gamma,'kappa':args.kappa,'sigma':args.sigma,'phi':args.phi},step = args.integrationstep)
-d.SetEndCondition('maxtime',args.maxtime)
+d = gc.TimeIntegrator(dynamics = dyn,initialconditions = np.array([args.populationsize * (1-args.fractionreducers), args.populationsize*args.fractionreducers, args.substrate, args.antibioticconcentration, 0]), params = {'growthrate':args.growthrate,'yieldfactor':args.yieldfactor,'gamma':args.gamma,'kappa':args.kappa,'sigma':args.sigma,'phi':args.phi},step = args.integrationstep)
+d.SetEndCondition('maxtime',args.mixingtime)
 
 print d.time,d
 while not d.HasEnded():
