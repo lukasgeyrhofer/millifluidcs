@@ -506,7 +506,6 @@ class TimeIntegrator(object):
     # allows definition of multiple endconditions, currently implemented maximum time and one of the populations reaching zero
     def __init__(self,step = 1e-3,requiredpositive = True,initialconditions = None,dynamics = None,globaltime = 0,**kwargs):
         self.__step = step
-        self.__requiredpositive = requiredpositive
 
         self.params = kwargs.get('params',None)
         
@@ -521,6 +520,12 @@ class TimeIntegrator(object):
         self.__EndConditions = list()
         self.__triggeredEndConditions = list()
         
+        self.__extinctionthresholds = dict()
+        if requiredpositive:
+            for i in range(len(self.x)):
+                self.setPopulationExtinctionThreshold(i,0)
+        
+        
     def RungeKutta4(self,xx,tt):
         # 4th order Runge-Kutta integration scheme
         k1 = self.__step * self.dyn( tt               , xx      , self.params )
@@ -534,8 +539,10 @@ class TimeIntegrator(object):
         t = 0
         while t <= time:
             self.x = self.RungeKutta4(self.x,self.__globaltime + t)
-            if self.__requiredpositive:
-                self.x[self.x<=0]=0
+            if len(self.__extinctionthresholds) >= 1:
+                for i in self.__extinctionthresholds.keys():
+                    if self.x[i] < self.__extinctionthresholds[i]:
+                        self.x[i] = 0
             t += self.__step
         self.__globaltime += time
     
@@ -543,8 +550,10 @@ class TimeIntegrator(object):
         t = 0
         while self.x[index] > 0:
             self.x = self.RungeKutta4(self.x,self.__globaltime + t)
-            if self.__requiredpositive:
-                self.x[self.x<=0]=0
+            if len(self.__extinctionthresholds) >= 1:
+                for i in self.__extinctionthresholds.keys():
+                    if self.x[i] < self.__extinctionthresholds[i]:
+                        self.x[i] = 0
             t += self.__step
         self.__globaltime += t
         self.__triggeredEndConditions = list(["reachzero",index])
@@ -598,8 +607,10 @@ class TimeIntegrator(object):
         if self.CountEndConditions > 0:
             while not self.HasEnded():
                 self.x = self.RungeKutta4(self.x,self.__globaltime)
-                if self.__requiredpositive:
-                    self.x[self.x<=0]=0
+                if len(self.__extinctionthresholds) >= 1:
+                    for i in self.__extinctionthresholds.keys():
+                        if self.x[i] < self.__extinctionthresholds[i]:
+                            self.x[i] = 0
                 self.__globaltime += self.__step
         else:
             raise NotImplementedError
@@ -625,6 +636,10 @@ class TimeIntegrator(object):
     def setPopulation(self,index,value):
         if int(index) < len(self.x):
             self.x[int(index)] = float(value)
+    
+    def setPopulationExtinctionThreshold(self,index,value):
+        if int(index) < len(self.x):
+            self.__extinctionthresholds[int(index)] = float(value)
     
 
 class GrowthDynamicsPublicGoods(GrowthDynamics):
