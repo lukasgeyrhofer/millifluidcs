@@ -781,12 +781,19 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
     
+    
     def beta(self,abconc):
         bk = np.power(abconc,self.ABparams['kappa'])
-        return 1 - (1+self.ABparams['logkill'])*bk/(bk + self.ABparams['logkill'])
+        return 1 - (1+self.ABparams['gamma'])*bk/(bk + self.ABparams['gamma'])
+    
+    def growth(self,substrate,abconc):
+        if substrate > 0:
+            return self.growthrates * self.beta(abconc)
+        else:
+            return np.zeros(self.numstrains)
     
     def dynAB(self,t,x,params):
-        a = self.growthrates * self.beta(x[-1])
+        a = self.growth(x[-3],x[-1])
         return np.concatenate([ a*x[:-3],                                                      # growth of strains
                                 np.array( [ -np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
                                             np.sum(self.ABparams['PGproduction']*x[:-3]),      # production of public good
