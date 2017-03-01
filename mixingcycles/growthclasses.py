@@ -765,8 +765,8 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
 
         super(GrowthDynamicsAntibiotics,self).__init__(self,**kwargs)
         
-        self.ABparams = {   'kappa' :         kwargs.get("kappa",1),
-                            'logkill' :       kwargs.get("logkill",2),
+        self.ABparams = {   'kappa' :         kwargs.get("kappa",2),
+                            'gamma' :         kwargs.get("gamma",2),
                             'PGproduction' :  np.array(kwargs.get("PGproduction",np.zeros(self.numstrains)),dtype=np.float64),
                             'PGreductionAB' : kwargs.get("PGreductionAB",1),
                             'PGconc' :        kwargs.get("PGconc",0),   # initial condition PG concentration
@@ -775,9 +775,11 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
         assert len(self.ABparams['PGproduction']) == self.numstrains, "PG production not defined correctly"
         assert sum(self.ABparams['PGproduction']) > 0, "PG is not produced"
         
-        self.dyn = TimeIntegrator(dynamics = self.dynAB,initialconditions = np.zeros(self.numstrains + 3),params = None)
+        self.dyn = TimeIntegrator(dynamics = self.dynAB,initialconditions = np.zeros(self.numstrains + 3),params = None,requiredpositive = True)
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         self.dyn.SetEndCondition("reachzero",self.numstrains)
+        for i in range(self.numstrains):
+            self.dyn.setPopulationExtinctionThreshold(i,1)
     
     def beta(self,abconc):
         bk = np.power(abconc,self.ABparams['kappa'])
