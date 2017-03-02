@@ -29,7 +29,7 @@ parser.add_argument("-o","--outfile",default=None)
 
 args = parser.parse_args()
 g = gc.GrowthDynamicsAntibiotics(**vars(args))
-gm1,gm2 = g.getGrowthMatrix(size = args.maxsize)
+gm1,gm2 = g.getGrowthMatrix(size = args.maxsize,step = args.step)
 
 m = np.arange(args.maxsize)*args.step
 if args.poissonseeding:
