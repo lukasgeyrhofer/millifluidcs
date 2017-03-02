@@ -291,9 +291,9 @@ class GrowthDynamics(object):
                 i += 1
         return g
 
-    def getGrowthMatrix(self,size):
+    def getGrowthMatrix(self,size,step=1):
         if isinstance(size,int):
-            m = np.arange(size)
+            m = np.arange(size)*step
             g = np.zeros((size,size,2))
             for i in m:
                 for j in m:

@@ -20,6 +20,7 @@ parser_ab.add_argument("-r","--PGreductionAB",type=float,default=1e-3)
 
 parser_iterationmap = parser.add_argument_group(description = "Parameters for iterationmap")
 parser_iterationmap.add_argument("-m","--maxsize",type=int,default=100)
+parser_iterationmap.add_argument("-M","--step",type=int,default=1)
 parser_iterationmap.add_argument("-n","--outputmax",type=float,default=20)
 parser_iterationmap.add_argument("-d","--outputdx",type=float,default=.1)
 parser_iterationmap.add_argument("-P","--poissonseeding",default=False,action="store_true")
@@ -30,7 +31,7 @@ args = parser.parse_args()
 g = gc.GrowthDynamicsAntibiotics(**vars(args))
 gm1,gm2 = g.getGrowthMatrix(size = args.maxsize)
 
-m = np.arange(args.maxsize)
+m = np.arange(args.maxsize)*args.step
 if args.poissonseeding:
     outpoints = np.arange(0,args.outputmax,args.outputdx,dtype=float)
 else:
@@ -46,7 +47,6 @@ if not args.outfile is None:
         fp = sys.stdout
 else:
     fp = sys.stdout
-    
 
 for x in outpoints:
     for y in outpoints:
