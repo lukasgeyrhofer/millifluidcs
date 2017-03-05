@@ -292,12 +292,16 @@ class GrowthDynamics(object):
         return g
 
     def getGrowthMatrix(self,size,step=1):
-        if isinstance(size,int):
+        if step > 1 and isinstance(size,int):
+            # only use step if initial conditions are not explicitely specified in a list already...
+            m = np.arange(start = 0,stop = size,step = step)
+            return self.getGrowthMatrix(np.array([m,m]))
+        elif isinstance(size,int):
             m = np.arange(size)
             g = np.zeros((size,size,2))
             for i in m:
                 for j in m:
-                    g[i,j] = self.Growth(initialcells = np.array([i,j]*step))
+                    g[i,j] = self.Growth(initialcells = np.array([i,j]))
             return g[:,:,0],g[:,:,1]        
         elif isinstance(size,np.ndarray):
             if isinstance(size[0],np.ndarray):
