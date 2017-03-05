@@ -31,11 +31,11 @@ args = parser.parse_args()
 g = gc.GrowthDynamicsAntibiotics(**vars(args))
 gm1,gm2 = g.getGrowthMatrix(size = args.maxsize,step = args.step)
 
-m = np.arange(args.maxsize)*args.step
+m = np.arange(0,args.maxsize,args.step)
 if args.poissonseeding:
     outpoints = np.arange(0,args.outputmax,args.outputdx,dtype=float)
 else:
-    outpoints = np.arange(args.maxsize,dtype=int)
+    outpoints = np.arange(0,args.maxsize,args.step,dtype=int)
     
 
 writetofile = False
@@ -48,16 +48,16 @@ if not args.outfile is None:
 else:
     fp = sys.stdout
 
-for x in outpoints:
-    for y in outpoints:
+for i in range(len(outpoints)):
+    for j in range(len(outpoints)):
         if args.poissonseeding:
-            px,py = gc.PoissonSeedingVectors(m,np.array((x,y)))
+            px,py = gc.PoissonSeedingVectors(m,np.array((outpoints[i],outpoints[j])))
             gx = np.dot(py,np.dot(px,gm1))
             gy = np.dot(py,np.dot(px,gm2))
         else:
-            gx = gm1[x,y]
-            gy = gm2[x,y]
-        print >> fp,"{} {} {} {}".format(x,y,gx,gy)
+            gx = gm1[i,j]
+            gy = gm2[i,j]
+        print >> fp,"{} {} {} {}".format(outpoints[i],outpoints[j],gx,gy)
     print >> fp
 
 if not args.outfile is None:
