@@ -31,11 +31,11 @@ args = parser.parse_args()
 g = gc.GrowthDynamicsAntibiotics(**vars(args))
 gm1,gm2 = g.getGrowthMatrix(size = args.maxsize,step = args.step)
 
-m = np.arange(0,args.maxsize,args.step)
+m = np.arange(start = 0,stop = args.maxsize,step = args.step,dtype=int)
 if args.poissonseeding:
     outpoints = np.arange(0,args.outputmax,args.outputdx,dtype=float)
 else:
-    outpoints = np.arange(0,args.maxsize,args.step,dtype=int)
+    outpoints = m
     
 
 writetofile = False

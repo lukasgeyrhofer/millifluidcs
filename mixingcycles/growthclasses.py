@@ -17,7 +17,7 @@
   interesting properties of the dynamics.
 
 
-  Lukas Geyrhofer, l.geyrhofer@technion.ac.il, 2016
+  Lukas Geyrhofer, l.geyrhofer@technion.ac.il, 2016-2017
 
 '''
 
@@ -72,7 +72,7 @@ def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
         if n[i] > 0:
             px[i] = poisson.pmf(m,n[i])
             px[i,px[i,:]<cutoff] = 0.
-            px[i,-1] += (1. - np.sum(px[i]))
+            px[i] /= np.sum(px[i]) # normalize
             if diff:
                 dpx[i] = (m/n[i] - 1.)*px[i]
         else:
