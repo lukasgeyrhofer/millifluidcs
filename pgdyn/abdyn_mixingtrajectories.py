@@ -25,7 +25,7 @@ parser_iterationmap.add_argument("-M","--step",type=int,default=1)
 parser_iterationmap.add_argument("-n","--outputmax",type=float,default=20)
 parser_iterationmap.add_argument("-N","--outputdx",type=float,default=.1)
 #parser_iterationmap.add_argument("-P","--poissonseeding",default=False,action="store_true")
-parser_iterationmap.add_argument("-t","--trajectorylength",type=int,default=20)
+parser_iterationmap.add_argument("-t","--trajectorylength",type=int,default=30)
 
 parser_dilution = parser.add_argument_group(description = "Parameters for dilution values")
 parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
@@ -48,10 +48,10 @@ if args.outfile is None:
     exit(1)
 
 for dilution in dilutions:
-    outfile = "%s_D%f"%(args.outfile.replace(" ",""),dilution)
+    outfile = "%s_D%e"%(args.outfile.replace(" ",""),dilution)
     fp = open(outfile,"w")
     
-    for icx,icy in itertools.product(outpoints,repeat=2)
+    for icx,icy in itertools.product(outpoints,repeat=2):
         x = icx
         y = icy
         print >> fp,x,y
