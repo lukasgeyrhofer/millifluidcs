@@ -220,7 +220,7 @@ class GrowthDynamics(object):
         for a,y,d in zip(growthrates,yieldfactors,deathrates):
             self.addStrain(growthrate = a,yieldfactor = y,deathrate = d)
         
-        self.env = Environment( dilution = kwargs.get("dilution",1e-4),
+        self.env = Environment( dilution = kwargs.get("dilution",1.),
                                 mixingtime = kwargs.get("mixingtime",12),
                                 substrate = kwargs.get("substrateconcentration",1e4),
                                 numdroplets = kwargs.get("numdroplets") )
@@ -463,7 +463,24 @@ class GrowthDynamics(object):
             self.env.substrate = substrate
     def setDilution(self,dilution):
             self.env.dilution = dilution
+            
+    
+    def arraystring(self,x):
+        return "[" + ", ".join(["{:.2f}".format(a) for a in x]) + "]"
 
+    def ParameterString(self):
+        r  = '\n'
+        s  = "*** microbial strains ***" +r
+        s += "  growthrates " + self.arraystring(self.growthrates) +r
+        s += "  yield       " + self.arraystring(self.yieldfactors) +r+r
+        s += "*** environment ***" +r
+        s += "mixingtime    " + str(self.env.mixingtime) +r
+        s += "substrate     " + str(self.env.substrate) +r
+        if self.env.dilution < 1:
+            s += "dilution      " + str(self.env.dilution) +r
+        
+        return s
+        
 
 class StochasticGrowthDynamics(GrowthDynamics):
     def __init__(self,**kwargs):
@@ -811,6 +828,15 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
         return self.dyn.populations[:-3]*self.env.dilution
                                           
     
-        
-        
+    def ParameterString(self):
+        r = '\n'
+        s  = super(GrowthDynamicsAntibiotics,self).ParameterString() +r
+        s += "*** antibiotic parameters ***" +r
+        s += "initial concentration   " + str(self.ABparams['ABconc']) +r
+        s += "gamma                   " + str(self.ABparams['gamma']) +r
+        s += "kappa                   " + str(self.ABparams['kappa']) +r
+        s += "enzyme production       " + self.arraystring(self.ABparams['PGproduction']) +r
+        s += "enzyme activity         " + str(self.ABparams['PGreductionAB']) +r
+        s += "enzyme initial conc.    " + str(self.ABparams['PGconc']) +r
+        return s
 

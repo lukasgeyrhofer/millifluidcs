@@ -24,7 +24,6 @@ parser_iterationmap.add_argument("-m","--maxsize",type=int,default=100)
 parser_iterationmap.add_argument("-M","--step",type=int,default=1)
 parser_iterationmap.add_argument("-n","--outputmax",type=float,default=20)
 parser_iterationmap.add_argument("-N","--outputdx",type=float,default=.1)
-#parser_iterationmap.add_argument("-P","--poissonseeding",default=False,action="store_true")
 parser_iterationmap.add_argument("-t","--trajectorylength",type=int,default=30)
 
 parser_dilution = parser.add_argument_group(description = "Parameters for dilution values")
@@ -37,10 +36,13 @@ parser.add_argument("-o","--outfile",default=None)
 
 args      = parser.parse_args()
 g         = gc.GrowthDynamicsAntibiotics(**vars(args))
+print g.ParameterString()
+exit(1)
 gm1,gm2   = g.getGrowthMatrix(size = args.maxsize,step = args.step)
 m         = np.arange(start = 0,stop = args.maxsize,step = args.step,dtype=int)
 outpoints = np.arange(start = 0,stop = args.outputmax,step = args.outputdx,dtype=float)
 dilutions = np.arange(start = args.dilutionmin,stop = args.dilutionmax,step = args.dilutionstep,dtype=float)
+
 
 
 if args.outfile is None:
@@ -57,8 +59,8 @@ for dilution in dilutions:
         print >> fp,x,y
         for i in range(args.trajectorylength):
             px,py = gc.PoissonSeedingVectors(m,np.array((x,y)))
-            x = np.dot(py,np.dot(px,gm1))
-            y = np.dot(py,np.dot(px,gm2))
+            x = np.dot(py,np.dot(px,gm1))*dilution
+            y = np.dot(py,np.dot(px,gm2))*dilution
             print >> fp,x,y
         print >> fp
     
