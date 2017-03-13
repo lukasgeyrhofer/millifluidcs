@@ -36,8 +36,6 @@ parser.add_argument("-o","--outfile",default=None)
 
 args      = parser.parse_args()
 g         = gc.GrowthDynamicsAntibiotics(**vars(args))
-print g.ParameterString()
-exit(1)
 gm1,gm2   = g.getGrowthMatrix(size = args.maxsize,step = args.step)
 m         = np.arange(start = 0,stop = args.maxsize,step = args.step,dtype=int)
 outpoints = np.arange(start = 0,stop = args.outputmax,step = args.outputdx,dtype=float)
