@@ -27,7 +27,6 @@ import numpy as np
 import argparse
 from scipy.stats import poisson
 import itertools
-import pickle
 
 
 def RungeKutta4(func,xx,tt,step):

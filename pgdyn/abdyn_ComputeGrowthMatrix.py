@@ -34,8 +34,12 @@ if args.outfile is None:
 g    = gc.GrowthDynamicsAntibiotics(**vars(args))
 g.ComputeGrowthMatrix(size = args.maxsize,step = args.step)
 
-
-pickle.dump(g,open(args.outfile,"w"))
+try:
+    fp = open(args.outfile,"w")
+    pickle.dump(g,fp)
+except IOError:
+    print >> sys.stderr,"could not open file for pickle dump"
+    exit(1)
 
 
 
