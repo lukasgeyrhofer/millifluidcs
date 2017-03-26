@@ -27,6 +27,8 @@ import numpy as np
 import argparse
 from scipy.stats import poisson
 import itertools
+import pickle
+
 
 def RungeKutta4(func,xx,tt,step):
   # 4th order Runge-Kutta integration scheme
@@ -200,6 +202,7 @@ class Environment(object):
 class GrowthDynamics(object):
     def __init__(self,NR_alpha = 1.,NR_precision = 1e-14, NR_maxsteps = 10000,numstrains = None,**kwargs):
         
+        
         if not numstrains is None:
             defaultlength = numstrains
         else:
@@ -225,6 +228,11 @@ class GrowthDynamics(object):
                                 substrate = kwargs.get("substrateconcentration",1e4),
                                 numdroplets = kwargs.get("numdroplets") )
         self.NR  = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
+        
+        self.__growthmatrix = None
+        self.__growthmatrixgrid = None
+        
+        
     
     def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
         self.strains.append(MicrobialStrain(growthrate = growthrate, yieldfactor = yieldfactor, deathrate = deathrate))
@@ -291,43 +299,43 @@ class GrowthDynamics(object):
                 i += 1
         return g
 
-    def getGrowthMatrix(self,size,step=1):
+    def ComputeGrowthMatrix(self,size,step=1):
+        self.__growthmatrixgrid = size
         if step > 1 and isinstance(size,int):
             # only use step if initial conditions are not explicitely specified in a list already...
             m = np.arange(start = 0,stop = size,step = step)
-            return self.getGrowthMatrix(np.array([m,m]))
+            return self.ComputeGrowthMatrix(np.array([m,m]))
         elif isinstance(size,int):
             m = np.arange(size)
-            g = np.zeros((size,size,2))
+            self.__growthmatrix = np.zeros((size,size,2))
             for i in m:
                 for j in m:
-                    g[i,j] = self.Growth(initialcells = np.array([i,j]))
-            return g[:,:,0],g[:,:,1]        
+                    self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([i,j]))
         elif isinstance(size,np.ndarray):
             if isinstance(size[0],np.ndarray):
                 if len(size) >= 2:
                     m0 = size[0]
                     m1 = size[1]
-                    g = np.zeros((len(m0),len(m1),2))
+                    self.__growthmatrix = np.zeros((len(m0),len(m1),2))
                     for i in range(len(m0)):
                         for j in range(len(m1)):
-                            g[i,j] = self.Growth(initialcells = np.array([m0[i],m1[j]]))
-                    return g[:,:,0],g[:,:,1]        
+                            self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([m0[i],m1[j]]))
+                    #return g[:,:,0],g[:,:,1]        
             else:
                 m = size
-                g = np.zeros(len(m))
+                self.__growthmatrix = np.zeros(len(m))
                 for i in range(len(m)):
-                    g[i] = self.Growth(initialcells = np.array([m[i]]))[0]
-                return g
+                    self.__growthmatrix[i] = self.Growth(initialcells = np.array([m[i]]))[0]
+                #return g
         elif isinstance(size,(list,tuple)):
             if (len(size) >= 2) and isinstance(size[0],np.ndarray):
                 m0 = size[0]
                 m1 = size[1]
-                g = np.zeros((len(m0),len(m1),2))
+                self.__growthmatrix = np.zeros((len(m0),len(m1),2))
                 for i in range(len(m0)):
                     for j in range(len(m1)):
-                        g[i,j] = self.Growth(initialcells = np.array([m0[i],m1[j]]))
-                return g[:,:,0],g[:,:,1]
+                        self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([m0[i],m1[j]]))
+                #return g[:,:,0],g[:,:,1]
                 
     
     def getGrowthMultipleStrains(self,size,nstrains=2):
@@ -428,6 +436,13 @@ class GrowthDynamics(object):
             return np.array([self.strains[i].yieldfactor for i in range(self.numstrains)])
         elif key == "deathrates":
             return np.array([self.strains[i].deathrate for i in range(self.numstrains)])
+        elif key == "growthmatrix":
+            if self.__growthmatrix is None:
+                raise ValueError
+            else:
+                return self.__growthmatrix
+        else:
+            super(GrowthDynamics,self).__getattr__(key,value)
 
     def __setattr__(self,key,value):
         if key == "growthrates":
