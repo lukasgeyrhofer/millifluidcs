@@ -235,7 +235,7 @@ class GrowthDynamics(object):
         self.__growthmatrixgrid = None
         
         
-        self.__save_kwargs = kwargs
+        self.__kwargs_for_pickle = kwargs
         
     
     def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
@@ -324,13 +324,11 @@ class GrowthDynamics(object):
                     for i in range(len(m0)):
                         for j in range(len(m1)):
                             self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([m0[i],m1[j]]))
-                    #return g[:,:,0],g[:,:,1]        
             else:
                 m = size
                 self.__growthmatrix = np.zeros(len(m))
                 for i in range(len(m)):
                     self.__growthmatrix[i] = self.Growth(initialcells = np.array([m[i]]))[0]
-                #return g
         elif isinstance(size,(list,tuple)):
             if (len(size) >= 2) and isinstance(size[0],np.ndarray):
                 m0 = size[0]
@@ -339,8 +337,11 @@ class GrowthDynamics(object):
                 for i in range(len(m0)):
                     for j in range(len(m1)):
                         self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([m0[i],m1[j]]))
-                #return g[:,:,0],g[:,:,1]
-                
+    
+    def getGrowthMatrix(self,size,step=1):
+        # backwards compatibility
+        self.ComputeGrowthMatrix(size,step)
+        return self.__growthmatrix
     
     def getGrowthMultipleStrains(self,size,nstrains=2):
         g = [np.zeros(np.repeat(size,nstrains)) for i in range(nstrains)]
@@ -500,11 +501,12 @@ class GrowthDynamics(object):
         return s
     
     def __getstate__(self):
-        r = self.__dict__.copy()
-        del r['env']
-        del r['strains']
-        del r['dyn']
-        return r
+        return [self.__kwargs_for_pickle,self.__growthmatrix,self.__growthmatrixgrid]
+    
+    def __setstate__(self,state):
+        self.__init__(**state[0])
+        self.__growthmatrix = state[1]
+        self.__growthmatrixgrid = state[2]
 
 class StochasticGrowthDynamics(GrowthDynamics):
     def __init__(self,**kwargs):
