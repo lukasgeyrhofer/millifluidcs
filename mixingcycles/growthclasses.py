@@ -27,7 +27,7 @@ import numpy as np
 import argparse
 from scipy.stats import poisson
 import itertools
-
+import pickle
 
 def RungeKutta4(func,xx,tt,step):
   # 4th order Runge-Kutta integration scheme
@@ -199,8 +199,7 @@ class Environment(object):
 
 
 class GrowthDynamics(object):
-    def __init__(self,NR_alpha = 1.,NR_precision = 1e-14, NR_maxsteps = 10000,numstrains = None,**kwargs):
-        
+    def __init__(self,numstrains = None,**kwargs):
         
         if not numstrains is None:
             defaultlength = numstrains
@@ -210,6 +209,7 @@ class GrowthDynamics(object):
         yieldfactors = kwargs.get("yieldfactors",np.ones(defaultlength))
         assert len(growthrates) == len(yieldfactors)
         defaultlength = len(growthrates)
+        
         if hasattr(kwargs,"deathrates"):
             deathrates = kwargs.get("deathrates")
             assert len(growthrates) == len(deathrates)
@@ -222,15 +222,20 @@ class GrowthDynamics(object):
         for a,y,d in zip(growthrates,yieldfactors,deathrates):
             self.addStrain(growthrate = a,yieldfactor = y,deathrate = d)
         
-        self.env = Environment( dilution = kwargs.get("dilution",1.),
-                                mixingtime = kwargs.get("mixingtime",12),
-                                substrate = kwargs.get("substrateconcentration",1e4),
+        self.env = Environment( dilution    = kwargs.get("dilution",               1.),
+                                mixingtime  = kwargs.get("mixingtime",             12),
+                                substrate   = kwargs.get("substrateconcentration", 1e4),
                                 numdroplets = kwargs.get("numdroplets") )
-        self.NR  = {'alpha':NR_alpha, 'precision2': NR_precision**2, 'maxsteps':NR_maxsteps}
+        
+        self.NR  = {'alpha' :       float(kwargs.get("NR_alpha",     1. )),
+                    'precision2' :  float(kwargs.get("NR_precision", 1e-14 ))**2,
+                    'maxsteps' :    int(  kwargs.get("NR_maxsteps",  1000 ))}
         
         self.__growthmatrix = None
         self.__growthmatrixgrid = None
         
+        
+        self.__save_kwargs = kwargs
         
     
     def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
@@ -492,9 +497,14 @@ class GrowthDynamics(object):
         s += "substrate     " + str(self.env.substrate) +r
         if self.env.dilution < 1:
             s += "dilution      " + str(self.env.dilution) +r
-        
         return s
-        
+    
+    def __getstate__(self):
+        r = self.__dict__.copy()
+        del r['env']
+        del r['strains']
+        del r['dyn']
+        return r
 
 class StochasticGrowthDynamics(GrowthDynamics):
     def __init__(self,**kwargs):
@@ -798,7 +808,7 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
         if kwargs.get("mixingtime") is None:
             kwargs["mixingtime"] = 12.
 
-        super(GrowthDynamicsAntibiotics,self).__init__(self,**kwargs)
+        super(GrowthDynamicsAntibiotics,self).__init__(**kwargs)
         
         self.ABparams = {   'kappa' :         kwargs.get("kappa",2),
                             'gamma' :         kwargs.get("gamma",2),
@@ -821,14 +831,14 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
         bk = np.power(abconc,self.ABparams['kappa'])
         return 1 - (1+self.ABparams['gamma'])*bk/(bk + self.ABparams['gamma'])
     
-    def growth(self,substrate,abconc):
+    def growthr(self,substrate,abconc):
         if substrate > 0:
             return self.growthrates * self.beta(abconc)
         else:
             return np.zeros(self.numstrains)
     
     def dynAB(self,t,x,params):
-        a = self.growth(x[-3],x[-1])
+        a = self.growthr(x[-3],x[-1])
         return np.concatenate([ a*x[:-3],                                                      # growth of strains
                                 np.array( [ -np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
                                             np.sum(self.ABparams['PGproduction']*x[:-3]),      # production of public good

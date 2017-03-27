@@ -5,10 +5,20 @@ import numpy as np
 import argparse
 import sys,math
 import pickle
-
+import inspect
 
 sys.path.append(sys.path[0] + '/../mixingcycles')
 import growthclasses as gc
+
+
+def isclass(obj):
+    try:
+        issubclass(obj, object)
+    except TypeError:
+        return False
+    else:
+        return True
+
 
 parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser,defaultmixingtime=24,dilution=False)
@@ -33,6 +43,13 @@ if args.outfile is None:
 
 g    = gc.GrowthDynamicsAntibiotics(**vars(args))
 g.ComputeGrowthMatrix(size = args.maxsize,step = args.step)
+
+if isclass(g):
+    print "class"
+else:
+    print "not class"
+exit(1)
+
 
 try:
     fp = open(args.outfile,"w")
