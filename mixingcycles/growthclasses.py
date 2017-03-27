@@ -343,6 +343,24 @@ class GrowthDynamics(object):
         self.ComputeGrowthMatrix(size,step)
         return self.__growthmatrix
     
+    def ExtendGrowthMatrix(self,size):
+        if isinstance(self.__growthmatrixgrid,int):
+            # only works for full growth matrix, with all entries
+            if self.__growthmatrixgrid < size:
+                g = np.zeros((size,size,2))
+                g[:self.__growthmatrixgrid,:self.__growthmatrixgrid,:] = self.__growthmatrix
+                for i in range(self.__growthmatrixgrid,size):
+                    for j in range(self.__growthmatrixgrid):
+                        g[i,j] = self.Growth(initialcells = np.array([i,j]))
+                        g[j,i] = self.Growth(initialcells = np.array([j,i]))
+                    for j in range(self.__growthmatrixgrid,size):
+                        g[i,j] = self.Growth(initialcells = np.array([i,j]))
+                self.__growthmatrix = g[:,:,:]
+                self.__growthmatrixgrid = size
+        else:
+            raise ValueError,"Can only extend a full grid"
+    
+    
     def getGrowthMultipleStrains(self,size,nstrains=2):
         g = [np.zeros(np.repeat(size,nstrains)) for i in range(nstrains)]
         for ic in itertools.product(range(size),repeat=nstrains):
