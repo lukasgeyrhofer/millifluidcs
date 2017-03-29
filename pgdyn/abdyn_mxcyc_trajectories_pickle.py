@@ -7,6 +7,8 @@ import pickle
 
 sys.path.append(sys.path[0] + '/../mixingcycles')
 import growthclasses as gc
+import itertools
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i","--infile",required = True)
@@ -48,22 +50,17 @@ nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
 gm1 = g.growthmatrix[:,:,0]
 gm2 = g.growthmatrix[:,:,1]
 
-
-
 for dilution in dlist:
-    try:
-        fp = open(args.outfile + "_D{:.3e}".format(d),"w")
-        for icx,icy in itertools.product(outpoints,repeat=2):
-            x = icx
-            y = icy
+    fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
+    for icx,icy in itertools.product(nlist,repeat=2):
+        x = icx
+        y = icy
+        print >> fp,x,y
+        for i in range(args.trajectorylength):
+            px,py = gc.PoissonSeedingVectors(m,np.array((x,y)))
+            x = np.dot(py,np.dot(px,gm1))*dilution
+            y = np.dot(py,np.dot(px,gm2))*dilution
             print >> fp,x,y
-            for i in range(args.trajectorylength):
-                px,py = gc.PoissonSeedingVectors(m,np.array((x,y)))
-                x = np.dot(py,np.dot(px,gm1))*dilution
-                y = np.dot(py,np.dot(px,gm2))*dilution
-                print >> fp,x,y
-            print >> fp
-        fp.close()
-        
-                
+        print >> fp
+    fp.close()
             
