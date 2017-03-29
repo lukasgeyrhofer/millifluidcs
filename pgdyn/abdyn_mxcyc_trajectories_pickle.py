@@ -44,13 +44,14 @@ elif isinstance(g.growthmatrixgrid,(tuple,list,np.ndarray)):
 else:
     raise ValueError
 
-dlist = np.arange(start = args.dilutionmin,stop = args.dilutionmax,step = args.dilutionstep)
+dlist = np.arange(start = args.dilutionmin,stop = args.dilutionmax + args.dilutionstep,step = args.dilutionstep)
 nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
 
 gm1 = g.growthmatrix[:,:,0]
 gm2 = g.growthmatrix[:,:,1]
 
 for dilution in dlist:
+    print "# computing trajectories for D = {:e}".format(dilution)
     fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
     for icx,icy in itertools.product(nlist,repeat=2):
         x = icx
@@ -61,6 +62,8 @@ for dilution in dlist:
             x = np.dot(py,np.dot(px,gm1))*dilution
             y = np.dot(py,np.dot(px,gm2))*dilution
             print >> fp,x,y
+            if (x==0) and (y==0):
+                break
         print >> fp
     fp.close()
             
