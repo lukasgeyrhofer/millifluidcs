@@ -27,7 +27,7 @@ import numpy as np
 import argparse
 from scipy.stats import poisson
 import itertools
-import pickle
+#import pickle
 
 def RungeKutta4(func,xx,tt,step):
   # 4th order Runge-Kutta integration scheme
@@ -343,6 +343,9 @@ class GrowthDynamics(object):
         self.ComputeGrowthMatrix(size,step)
         return self.__growthmatrix
     
+    def hasGrowthMatrix(self):
+        return not (self.__growthmatrix is None)
+    
     def ExtendGrowthMatrix(self,size):
         if isinstance(self.__growthmatrixgrid,int):
             # only works for full growth matrix, with all entries
@@ -461,9 +464,14 @@ class GrowthDynamics(object):
             return np.array([self.strains[i].deathrate for i in range(self.numstrains)])
         elif key == "growthmatrix":
             if self.__growthmatrix is None:
-                raise ValueError
+                raise ValueError,"Growthmatrix not yet computed"
             else:
                 return self.__growthmatrix
+        elif key == "growthmatrixgrid":
+            if self.__growthmatrixgrid is None:
+                raise ValueError,"Growthmatrix not yet computed"
+            else:
+                return self.__growthmatrixgrid
         else:
             super(GrowthDynamics,self).__getattr__(key,value)
 
