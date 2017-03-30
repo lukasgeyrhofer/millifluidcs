@@ -41,7 +41,7 @@ trajectories = list()
 current      = list()
 dim          = 0
 try:
-    fp = open(args.trajectoryfile)
+    fp = open(args.trajectoryfile,"r")
 except:
     raise IOError,"Error opening file '{}'".format(args.trajectoryfile)
 
