@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser()
 parser_io = parser.add_argument_group(description = "Input/Output [required]")
 parser_io.add_argument("-i","--infile",required = True)
 parser_io.add_argument("-o","--outfile",required = True)
+parser_io.add_argument("-v","--verbose",default=False,action="store_true")
 
 parser_dilution = parser.add_argument_group(description = "Parameters for dilution values")
 parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
@@ -51,10 +52,12 @@ nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
 gm1 = g.growthmatrix[:,:,0]
 gm2 = g.growthmatrix[:,:,1]
 
-print g.ParameterString()
+if args.verbose:
+    print g.ParameterString()
 
 for dilution in dlist:
-    print "# computing trajectories for D = {:e}".format(dilution)
+    if args.verbose:
+        print "# computing trajectories for D = {:e}".format(dilution)
     fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
     for icx,icy in itertools.product(nlist,repeat=2):
         x = icx
