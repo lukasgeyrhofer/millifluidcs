@@ -27,13 +27,14 @@ def writeoutput(filename,trajectories):
     fp = open(filename,"w")
     for t in trajectories:
         for p in t:
-            print >> fp,p[0],p[1]
+            print >> fp,"".join([" {}".format(x) for x in p])
         print >> fp
     fp.close()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i","--trajectoryfile")
 parser.add_argument("-d","--accepteddistance",type=float,default=1e-3)
+parser.add_argument("-o","--basenameoutfile",default=None)
 args = parser.parse_args()
 
 trajectories = list()
@@ -59,17 +60,21 @@ fp.close()
 
 
 # create strings of 0's and 1's, where 0 means trajectory reached zero in population (indicated by position of 0 in the string)
-fixedpoint_restrictions = sorted([''.join(x) for x in itertools.product('01',repeat = dim)],cmp = lambda a,b: np.sign(b.count('0') - a.count('0')))
-sortedtrajectories      = dict()
+zero                       = np.zeros(dim)
+fixedpoint_restrictions    = sorted([''.join(x) for x in itertools.product('01',repeat = dim)],cmp = lambda a,b: np.sign(b.count('0') - a.count('0')))
+sortedtrajectories         = dict()
+for fp in fixedpoint_restrictions:
+    sortedtrajectories[fp] = list()
 
 for t in trajectories:
     for fp in fixedpoint_restrictions:
-        if not sortedtrajectories.has_key(fp):
-            sortedtrajectories[fp] = list()
         if closeto(t[-1],zero,fp):
-            sortedtrajectories.append(t)
+            sortedtrajectories[fp].append(t)
             break
 
+if args.basenameoutfile is None:    outfile = args.trajectoryfile
+else:                               outfile = args.basenameoutfile
+
 for fp in fixedpoint_restrictions:
-    writeoutput(args.infile + "_" + fp,sortedtrajectories[fp])
+    writeoutput(outfile + "_" + fp,sortedtrajectories[fp])
 
