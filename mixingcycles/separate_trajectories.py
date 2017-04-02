@@ -12,7 +12,6 @@ def closeto(point1,point2,accepteddistance = 1e-3,restrictdimension = None):
     elif isinstance(restrictdimension,str):
         assert len(restrictdimension) == len(point1),"Restriction must have identical dimension as points"
         assert restrictdimension.count('1') + restrictdimension.count('0') == len(restrictdimension),"Restriction on dimensions has to be either string of '1' and '0' or a single number"
-        #assert restrictdimension.count('1') > 0,"Restriction must contain at least one dimension to compare"
         d = 0.
         for i in range(len(restrictdimension)):
             if restrictdimension[i] == '1':
@@ -65,14 +64,17 @@ fp.close()
 
 # create strings of 0's and 1's, where 0 means trajectory reached zero in population (indicated by position of 0 in the string)
 zero                       = np.zeros(dim)
-fixedpoint_restrictions    = sorted([''.join(x) for x in itertools.product('01',repeat = dim)],cmp = lambda a,b: np.sign(b.count('1') - a.count('1')))
+fixedpoint_restrictions    = sorted([''.join(x) for x in itertools.product('01',repeat = dim)],cmp = lambda a,b: np.sign(b.count('0') - a.count('0')))
 sortedtrajectories         = dict()
 for fp in fixedpoint_restrictions:
     sortedtrajectories[fp] = list()
 
 for t in trajectories:
     for fp in fixedpoint_restrictions:
-        if closeto(t[-1],zero,restrictdimension = fp):
+        # index 1 in the 'closeto' function means use and compare this dimension
+        # index 0 in the output means that the endpoint of the trajectory is zero in this dimension (while 1 indicates endpoint is away from boundary in this dimension)
+        # both contradict each other, thus invert the bitstring!
+        if closeto(t[-1],zero,restrictdimension = invert(fp)):
             sortedtrajectories[fp].append(t)
             break
 
