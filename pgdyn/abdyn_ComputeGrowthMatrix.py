@@ -26,6 +26,7 @@ parser_iterationmap.add_argument("-M","--step",type=int,default=1)
 
 parser.add_argument("-o","--outfile",default=None)
 parser.add_argument("-i","--infile",default=None)
+parser.add_argument("-v","--verbose",default=False,action="store_true")
 
 args = parser.parse_args()
 
@@ -34,6 +35,7 @@ if args.outfile is None:
 
 if args.infile is None:
     g    = gc.GrowthDynamicsAntibiotics(**vars(args))
+    if args.verbose:print g.ParameterString()
     g.ComputeGrowthMatrix(size = args.maxsize,step = args.step)
 
 else:
@@ -41,7 +43,7 @@ else:
         g = pickle.load(open(args.infile))
     except:
         raise IOError,"could not open pickle file"
-
+    if args.verbose:print g.ParameterString()
     if g.hasGrowthMatrix():
         g.ExtendGrowthMatrix(size = args.maxsize)
     else:
