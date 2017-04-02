@@ -25,21 +25,35 @@ parser_iterationmap.add_argument("-m","--maxsize",type=int,default=100)
 parser_iterationmap.add_argument("-M","--step",type=int,default=1)
 
 parser.add_argument("-o","--outfile",default=None)
+parser.add_argument("-i","--infile",default=None)
 
 args = parser.parse_args()
 
 if args.outfile is None:
     raise IOError, "filename not specified"
 
-g    = gc.GrowthDynamicsAntibiotics(**vars(args))
-g.ComputeGrowthMatrix(size = args.maxsize,step = args.step)
+if args.infile is None:
+    g    = gc.GrowthDynamicsAntibiotics(**vars(args))
+    g.ComputeGrowthMatrix(size = args.maxsize,step = args.step)
 
+else:
+    try:
+        g = pickle.load(open(args.infile))
+    except:
+        raise IOError,"could not open pickle file"
+
+    if g.hasGrowthMatrix():
+        g.ExtendGrowthMatrix(size = args.maxsize)
+    else:
+        raise IOError,"pickle file does not contain growthmatrix"
+    
 try:
     fp = open(args.outfile,"w")
     pickle.dump(g,fp)
 except IOError:
     print >> sys.stderr,"could not open file for pickle dump"
     exit(1)
-
+        
+    
 
 
