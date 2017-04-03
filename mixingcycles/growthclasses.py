@@ -512,7 +512,7 @@ class GrowthDynamics(object):
             
     
     def arraystring(self,x):
-        return "[" + ", ".join(["{:.2f}".format(a) for a in x]) + "]"
+        return "[" + ", ".join(["{:.4f}".format(a) for a in x]) + "]"
 
     def ParameterString(self):
         r  = '\n'
