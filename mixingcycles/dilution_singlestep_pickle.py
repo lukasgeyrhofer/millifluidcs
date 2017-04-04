@@ -62,7 +62,7 @@ for dilution in dlist:
         px,py = gc.PoissonSeedingVectors(m,np.array((x,y)))
         nx = np.dot(py,np.dot(px,gm1))*dilution
         ny = np.dot(py,np.dot(px,gm2))*dilution
-        if (x==0):
+        if (y==0):
             print >> fp
         print >> fp,x,y,nx,ny
             
