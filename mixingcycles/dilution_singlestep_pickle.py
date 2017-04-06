@@ -56,7 +56,7 @@ if args.verbose:
 
 for dilution in dlist:
     if args.verbose:
-        print "# computing trajectories for D = {:e}".format(dilution)
+        print "# computing single step dynamics for D = {:e}".format(dilution)
     fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
     for x,y in itertools.product(nlist,repeat=2):
         px,py = gc.PoissonSeedingVectors(m,np.array((x,y)))
