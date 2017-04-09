@@ -40,10 +40,9 @@ except:
     raise IOError,"could not open pickle file"
 
 
-gm1 = g.growthmatrix[:,:,0]
-gm2 = g.growthmatrix[:,:,1]
-m   = np.arange(args.maxM)
-
+gm1 = g.growthmatrix[:,:,0]*args.dilution
+gm2 = g.growthmatrix[:,:,1]*args.dilution
+m   = np.arange(g.growthmatrixgrid)
 
 # initial condition are the respective fixed points on the axis
 if args.initialconditions is None:
