@@ -136,6 +136,10 @@ class reactionsystem:
     
     def get_time(self):
         return self.__time
+    
+    def set_time(self,time):
+        self.__time = time
+    
     def get_step(self):
         return self.__steps
     
