@@ -11,10 +11,11 @@ class reactionsystem:
         # define populations and set initial conditions =0 for all of them
         self.__indexset = indexset.replace("0","")
         self.__numpops  = len(self.__indexset)
-        
+        self.__n        = dict()
         self.set_population(self.__indexset,0,permissive = True)
 
         # reactions are stored in these arrays
+        # a single first reaction is already stored: "0" -> "0" with rate 0.
         self.__reactionrates = np.array((0.),dtype = float)
         self.__reactants     = np.array(("0"),dtype = str)
         self.__products      = np.array(("0"),dtype = str)
@@ -57,20 +58,18 @@ class reactionsystem:
     
     def existing_populations(self,populations = "0"):
         # splits the string for the population in two parts, with those in the indexset and those which are not
-        if isinstance(population,str):
-            tmp_exist    = ""
-            tmp_notexist = ""
+        populations = str(populations).replace("0","")
+        tmp_exist    = ""
+        tmp_notexist = ""
             
-            for p in populations:
-                if (p in (self.__indexset+"0")) and (not p in tmp_exist):
-                    if p != "0":    tmp_exist += p
-                if (not p in (self.__indexset + "0")) and (not p in tmp_notexist):
-                    if p != "0":    tmp_notexist += p
-            
-            return list([tmp_exist,tmp_notexist])
-        else:
-            raise KeyError,"need string for populations"
-    
+        for p in populations:
+            if (p in self.__indexset) and (not p in tmp_exist):
+                tmp_exist += p
+            if (not p in self.__indexset) and (not p in tmp_notexist):
+                tmp_notexist += p
+        
+        return list([tmp_exist,tmp_notexist])
+
     
     def set_population(self,population = "0",value = 0,permissive = False):
         populations = self.existing_populations(population)
@@ -119,13 +118,15 @@ class reactionsystem:
     
     def isavailable(self,populations = "0"):
         # check for any populations in the parameter string, if even one of them is 0 => return false
-        a = True
-        if populations != "0":
-            for p in populations.replace("0",""):
+        a    = True
+        pops = self.existing_populations(populations)
+        
+        if len(pops[0]) == 0 or len(pops[1]) > 0:
+            a = False
+        else:
+            for p in pops[0]:
                 if self.__n[p] == 0:
                     a = False
-        else:
-            a = False
         return a
     
 
@@ -135,31 +136,40 @@ class reactionsystem:
         currentrates = np.zeros(self.__numreactions)
         for i in range(self.__numreactions):
             currentrates[i] = self.__reactionrates[i]
-            for r in self.__reactioncoefficients[i].replace("0",""):
+            for r in self.__coefficients[i].replace("0",""):
                 currentrates[i] *= self.__n[r]
                     
-        
         # pick next reaction
-        nr = np.random.choice(np.arange(self.__numreactions),1,p = currentrates)
+        totalrate = np.sum(currentrates)
+        if totalrate > 0:
+            currentrates /= totalrate
+            nr = np.random.choice(np.arange(self.__numreactions),p = currentrates)
+        else:
+            nr = 0
         
         # return as tuple
-        return nr,np.sum(currentrates)
+        return nr,totalrate
         
     
     def step(self):
         # draw random numbers for next reaction until one is found with all reactants present
         nextreaction = 0
+        totalrate = 0
         while not self.isavailable(self.__reactants[nextreaction]):
             nextreaction,totalrate = self.nextreaction()
-            
-        for r in self.__reactants[nextreaction].replace("0",""):
-            self.__n[r] -= 1
-        for r in self.__products[nextreaction].replace("0",""):
-            self.__n[r] += 1
         
-        self.__steps += 1
-        self.__time  += np.random.exponential(1./totalrate)
-        return self.__steps
+        # only works, if something happens
+        if totalrate > 0:
+            for r in self.__reactants[nextreaction].replace("0",""):
+                self.__n[r] -= 1
+            for r in self.__products[nextreaction].replace("0",""):
+                self.__n[r] += 1
+            
+            self.__steps += 1
+            self.__time  += np.random.exponential(1./totalrate)
+            return self.__steps
+        else:
+            return None
 
 
     def get_populations(self, populations = None):

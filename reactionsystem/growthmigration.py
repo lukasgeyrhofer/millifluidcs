@@ -19,10 +19,10 @@ args = parser.parse_args()
 
 r = rs.reactionsystem(indexset="NMRS")
 
-r.add_reaction("N","M",args.mu)
-r.add_reaction("M","N",args.mu)
-r.add_reaction("NR","NN",args.alpha)
-r.add_reaction("MS","MM",args.alpha)
+r.add_reaction("N", "M",   rate = args.mu,    coefficients = "N")
+r.add_reaction("M", "N",   rate = args.mu,    coefficients = "M")
+r.add_reaction("NR", "NN", rate = args.alpha, coefficients = "N")
+r.add_reaction("MS", "MM", rate = args.alpha, coefficients = "M")
 
 
 for rep in range(args.repetitions):
