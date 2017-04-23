@@ -29,7 +29,7 @@ r = rs.reactionsystem(indexset = "Aa")
 r.add_reaction("Aa", "AA", rate = args.alpha, coefficients = "A")
 prevn = "A"
 allpops = "A"
-assert args.populations < 26,"dont have enough letters"
+assert 2 <= args.populations <= 26,"populations indexed by letters in alphabet..."
 for i in range(66,65+args.populations):
     n = chr(i)
     s = chr(i+32)
