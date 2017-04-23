@@ -7,20 +7,24 @@ from scipy import stats
 
 class reactionsystem:
     def __init__(self,indexset = ""):
+        
+        # define populations and set initial conditions =0 for all of them
         self.__indexset = indexset.replace("0","")
-        self.__numpops = len(self.__indexset)
-        self.__n = {}
-        for r in indexset:
-            self.__n[r] = 0
+        self.__numpops  = len(self.__indexset)
+        
+        self.set_population(self.__indexset,0,permissive = True)
 
-        self.__recreaterv = True
-        self.__reactionrates = np.array((0))
-        self.__reactants = np.array(("0"))
-        self.__products = np.array(("0"))
-        self.__numreactions = 1
+        # reactions are stored in these arrays
+        self.__reactionrates = np.array((0.),dtype = float)
+        self.__reactants     = np.array(("0"),dtype = str)
+        self.__products      = np.array(("0"),dtype = str)
+        self.__coefficients  = np.array(("0"),dtype = str)
+        self.__numreactions  = 1
 
+        # internal time tracking
         self.__time = 0.
         self.__steps = 0
+    
     
     def load_populations_from_file(self,filename = None,permissive = False):
         try:
@@ -32,58 +36,89 @@ class reactionsystem:
             n = data[i,1]
             self.set_population(p,n,permissive)
     
+    
     def load_reactions_from_file(self,filename = None,permissive = False):
         try:
-            data = np.genfromtxt(filename)
+            fp = open(filename,"r")
         except:
             raise IOError("Could not load reactions from file '%s'"%filename)
-        for i in range(len(data[:,0])):
-            a = data[i,0] # reactants
-            b = data[i,1] # products
-            r = data[i,2] # rate
-            self.add_reaction(a,b,r,permissive)
+        for reaction in fp.readline():
+            e = reaction.split()
+            if len(e) < 2:
+                # skip lines with not at least two entries
+                continue
+            elif len(e) == 2:
+                self.add_reaction(e[0],e[1],permissive = permissive)
+            elif len(e) == 3:
+                self.add_reaction(e[0],e[1],rate = float(e[2]),permissive = permissive)
+            elif len(e) > 3:
+                self.add_reaction(e[0],e[1],rate = float(e[2]),coefficients = e[3],permissive = permissive)
+    
+    
+    def existing_populations(self,populations = "0"):
+        # splits the string for the population in two parts, with those in the indexset and those which are not
+        if isinstance(population,str):
+            tmp_exist    = ""
+            tmp_notexist = ""
+            
+            for p in populations:
+                if (p in (self.__indexset+"0")) and (not p in tmp_exist):
+                    if p != "0":    tmp_exist += p
+                if (not p in (self.__indexset + "0")) and (not p in tmp_notexist):
+                    if p != "0":    tmp_notexist += p
+            
+            return list([tmp_exist,tmp_notexist])
+        else:
+            raise KeyError,"need string for populations"
     
     
     def set_population(self,population = "0",value = 0,permissive = False):
-        if isinstance(population,str):
-            if len(population.replace("0","")) >= 1:
-                for p in population.replace("0",""):
-                    if p in self.__indexset:
-                        self.__n[p] = value
-                    else:
-                        if permissive and p != "0":
-                            self.__indexset += p
-                            self.__n[p] = value
+        populations = self.existing_populations(population)
         
+        for p in populations[0]:
+            self.__n[p] = value
+        if permissive:
+            for p in populations[1]:
+                self.__indexset += p
+                self.__numpops  += 1
+                self.__n[p]      = value
+
     
-    def add_reaction(self,reactants,products,rate,permissive = False):
+    def add_reaction(self,reactants,products,rate = 1.,coefficients = "0",permissive = False):
         correctreaction = True
+        
         if rate <= 0:
             correctreaction = False
+            
         if correctreaction:
-            for r in reactants:
-                if not r in self.__indexset.replace("0",""):
-                    if permissive:
-                        self.__indexset += r
-                        self.__n[r] = 0
-                    else:
-                        correctreaction = False
-            for r in products:
-                if not r in self.__indexset.replace("0",""):
-                    if permissive:
-                        self.__indexset += r
-                        self.__n[r] = 0
-                    else:
-                        correctreaction = False
+            rpop = self.existing_populations(reactants)
+            if not permissive and len(rpop[1]) > 0:
+                correctreaction = False
+            else:
+                self.set_population(rpop[1],0)
+            
+            ppop = self.existing_populations(products)
+            if not permissive and len(ppop[1]) > 0:
+                correctreaction = False
+            else:
+                self.set_population(ppop[1],0)
+            
+            cpop = self.existing_populations(coefficients)
+            if not permissive and len(cpop[1]) > 0:
+                correctreaction = False
+            else:
+                self.set_population(cpop[1],0)
+                
         if correctreaction:
             self.__reactants     = np.append(self.__reactants,reactants)
             self.__products      = np.append(self.__products,products)
             self.__reactionrates = np.append(self.__reactionrates,rate)
+            self.__coefficients  = np.append(self.__coefficients,coefficients)
             self.__numreactions += 1
-            self.__recreaterv = True
     
     
     def isavailable(self,populations = "0"):
+        # check for any populations in the parameter string, if even one of them is 0 => return false
         a = True
         if populations != "0":
             for p in populations.replace("0",""):
@@ -93,26 +128,29 @@ class reactionsystem:
             a = False
         return a
     
-    def recreate_RV(self):
-        self.__totalrate = np.sum(self.__reactionrates)
-        if self.__totalrate > 0.:
-            rk = self.__reactionrates/self.__totalrate
-            ak = np.arange(self.__numreactions)
-            self.__nextreaction = stats.rv_discrete(values = (ak,rk))
-            self.__recreaterv = False
-            return True
-        else:
-            return False
+
+    def nextreaction(self):
+        # need to build rates from reactionrate and coefficients
+        # so far, only linear dependence implemented
+        currentrates = np.zeros(self.__numreactions)
+        for i in range(self.__numreactions):
+            currentrates[i] = self.__reactionrates[i]
+            for r in self.__reactioncoefficients[i].replace("0",""):
+                currentrates[i] *= self.__n[r]
+                    
+        
+        # pick next reaction
+        nr = np.random.choice(np.arange(self.__numreactions),1,p = currentrates)
+        
+        # return as tuple
+        return nr,np.sum(currentrates)
+        
     
     def step(self):
-        if self.__recreaterv:
-            if not self.recreate_RV():
-                raise ValueError("Total rate of all reactions is 0")
-            
+        # draw random numbers for next reaction until one is found with all reactants present
         nextreaction = 0
-        i = 0
         while not self.isavailable(self.__reactants[nextreaction]):
-            nextreaction = self.__nextreaction.rvs(size=1)[0]
+            nextreaction,totalrate = self.nextreaction()
             
         for r in self.__reactants[nextreaction].replace("0",""):
             self.__n[r] -= 1
@@ -120,7 +158,7 @@ class reactionsystem:
             self.__n[r] += 1
         
         self.__steps += 1
-        self.__time  += np.random.exponential(1/self.__totalrate)
+        self.__time  += np.random.exponential(1./totalrate)
         return self.__steps
 
 
@@ -145,10 +183,10 @@ class reactionsystem:
     
     def print_reactions(self):
         if self.__numreactions > 1:
-            print "# Reactants\tProducts\trate"
+            print "# Reactants\tProducts\tRate\tCoefficients"
             print "# ============================================="
             for i in range(1,self.__numreactions):
-                print "# %s\t->\t%s\t%e"%(self.__reactants[i],self.__products[i],self.__reactionrates[i])
+                print "# %s\t->\t%s\t%e\t%s"%(self.__reactants[i],self.__products[i],self.__reactionrates[i],self.__coefficients[i])
         else:
             print "# No reactions defined"
     
