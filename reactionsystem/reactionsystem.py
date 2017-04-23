@@ -94,19 +94,19 @@ class reactionsystem:
             if not permissive and len(rpop[1]) > 0:
                 correctreaction = False
             else:
-                self.set_population(rpop[1],0)
+                self.set_population(rpop[1],0,permissive = True)
             
             ppop = self.existing_populations(products)
             if not permissive and len(ppop[1]) > 0:
                 correctreaction = False
             else:
-                self.set_population(ppop[1],0)
+                self.set_population(ppop[1],0,permissive = True)
             
             cpop = self.existing_populations(coefficients)
             if not permissive and len(cpop[1]) > 0:
                 correctreaction = False
             else:
-                self.set_population(cpop[1],0)
+                self.set_population(cpop[1],0,permissive = True)
                 
         if correctreaction:
             self.__reactants     = np.append(self.__reactants,reactants)
