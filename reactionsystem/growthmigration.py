@@ -25,20 +25,21 @@ parser.add_argument("-a","--alpha",type=float,default=1.)
 parser.add_argument("-o","--outputsteps",type=int,default=100)
 args = parser.parse_args()
 
-r = rs.reactionsystem(indexset = "Aa")
-r.add_reaction("Aa", "AA", rate = args.alpha, coefficients = "A")
-prevn = "A"
-allpops = "A"
 assert 2 <= args.populations <= 26,"populations indexed by letters in alphabet..."
+
+r       = rs.reactionsystem(indexset = "Aa")
+prevn   = "A"
+allpops = "A"
+r.add_reaction("Aa", "AA", rate = args.alpha, coefficients = "A")
+
 for i in range(66,65+args.populations):
-    n = chr(i)
-    s = chr(i+32)
-    print n+s
-    r.add_reaction(n+s,n+n,rate = args.alpha,coefficients = n,permissive = True)
-    r.add_reaction(n,prevn,rate = args.mu,coefficients = n,permissive = True)
-    r.add_reaction(prevn,n,rate = args.mu,coefficients = prevn,permissive = True)
-    prevn = n
-    allpops += n
+    n = chr(i)     # microbial population
+    s = chr(i+32)  # consumed substrate
+    r.add_reaction(n+s, n+n, rate = args.alpha, coefficients = n,     permissive = True)  # growth
+    r.add_reaction(n, prevn, rate = args.mu,    coefficients = n,     permissive = True)  # migration to previous deme
+    r.add_reaction(prevn, n, rate = args.mu,    coefficients = prevn, permissive = True)  # migration from previous deme
+    prevn    = n
+    allpops += n # keep whole string of all growing populations (for output)
     
 for rep in range(args.repetitions):
     r.set_population("A",args.initialcond_firstpop)
