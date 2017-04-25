@@ -14,13 +14,13 @@ def output(time,pops):
         print
     
 parser = argparse.ArgumentParser()
-parser.add_argument("-P","--populations",type=int,default=2)
+parser.add_argument("-P","--populations",type=int,default=4)
 parser.add_argument("-N","--initialcond_firstpop",type=int,default=25)
 parser.add_argument("-n","--initialcond_otherpop",type=int,default=0)
-parser.add_argument("-S","--substrate",type=int,default=1000)
+parser.add_argument("-S","--substrate",type=int,default=10000)
 
 parser.add_argument("-r","--repetitions",type=int,default=10)
-parser.add_argument("-m","--mu",type=float,default=1e-3)
+parser.add_argument("-m","--mu",type=float,default=1e-2)
 parser.add_argument("-a","--alpha",type=float,default=1.)
 parser.add_argument("-o","--outputsteps",type=int,default=100)
 args = parser.parse_args()
