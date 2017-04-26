@@ -10,6 +10,8 @@ parser.add_argument("-i","--infiles",nargs="*")
 parser.add_argument("-T","--templatefile",default=None)
 parser.add_argument("-m","--lowerthreshold",default=.02,type=float)
 parser.add_argument("-M","--upperthreshold",default=2,type=float)
+parser.add_argument("-B","--bins",default=10,type=int)
+parser.add_argument("-R","--histogramrange",nargs=2,type=float,default=None)
 args = parser.parse_args()
 
 try:
@@ -95,6 +97,10 @@ for key in growthrates.iterkeys():
     gr = np.array(growthrates[key])
     #print gr
     print "{:15s} {:.4f} (± {:.4f}) 1/h".format(key,np.mean(gr),np.sqrt(np.std(gr)))
-    h,b = np.histogram(gr,bins=10,range = (.2,.7),density = True)
+    if args.histogramrange is None:
+        r = (.2,.7)
+    else:
+        r = args.histogramrange
+    h,b = np.histogram(gr,bins=args.bins,range = r,density = True)
     b = b[:-1] + np.diff(b)/2.
     np.savetxt(key + ".growthrates",np.transpose([b,h]))
