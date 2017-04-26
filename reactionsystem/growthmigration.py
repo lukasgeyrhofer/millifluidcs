@@ -32,6 +32,8 @@ prevn   = "A"
 allpops = "A"
 r.add_reaction("Aa", "AA", rate = args.alpha, coefficients = "A")
 
+
+
 for i in range(66,65+args.populations):
     n = chr(i)     # microbial population
     s = chr(i+32)  # consumed substrate
