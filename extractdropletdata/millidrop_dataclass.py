@@ -13,7 +13,6 @@ class DropletData(object):
                 fptemp = open(templatefile,"r")
             except:
                 raise IOError,"could not open file"
-        
             self.__droplettype = None
             first = True
             for line in fptemp.readlines():
@@ -39,6 +38,7 @@ class DropletData(object):
         
         self.__data        = dict()
         self.__listoftypes = list(set(self.__droplettype))
+        self.__datacolumns = datacolumns
             
         for filename in infiles:
             try:
@@ -46,7 +46,7 @@ class DropletData(object):
             except:
                 raise IOError
             dropletID = self.filename_to_dropletID(filename)
-            self.add_trajectory(dropletID, tmpdata, datacolumns, splitBackForthTrajectories)
+            self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
             
 
     def filename_to_dropletID(self,filename):
@@ -66,7 +66,6 @@ class DropletData(object):
 
 
     def add_trajectory(self,dropletID = None, data = None, columns = None, splitBackForthTrajectories = False):
-        
         if data is None:
             raise ValueError,"need timestamps for experimental data"
 
@@ -105,6 +104,7 @@ class DropletData(object):
         else:
             super(DropletData,self).__getitem__(key)
     
+    
     def __iter__(self):
         for key in self.__listoftypes:
             yield key,self[key]
@@ -115,7 +115,13 @@ class DropletData(object):
         for key in self.__listoftypes:
             r[key] = len(self.__data[key])
         return r
-            
+    
+    
+    def __getattr__(self,key):
+        if key == "datacolumns":
+            return self.__datacolumns
+        else:
+            super(DropletData,self).__getattr__(key)
 
 # working example of loading files and printing them again
 def main():

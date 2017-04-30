@@ -5,6 +5,8 @@ import numpy as np
 import argparse
 import sys,math
 
+import millidrop_dataclass as mdc
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-i","--infiles",nargs="*")
 parser.add_argument("-T","--templatefile",default=None)
@@ -14,93 +16,40 @@ parser.add_argument("-B","--bins",default=10,type=int)
 parser.add_argument("-R","--histogramrange",nargs=2,type=float,default=None)
 args = parser.parse_args()
 
-try:
-    fpTMP = open(args.templatefile,"r")
-except:
-    raise IOError,"could not open templatefile"
+data = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = True)
 
-first = True
-template = dict()
-for line in fpTMP.readlines():
-    if line[0] != "#":
-        values = line.strip().split(',')
-        if first:
-            names = values
-            first = False
-        else:
-            for i in range(len(values)):
-                if not template.has_key(names[i]):
-                    template[names[i]] = np.array([values[i]])
-                else:
-                    template[names[i]] = np.concatenate([template[names[i]],[values[i]]])
-
-description = np.concatenate([[template['description'][i]] * int(template['droplet_number'][i]) for i in range(len(template['description']))])
 growthrates = dict()
 
-assert len(args.infiles) == len(description)
-
-for i in range(len(args.infiles)):
-    try:
-        data = np.genfromtxt(args.infiles[i],delimiter = ',', names = True)
-        t = data['time'] * 1e-3 # for whatever reason, the unit seems to be milli-hours
-        b = data['Channel1_mean']
-
-        if not growthrates.has_key(description[i]):
-            growthrates[description[i]] = list()
+for experimentLabel, trajectories in data:
+    if not growthrates.has_key(experimentLabel):
+        growthrates[experimentLabel] = list()
+    
+    for trajectory in trajectories:
+        t = trajectory[:,0] * 1e-3
+        b = trajectory[:,1]
         
-        tEVEN = t[0::2]
-        tODD  = t[1::2]
-        bEVEN = b[0::2]
-        bODD  = b[1::2]
+        t = t[args.lowerthreshold < b]
+        b = b[args.lowerthreshold < b]
         
-        tEVEN = tEVEN[args.lowerthreshold < bEVEN]
-        bEVEN = bEVEN[args.lowerthreshold < bEVEN]
-        tODD  = tODD [args.lowerthreshold < bODD ]
-        bODD  = bODD [args.lowerthreshold < bODD ]
+        t = t[args.upperthreshold > b]
+        b = b[args.upperthreshold > b]
         
-        tEVEN = tEVEN[args.upperthreshold > bEVEN]
-        bEVEN = bEVEN[args.upperthreshold > bEVEN]
-        tODD  = tODD [args.upperthreshold > bODD ]
-        bODD  = bODD [args.upperthreshold > bODD ]
-        
-        if len(tODD) >= 2:
-            sx  = np.sum(tODD)
-            sxx = np.sum(tODD*tODD)
-            sy  = np.sum(np.log(bODD))
-            sxy = np.sum(tODD * np.log(bODD))
-            n   = len(tODD)
-            grODD = (n * sxy - sx * sy)/(n*sxx - sx*sx)
-        
-            if np.isnan(grODD):
-                print bODD,description[i]
-            else:
-                growthrates[description[i]].append(grODD)
+        if len(t) >= 2:
+            sx  = np.sum(t)
+            sxx = np.sum(t*t)
+            sy  = np.sum(np.log(b))
+            sxy = np.sum(t * np.log(b))
+            n   = len(t)
+            gr  = (n * sxy - sx * sy)/(n*sxx - sx*sx)
 
-        if len(tEVEN) >= 2:
-            sx  = np.sum(tEVEN)
-            sxx = np.sum(tEVEN*tEVEN)
-            sy  = np.sum(np.log(bEVEN))
-            sxy = np.sum(tEVEN * np.log(bEVEN))
-            n   = len(tEVEN)
-            grEVEN = (n * sxy - sx * sy)/(n*sxx - sx*sx)
+            growthrates[experimentLabel].append(gr)
+    
+    print "{:15s} {:.4f} (± {:.4f}) 1/h".format(experimentLabel,np.mean(growthrates[experimentLabel]),np.sqrt(np.std(growthrates[experimentLabel])))
 
-            if np.isnan(grEVEN):
-                print bEVEN,description[i]
-            else:
-                growthrates[description[i]].append(grEVEN)
-        
-    except:
-        continue
-
-
-for key in growthrates.iterkeys():
-    gr = np.array(growthrates[key])
-    #print gr
-    print "{:15s} {:.4f} (± {:.4f}) 1/h".format(key,np.mean(gr),np.sqrt(np.std(gr)))
     if args.histogramrange is None:
         r = (.2,.7)
     else:
         r = args.histogramrange
-    h,b = np.histogram(gr,bins=args.bins,range = r,density = True)
+    h,b = np.histogram(growthrates[experimentLabel],bins=args.bins,range = r,density = True)
     b = b[:-1] + np.diff(b)/2.
-    np.savetxt(key + ".growthrates",np.transpose([b,h]))
+    np.savetxt(experimentLabel + ".growthrates",np.transpose([b,h]))
