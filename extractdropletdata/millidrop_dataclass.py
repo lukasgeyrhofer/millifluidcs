@@ -55,6 +55,7 @@ class DropletData(object):
         r = int(os.path.basename(filename).split('.')[0])
         return r
 
+
     def dropletID_to_label(self,dropletID = None):
         if dropletID is None:
             raise KeyError
@@ -107,10 +108,16 @@ class DropletData(object):
     def __iter__(self):
         for key in self.__listoftypes:
             yield key,self[key]
+    
+    
+    def CountTrajectories(self):
+        r = dict()
+        for key in self.__listoftypes:
+            r[key] = len(self.__data[key])
+        return r
+            
 
-
-# working example of loading files
-
+# working example of loading files and printing them again
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i","--infiles",nargs="*")
@@ -118,13 +125,23 @@ def main():
     parser.add_argument("-S","--splitBackForthTrajectories",default=False,action="store_true")
     args = parser.parse_args()
     
+    # define data object
     data = DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = args.splitBackForthTrajectories)
 
+    # in general, data is obtained by iterating over sets of experimental labels with their trajectories
     for dropletLabel, Trajectories in data:
         print dropletLabel, len(Trajectories)
         for trajectory in Trajectories:
                 print trajectory
-    
+                
+    # should also work like that:
+    # given that the label 'SBW25mC-10' is defined in the templatefile
+    # this is the same as the 'Trajectories' in the loop above
+    print data['SBW25mC-10']
+
+
+# run through working example, if program is executed directly
+# don't run, if just loaded for class definitions
 if __name__ == "__main__":
     main()
 
