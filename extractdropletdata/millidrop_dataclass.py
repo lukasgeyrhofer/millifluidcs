@@ -6,31 +6,42 @@ import sys,math
 import os
 
 class DropletData(object):
-    def __init__(self, templatefile = None, infiles = None, splitBackForthTrajectories = False, datacolumns = ['time','Channel1_mean']):
+    def __init__(self, templatefile = None, infiles = None, splitBackForthTrajectories = False, datacolumns = ['time','Channel1_mean'], snakelikeloading = True):
         
         if not templatefile is None:
             try:
                 fptemp = open(templatefile,"r")
             except:
                 raise IOError,"could not open file"
-            self.__droplettype = None
             first = True
             for line in fptemp.readlines():
                 if line[0] != "#":
                     values = line.strip().split(',')
                     if first:
                         names = values
-                        first = False
                         try:
                             IDdescription    = names.index("description")
                             IDdroplet_number = names.index("droplet_number")
                         except:
                             raise ValueError, "templatefile does not contain columns 'description' and 'droplet_number'"
+
+                        self.__droplettype = None
+                        typesinrow         = None
+                        lastrow            = ""
+                        first              = False
                     else:
-                        if self.__droplettype is None:
-                            self.__droplettype = np.repeat(values[IDdescription],int(values[IDdroplet_number]))
-                        else:
-                            self.__droplettype = np.concatenate([self.__droplettype,np.repeat(values[IDdescription],int(values[IDdroplet_number]))])
+                        if line[0] != lastrow:
+                            if snakelikeloading:
+                                # check if forward
+                                direction      = 2 * (ord(line[0])%2) - 1   # ord('A') == 65
+                                                                            # seems quite a hack, not sure how general this is
+                            else:
+                                direction      = 1
+                            self.__droplettype = self.concat(self.__droplettype,typesinrow[::direction])
+                            typesinrow         = None
+                        
+                        typesinrow = self.concat(typesinrow,np.repeat(values[IDdescription],int(values[IDdroplet_number])))
+                        lastrow = line[0]
         
             fptemp.close()
         else:
@@ -47,7 +58,17 @@ class DropletData(object):
                 raise IOError
             dropletID = self.filename_to_dropletID(filename)
             self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
-            
+    
+    
+    def concat(list1,list2):
+        if (list1 is None):
+            return list2
+        elif (list2 is None):
+            return list1
+        elif (list1 is None) and (list2 is None):
+            return None
+        else:
+            return np.concatenate([list1,list2])
 
     def filename_to_dropletID(self,filename):
         # in current implementation, filename is just 'dropletnumber.CSV'
@@ -77,12 +98,8 @@ class DropletData(object):
             newdatablock0 = None
             newdatablock1 = None
             for column in columns:
-                if newdatablock0 is None:
-                    newdatablock0 = np.array([data[column][0::2]])
-                    newdatablock1 = np.array([data[column][1::2]])
-                else:
-                    newdatablock0 = np.concatenate([newdatablock0,np.array([data[column][0::2]])])
-                    newdatablock1 = np.concatenate([newdatablock1,np.array([data[column][1::2]])])                                                    
+                newdatablock0 = self.concat(newdatablock0,np.array([data[column][0::2]]))
+                newdatablock1 = self.concat(newdatablock1,np.array([data[column][1::2]]))                                                    
             newdatablock0 = np.transpose(newdatablock0)
             newdatablock1 = np.transpose(newdatablock1)
             self.__data[dropletLabel].append(newdatablock0)
@@ -90,10 +107,7 @@ class DropletData(object):
         else:
             newdatablock0 = None
             for column in columns:
-                if newdatablock0 is None:
-                    newdatablock0 = np.array([data[column][0::2]])
-                else:
-                    newdatablock0 = np.concatenate([newdatablock0,np.array([data[column][0::2]])])
+                newdatablock0 = self.concat(newdatablock0,np.array([data[column][0::2]]))
             newdatablock0 = np.transpose(newdatablock0)
             self.__data[dropletLabel].append(newdatablock0)
             
