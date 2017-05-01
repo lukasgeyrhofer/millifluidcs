@@ -18,7 +18,7 @@ parser.add_argument("-i","--infiles",nargs="*")
 parser.add_argument("-l","--lowerthreshold", type=float, default = .027)
 parser.add_argument("-t","--maxtime", type = float, default= 140)
 parser.add_argument("-M","--maxfev",type=int,default=5000)
-parser.add_argument("-B","--bins",type=int,default=10)
+parser.add_argument("-B","--bins",type=int,default=20)
 parser.add_argument("-v","--verbose",default=False,action="store_true")
 args = parser.parse_args()
 
@@ -59,7 +59,7 @@ for label,trajectories in data:
         
         
     
-    r = [-.05,.25]
+    r = [-.05,.45]
     h,b = np.histogram(growthrates[label],bins=args.bins,range = r,density = True)
     b = b[:-1] + np.diff(b)/2.
     np.savetxt(label + ".growthratesE",np.transpose([b,h]))
