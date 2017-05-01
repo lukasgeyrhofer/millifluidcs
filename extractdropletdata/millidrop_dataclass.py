@@ -8,6 +8,7 @@ import os
 class DropletData(object):
     def __init__(self, templatefile = None, infiles = None, splitBackForthTrajectories = False, datacolumns = ['time','Channel1_mean'], snakelikeloading = True):
         
+        self.__listoftypes = list()
         if not templatefile is None:
             try:
                 fptemp = open(templatefile,"r")
@@ -27,22 +28,31 @@ class DropletData(object):
 
                         self.__droplettype = None
                         typesinrow         = None
-                        lastrow            = ""
+                        lastrow            = '.'
                         first              = False
                     else:
                         if line[0] != lastrow:
                             if snakelikeloading:
                                 # check if forward
-                                direction      = 2 * (ord(line[0])%2) - 1   # ord('A') == 65
+                                direction      = 2 * (ord(lastrow)%2) - 1   # ord('A') == 65
                                                                             # seems quite a hack, not sure how general this is
                             else:
                                 direction      = 1
-                            self.__droplettype = self.concat(self.__droplettype,typesinrow[::direction])
+
+                            self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
                             typesinrow         = None
                         
                         typesinrow = self.concat(typesinrow,np.repeat(values[IDdescription],int(values[IDdroplet_number])))
                         lastrow = line[0]
-        
+            
+            if snakelikeloading:
+                # check if forward
+                direction      = 2 * (ord(lastrow)%2) - 1   # ord('A') == 65
+                                                            # seems quite a hack, not sure how general this is
+            else:
+                direction      = 1
+                
+            self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
             fptemp.close()
         else:
             self.__droplettype = np.repeat("default",len(infiles),dtype=str)
@@ -60,15 +70,15 @@ class DropletData(object):
             self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
     
     
-    def concat(list1,list2):
-        if (list1 is None):
-            return list2
-        elif (list2 is None):
-            return list1
-        elif (list1 is None) and (list2 is None):
+    def concat(self,list1 = None,list2 = None, direction1 = 1, direction2 = 1):
+        if (list1 is None) and (list2 is None):
             return None
+        elif (list1 is None):
+            return list2[::direction2]
+        elif (list2 is None):
+            return list1[::direction1]
         else:
-            return np.concatenate([list1,list2])
+            return np.concatenate([list1[::direction1],list2[::direction2]])
 
     def filename_to_dropletID(self,filename):
         # in current implementation, filename is just 'dropletnumber.CSV'
@@ -79,11 +89,11 @@ class DropletData(object):
 
     def dropletID_to_label(self,dropletID = None):
         if dropletID is None:
-            raise KeyError
+            raise KeyError, "dropletID is None"
         try:
             return self.__droplettype[dropletID]
         except:
-            raise KeyError
+            raise KeyError, "did not find experiment type for droplet '{}'".format(dropletID)
 
 
     def add_trajectory(self,dropletID = None, data = None, columns = None, splitBackForthTrajectories = False):
@@ -115,8 +125,8 @@ class DropletData(object):
     def __getitem__(self,key):
         if key in self.__listoftypes:
             return self.__data[key]
-        else:
-            super(DropletData,self).__getitem__(key)
+        #else:
+            #super(DropletData,self).__getitem__(key)
     
     
     def __iter__(self):
