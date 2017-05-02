@@ -11,7 +11,9 @@ class DropletData(object):
         if infiles is None:
             raise IOError, "datafiles required"
         
-        
+        # ===============================================================
+        # = generate list of all types of experiments from templatefile =
+        # ===============================================================
         self.__listoftypes = list()
         if not templatefile is None:
             try:
@@ -60,11 +62,17 @@ class DropletData(object):
             # if no templatefile, group everything under label 'default'
             self.__droplettype = np.repeat("default",len(infiles))
         
+        # ===============================================================
+        # = variable initialization
+        # ===============================================================
         self.__data        = dict()
         self.__listoftypes = list(set(self.__droplettype))
         self.__datacolumns = datacolumns
-        
-        # iterate over all separate droplet files
+
+
+        # ===============================================================
+        # = iterate over all separate droplet files
+        # ===============================================================
         for filename in infiles:
             dropletID = self.filename_to_dropletID(filename)
             try:
@@ -76,7 +84,9 @@ class DropletData(object):
             self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
         
         
-        # restrictions on data
+        # ===============================================================
+        # = restrictions on data
+        # ===============================================================
         self.__datarestrictions = list()
         self.__permittedoperations = ["min","max"]
     
@@ -135,9 +145,11 @@ class DropletData(object):
             
     def __getitem__(self,key):
         if key in self.__listoftypes:
-            return self.__data[key]
+            #return self.__data[key]
+            return self.restricted_data(key)
         #else:
             #super(DropletData,self).__getitem__(key)
+            # apparently, 'object' does not have a __getitem__ method
     
     
     def __iter__(self):
