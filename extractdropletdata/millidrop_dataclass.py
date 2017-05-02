@@ -74,6 +74,11 @@ class DropletData(object):
                 print "Error while loading file '{:s}'. Continuing ...".format(filename)
                 continue
             self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
+        
+        
+        # restrictions on data
+        self.__datarestrictions = list()
+        self.__permittedoperations = ["min","max"]
     
     
     def concat(self,list1 = None,list2 = None, direction1 = 1, direction2 = 1):
@@ -152,6 +157,32 @@ class DropletData(object):
             return self.__datacolumns
         else:
             super(DropletData,self).__getattr__(key)
+    
+    
+    # routines to work with restricted data (ie. a lower cutoff for the droplet signal, or a maximal time)
+    def set_restriction(self,column,operation,value):
+        if (column in self.__datacolumns) and (operation in self.__permittedoperations):
+            self.__datarestrictions.append([column,value,operation])
+        else:
+            raise ValueError,"cannot apply restriction to data (column: '{:s}', operation: {:s})".format(column,operation)
+
+    def remove_all_restrictions(self):
+        self.__datarestrictions = list()
+        
+    def othercolumns(self.column):
+        return [dc if not dc == key for dc in self.__datacolumns]
+
+    def restricted_data(self,key):
+        tmpdata = self.__data[key]
+        if len(self.__datarestrictions) > 0:
+            for restriction in self.__datarestrictions:
+                if restriction[2] == "max":
+                    tmpdata = tmpdata[np.where(tmpdata[restriction[0]] < restriction[1])]
+                elif restriction[2] == "min":
+                    tmpdata = tmpdata[np.where(tmpdata[restriction[0]] > restriction[1])]
+        return tmpdata
+                
+
 
 # working example of loading files and printing them again
 def main():
