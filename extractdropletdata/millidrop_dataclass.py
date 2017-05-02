@@ -180,8 +180,24 @@ class DropletData(object):
     def remove_all_restrictions(self):
         self.__datarestrictions = list()
         
-    def othercolumns(self,key):
-        return [dc for dc in self.__datacolumns if dc != key]
+    def restrictions_from_file(self,filename):
+        try:
+            fp = open(filename,"r")
+        except:
+            raise IOError, "could not open file '{:s}' to load restrictions".format(filename)
+        for line in fp.readlines():
+            values = line.split()
+            if len(values) >= 3:
+                if values[0] in self.__datacolumns:
+                    if values[1] in ["<",">"]:
+                        if not np.isnan(float(values[2])):
+                            if values[1] == ">":
+                                self.set_restriction(values[0],"max",float(values[2]))
+                            elif values[1] == "<":
+                                self.set_restriction(values[0],"max",float(values[2]))
+        fp.close()
+
+
 
     def restricted_data(self,key):
         r = list()
