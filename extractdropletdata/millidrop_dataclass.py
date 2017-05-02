@@ -8,6 +8,10 @@ import os
 class DropletData(object):
     def __init__(self, templatefile = None, infiles = None, splitBackForthTrajectories = False, datacolumns = ['time','Channel1_mean'], snakelikeloading = True):
         
+        if infiles is None:
+            raise IOError, "datafiles required"
+        
+        
         self.__listoftypes = list()
         if not templatefile is None:
             try:
@@ -55,7 +59,7 @@ class DropletData(object):
             self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
             fptemp.close()
         else:
-            self.__droplettype = np.repeat("default",len(infiles),dtype=str)
+            self.__droplettype = np.repeat("default",len(infiles))
         
         self.__data        = dict()
         self.__listoftypes = list(set(self.__droplettype))
