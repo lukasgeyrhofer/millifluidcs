@@ -83,6 +83,8 @@ class DropletData(object):
                 continue
             self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
         
+        #print self.__data
+        #exit(1)
         
         # ===============================================================
         # = restrictions on data
@@ -126,20 +128,17 @@ class DropletData(object):
             self.__data[dropletLabel] = list()
         
         if splitBackForthTrajectories:        
-            newdatablock0 = None
-            newdatablock1 = None
+            newdatablock0 = dict()
+            newdatablock1 = dict()
             for column in columns:
-                newdatablock0 = self.concat(newdatablock0,np.array([data[column][0::2]]))
-                newdatablock1 = self.concat(newdatablock1,np.array([data[column][1::2]]))                                                    
-            newdatablock0 = np.transpose(newdatablock0)
-            newdatablock1 = np.transpose(newdatablock1)
+                newdatablock0[column] = np.array(data[column][0::2])
+                newdatablock1[column] = np.array(data[column][1::2])                                                    
             self.__data[dropletLabel].append(newdatablock0)
             self.__data[dropletLabel].append(newdatablock1)
         else:
-            newdatablock0 = None
+            newdatablock0 = dict()
             for column in columns:
-                newdatablock0 = self.concat(newdatablock0,np.array([data[column][0::2]]))
-            newdatablock0 = np.transpose(newdatablock0)
+                newdatablock0[column] = np.array(data[column][0::2])
             self.__data[dropletLabel].append(newdatablock0)
             
             
@@ -185,19 +184,33 @@ class DropletData(object):
         return [dc for dc in self.__datacolumns if dc != key]
 
     def restricted_data(self,key):
-        tmpdata = self.__data[key]
-        print tmpdata[:]
-        exit(1)
-        if len(self.__datarestrictions) > 0:
-            for restriction in self.__datarestrictions:
-                IDrestiction = self.__datacolumns.index(restriction[0])
-                if restriction[2] == "max":
-                    tmpdata = np.extract(tmpdata[:][IDrestiction] < restriction[1],tmpdata)
-                    #tmpdata = tmpdata[np.where(tmpdata[:,IDrestiction] < restriction[1])]
-                elif restriction[2] == "min":
-                    tmpdata = np.extract(tmpdata[:][IDrestiction] > restriction[1],tmpdata)
-                    #tmpdata = tmpdata[np.where(tmpdata[:,IDrestiction] > restriction[1])]
-        return tmpdata
+        r = list()
+        for datablock in self.__data[key]:
+            rdata = None
+            for column in self.__datacolumns:
+                if rdata is None:
+                    rdata = np.array([datablock[column]])
+                else:
+                    rdata = np.concatenate([rdata,np.array([datablock[column]])],axis = 0)
+            rdata = np.transpose(rdata)
+            pattern = None
+            if len(self.__datarestrictions) > 0:
+                for restriction in self.__datarestrictions:
+                    IDrestiction = self.__datacolumns.index(restriction[0])
+                    if restriction[2] == "max":
+                        if pattern is None:
+                            pattern = (datablock[restriction[0]] < restriction[1])
+                        else:
+                            pattern = pattern and (datablock[restriction[0]] < restriction[1])
+                    elif restriction[2] == "min":
+                        if pattern is None:
+                            pattern = (datablock[restriction[0]] < restriction[1])
+                        else:
+                            pattern = pattern and (datablock[restriction[0]] < restriction[1])
+                pattern = np.transpose(np.repeat([pattern],len(rdata[0]),axis = 0))
+                rdata   = np.reshape(rdata[pattern],(len(rdata[pattern])/2,2))
+            r.append(rdata)
+        return r
                 
 
 
