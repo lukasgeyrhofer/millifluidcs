@@ -181,17 +181,22 @@ class DropletData(object):
     def remove_all_restrictions(self):
         self.__datarestrictions = list()
         
-    def othercolumns(self.column):
-        return [dc if not dc == key for dc in self.__datacolumns]
+    def othercolumns(self,key):
+        return [dc for dc in self.__datacolumns if dc != key]
 
     def restricted_data(self,key):
         tmpdata = self.__data[key]
+        print tmpdata[:]
+        exit(1)
         if len(self.__datarestrictions) > 0:
             for restriction in self.__datarestrictions:
+                IDrestiction = self.__datacolumns.index(restriction[0])
                 if restriction[2] == "max":
-                    tmpdata = tmpdata[np.where(tmpdata[restriction[0]] < restriction[1])]
+                    tmpdata = np.extract(tmpdata[:][IDrestiction] < restriction[1],tmpdata)
+                    #tmpdata = tmpdata[np.where(tmpdata[:,IDrestiction] < restriction[1])]
                 elif restriction[2] == "min":
-                    tmpdata = tmpdata[np.where(tmpdata[restriction[0]] > restriction[1])]
+                    tmpdata = np.extract(tmpdata[:][IDrestiction] > restriction[1],tmpdata)
+                    #tmpdata = tmpdata[np.where(tmpdata[:,IDrestiction] > restriction[1])]
         return tmpdata
                 
 
