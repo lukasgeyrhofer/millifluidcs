@@ -45,28 +45,30 @@ class DropletData(object):
                         typesinrow = self.concat(typesinrow,np.repeat(values[IDdescription],int(values[IDdroplet_number])))
                         lastrow = line[0]
             
-            if snakelikeloading:
-                # check if forward
-                direction      = 2 * (ord(lastrow)%2) - 1   # ord('A') == 65
-                                                            # seems quite a hack, not sure how general this is
-            else:
-                direction      = 1
-                
+            # add the last buffer 'typesinrow'
+            if snakelikeloading:    direction      = 2 * (ord(lastrow)%2) - 1
+            else:                   direction      = 1
             self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
+            
+            # close templatefile
             fptemp.close()
         else:
+            # if no templatefile, group everything under label 'default'
             self.__droplettype = np.repeat("default",len(infiles),dtype=str)
         
         self.__data        = dict()
         self.__listoftypes = list(set(self.__droplettype))
         self.__datacolumns = datacolumns
-            
+        
+        # iterate over all separate droplet files
         for filename in infiles:
+            dropletID = self.filename_to_dropletID(filename)
             try:
                 tmpdata = np.genfromtxt(filename,names = True, delimiter = ',', dtype = float)
             except:
-                raise IOError
-            dropletID = self.filename_to_dropletID(filename)
+                # raise IOError
+                print "Error while loading file '{:s}'. Continuing ...".format(filename)
+                continue
             self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
     
     
