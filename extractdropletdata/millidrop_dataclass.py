@@ -173,7 +173,7 @@ class DropletData(object):
     # routines to work with restricted data (ie. a lower cutoff for the droplet signal, or a maximal time)
     def set_restriction(self,column,operation,value):
         if (column in self.__datacolumns) and (operation in self.__permittedoperations):
-            self.__datarestrictions.append([column,value,operation])
+            self.__datarestrictions.append([str(column),value,str(operation)])
         else:
             raise ValueError,"cannot apply restriction to data (column: '{:s}', operation: {:s})".format(column,operation)
 
@@ -189,13 +189,21 @@ class DropletData(object):
             values = line.split()
             if len(values) >= 3:
                 if values[0] in self.__datacolumns:
-                    if values[1] in ["<",">"]:
+                    if values[1] in self.__permittedoperations:
                         if not np.isnan(float(values[2])):
-                            if values[1] == ">":
-                                self.set_restriction(values[0],"max",float(values[2]))
-                            elif values[1] == "<":
-                                self.set_restriction(values[0],"max",float(values[2]))
+                            self.set_restriction(values[0],values[1],float(values[2]))
         fp.close()
+    
+    def write_restrictions_to_file(self,filename):
+        try:
+            if filename == "-":
+                fp = sys.stdout
+            else:
+                fp = open(filename,"w")
+        except:
+            raise IOError, "could not open file '{:s}' to save restrictions".format(filename)
+        for restriction in self.__datarestrictions:
+            print >> fp, restriction[0] + " " + restriction[2] + " " + str(restriction[1])
 
 
 
@@ -217,12 +225,12 @@ class DropletData(object):
                         if pattern is None:
                             pattern = (datablock[restriction[0]] < restriction[1])
                         else:
-                            pattern = pattern and (datablock[restriction[0]] < restriction[1])
+                            pattern = np.logical_and(pattern, datablock[restriction[0]] < restriction[1])
                     elif restriction[2] == "min":
                         if pattern is None:
-                            pattern = (datablock[restriction[0]] < restriction[1])
+                            pattern = (datablock[restriction[0]] > restriction[1])
                         else:
-                            pattern = pattern and (datablock[restriction[0]] < restriction[1])
+                            pattern = np.logical_and(pattern,datablock[restriction[0]] > restriction[1])
                 pattern = np.transpose(np.repeat([pattern],len(rdata[0]),axis = 0))
                 rdata   = np.reshape(rdata[pattern],(len(rdata[pattern])/2,2))
             r.append(rdata)

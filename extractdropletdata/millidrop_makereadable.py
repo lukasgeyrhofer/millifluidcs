@@ -34,10 +34,9 @@ if not args.lowertimecutoff is None:
 if not args.uppertimecutoff is None:
     data.set_restriction("time","max",args.uppertimecutoff)
 if not args.lowersignalcutoff is None:
-    data.set_restriction(args.columns[args.signalcolumn + timecolumnoffset],"min",args.lowersignalcutoff)
+    data.set_restriction(columns[args.signalcolumn + timecolumnoffset],"min",args.lowersignalcutoff)
 if not args.uppersignalcutoff is None:
-    data.set_restriction(args.columns[args.signalcolumn + timecolumnoffset],"max",args.uppersignalcutoff)
-
+    data.set_restriction(columns[args.signalcolumn + timecolumnoffset],"max",args.uppersignalcutoff)
 
 for label,trajectories in data:
     i = 0
