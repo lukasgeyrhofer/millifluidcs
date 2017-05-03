@@ -165,9 +165,13 @@ class DropletData(object):
     
     
     # routines to work with restricted data (ie. a lower cutoff for the droplet signal, or a maximal time)
-    def set_restriction(self,column,operation,value):
+    def set_restriction(self,column,operation,value, droplettype = None):
         if (column in self.__datacolumns) and (operation in self.__permittedoperations):
-            self.__datarestrictions.append([str(column),value,str(operation)])
+            newrestriction = [str(column),value,str(operation)]
+            if not droplettype is None:
+                if droplettype in self.__droplettype:
+                    newrestriction.append(str(datalabel))
+            self.__datarestrictions.append(newrestriction)
         else:
             raise ValueError,"cannot apply restriction to data (column: '{:s}', operation: {:s})".format(column,operation)
 
@@ -185,7 +189,10 @@ class DropletData(object):
                 if values[0] in self.__datacolumns:
                     if values[1] in self.__permittedoperations:
                         if not np.isnan(float(values[2])):
-                            self.set_restriction(values[0],values[1],float(values[2]))
+                            if len(values) >= 4:
+                                self.set_restriction(values[0],values[1],float(values[2]),values[3])
+                            else:
+                                self.set_restriction(values[0],values[1],float(values[2]))
         fp.close()
     
     def write_restrictions_to_file(self,filename = None):
@@ -197,7 +204,10 @@ class DropletData(object):
         except:
             raise IOError, "could not open file '{:s}' to save restrictions".format(filename)
         for restriction in self.__datarestrictions:
-            print >> fp, restriction[0] + " " + restriction[2] + " " + str(restriction[1])
+            print >> fp, restriction[0] + " " + restriction[2] + " " + str(restriction[1]),
+            if len(restriction) == 4:
+                print >> fp, " " + restriction[3],
+            print >> fp
 
 
 
@@ -214,6 +224,9 @@ class DropletData(object):
             pattern = None
             if len(self.__datarestrictions) > 0:
                 for restriction in self.__datarestrictions:
+                    if len(restriction) == 4:
+                        if restriction[3] == key:
+                            continue
                     IDrestiction = self.__datacolumns.index(restriction[0])
                     if restriction[2] == "max":
                         if pattern is None:
