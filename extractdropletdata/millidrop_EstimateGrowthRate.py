@@ -50,7 +50,7 @@ for experimentLabel, trajectories in data:
         growthrates[experimentLabel] = list()
     
     for trajectory in trajectories:
-        t = trajectory[:,0] * 1e-3
+        t = trajectory[:,0] / 3600.
         b = trajectory[:,1]
         
         if mode == "exponential":

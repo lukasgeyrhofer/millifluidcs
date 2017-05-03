@@ -83,8 +83,6 @@ class DropletData(object):
                 continue
             self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
         
-        #print self.__data
-        #exit(1)
         
         # ===============================================================
         # = restrictions on data
@@ -144,11 +142,7 @@ class DropletData(object):
             
     def __getitem__(self,key):
         if key in self.__listoftypes:
-            #return self.__data[key]
             return self.restricted_data(key)
-        #else:
-            #super(DropletData,self).__getitem__(key)
-            # apparently, 'object' does not have a __getitem__ method
     
     
     def __iter__(self):
