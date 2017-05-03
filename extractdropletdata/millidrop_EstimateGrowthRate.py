@@ -20,9 +20,9 @@ ioparser.add_argument("-t","--templatefile",default=None)
 ioparser.add_argument("-r","--restrictionfile",default=None)
 ioparser.add_argument("-o","--outbasename",default=None)
 
-
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
 aparser.add_argument("-m","--maxfev",default=5000,type=int)
+aparser.add_argument("-Y","--computeyield",default=False,action="store_true")
 
 ffparser = aparser.add_mutually_exclusive_group()
 ffparser.add_argument("-E","--exponential", default = False, action = "store_true")
@@ -33,7 +33,6 @@ hparser.add_argument("-B","--bins",default=10,type=int)
 hparser.add_argument("-R","--histogramrange",nargs=2,type=float,default=None)
 
 args = parser.parse_args()
-
 data = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = True)
 
 if not args.restrictionfile is None:
@@ -88,13 +87,14 @@ for experimentLabel, trajectories in data:
     else:                               outfilename = experimentLabel + ".growthrates"
     np.savetxt(outfilename,np.transpose([b,h]))
     
-    if (len(yields[experimentLabel]) >= 2) and (mode == "logistic"):
-        r = (0,1)
-        h,b = np.histogram(yields[experimentLabel],bins=args.bins,range = r,density = True)
-        b = b[:-1] + np.diff(b)/2.
-        if not args.outbasename is None:    outfilename = args.outbasename + experimentLabel + ".yields"
-        else:                               outfilename = experimentLabel + ".yields"
-        np.savetxt(outfilename,np.transpose([b,h]))
+    if args.computeyield:
+        if (len(yields[experimentLabel]) >= 2) and (mode == "logistic"):
+            r = (0,1)
+            h,b = np.histogram(yields[experimentLabel],bins=args.bins,range = r,density = True)
+            b = b[:-1] + np.diff(b)/2.
+            if not args.outbasename is None:    outfilename = args.outbasename + experimentLabel + ".yields"
+            else:                               outfilename = experimentLabel + ".yields"
+            np.savetxt(outfilename,np.transpose([b,h]))
 
 
 
