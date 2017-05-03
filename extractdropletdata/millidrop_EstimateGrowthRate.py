@@ -18,6 +18,7 @@ ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
 ioparser.add_argument("-i","--infiles",nargs="*")
 ioparser.add_argument("-t","--templatefile",default=None)
 ioparser.add_argument("-r","--restrictionfile",default=None)
+ioparser.add_argument("-o","--outbasename",default=None)
 
 
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
@@ -44,10 +45,12 @@ else:
     mode = "exponential" if args.exponential else "logistic"
 
 growthrates = dict()
+yields      = dict()
 
 for experimentLabel, trajectories in data:
     if not growthrates.has_key(experimentLabel):
         growthrates[experimentLabel] = list()
+        yields[experimentLabel] = list()
     
     for trajectory in trajectories:
         t = trajectory[:,0] / 3600.
@@ -70,6 +73,7 @@ for experimentLabel, trajectories in data:
                 ic = np.array([np.log(abs(np.log(b[0]/b[1])/(t[0] - t[1]))),np.log(b[0]),np.log(b[-1]),t[0]])
                 fitMEAN,fitCOV = curve_fit(logisticgrowth,t,b,p0 = ic,maxfev = args.maxfev)
                 growthrates[experimentLabel].append(np.exp(fitMEAN[0]))
+                yields[experimentLabel].append(np.exp(fitMEAN[2]))
 
     
     print "{:15s} {:.4f} (± {:.4f}) 1/h".format(experimentLabel,np.mean(growthrates[experimentLabel]),np.sqrt(np.std(growthrates[experimentLabel])))
@@ -80,4 +84,17 @@ for experimentLabel, trajectories in data:
         r = args.histogramrange
     h,b = np.histogram(growthrates[experimentLabel],bins=args.bins,range = r,density = True)
     b = b[:-1] + np.diff(b)/2.
-    np.savetxt(experimentLabel + ".growthrates",np.transpose([b,h]))
+    if not args.outbasename is None:    outfilename = args.outbasename + experimentLabel + ".growthrates"
+    else:                               outfilename = experimentLabel + ".growthrates"
+    np.savetxt(outfilename,np.transpose([b,h]))
+    
+    if (len(yields[experimentLabel]) >= 2) and (mode == "logistic"):
+        r = (0,1)
+        h,b = np.histogram(yields[experimentLabel],bins=args.bins,range = r,density = True)
+        b = b[:-1] + np.diff(b)/2.
+        if not args.outbasename is None:    outfilename = args.outbasename + experimentLabel + ".yields"
+        else:                               outfilename = experimentLabel + ".yields"
+        np.savetxt(outfilename,np.transpose([b,h]))
+
+
+
