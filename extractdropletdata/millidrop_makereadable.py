@@ -11,7 +11,7 @@ ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
 ioparser.add_argument("-i","--infiles",nargs="*")
 ioparser.add_argument("-o","--outbasename",default = None)
 ioparser.add_argument("-t","--templatefile",default = None)
-ioparser.add_argument("-R","--restrictionfile",default = None)
+ioparser.add_argument("-r","--restrictionfile",default = None)
 
 dparser = parser.add_argument_group(description = "==== Data parameters ====")
 dparser.add_argument("-C","--columns",nargs="*", default = ["Channel1_mean"])

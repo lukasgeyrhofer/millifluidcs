@@ -14,21 +14,22 @@ def logisticgrowth(t,la0,ln0,lk0,t0):
 
 
 parser = argparse.ArgumentParser()
-ioparser = argparse.add_argument_group(description = "==== I/O parameters ====")
-parser.add_argument("-i","--infiles",nargs="*")
-parser.add_argument("-t","--templatefile",default=None)
-parser.add_argument("-R"."--restrictionfile",default=None)
+ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
+ioparser.add_argument("-i","--infiles",nargs="*")
+ioparser.add_argument("-t","--templatefile",default=None)
+ioparser.add_argument("-r","--restrictionfile",default=None)
 
-ffparser = parser.add_mutuall_exclusive_group(description = "==== Type of fit function ====")
+
+aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
+aparser.add_argument("-m","--maxfev",default=5000,type=int)
+
+ffparser = aparser.add_mutually_exclusive_group()
 ffparser.add_argument("-E","--exponential", default = False, action = "store_true")
 ffparser.add_argument("-L","--logistic",    default = False, action = "store_true")
 
-hparser argparse.add_argument_group(description = "==== Histogram parameters ====")
+hparser = parser.add_argument_group(description = "==== Histogram parameters ====")
 hparser.add_argument("-B","--bins",default=10,type=int)
 hparser.add_argument("-R","--histogramrange",nargs=2,type=float,default=None)
-
-aparser.add_argument_group(description = "==== Algorithm parameters ====")
-aparser.add_argument("-m","--maxfev",default=5000,type=int)
 
 args = parser.parse_args()
 
@@ -64,12 +65,12 @@ for experimentLabel, trajectories in data:
                 growthrates[experimentLabel].append(gr)
                 
         elif mode == "logistic":
+            # length of trajectory has to contain more points than number of fitting parameters
+            if len(t) > 4:
                 ic = np.array([np.log(abs(np.log(b[0]/b[1])/(t[0] - t[1]))),np.log(b[0]),np.log(b[-1]),t[0]])
                 fitMEAN,fitCOV = curve_fit(logisticgrowth,t,b,p0 = ic,maxfev = args.maxfev)
                 growthrates[experimentLabel].append(np.exp(fitMEAN[0]))
 
-            
-            
     
     print "{:15s} {:.4f} (± {:.4f}) 1/h".format(experimentLabel,np.mean(growthrates[experimentLabel]),np.sqrt(np.std(growthrates[experimentLabel])))
 
