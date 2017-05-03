@@ -196,7 +196,7 @@ class DropletData(object):
     
     def write_restrictions_to_file(self,filename = None):
         try:
-            if filename is None
+            if filename is None:
                 fp = sys.stdout
             else:
                 fp = open(filename,"w")
