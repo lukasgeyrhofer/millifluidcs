@@ -17,6 +17,7 @@ parser.add_argument("-X","--uppertimecutoff",default = None,type = float)
 parser.add_argument("-s","--lowersignalcutoff",default = None,type = float)
 parser.add_argument("-S","--uppersignalcutoff",default = None,type = float)
 parser.add_argument("-c","--signalcolumn",default = 0,type = float)
+parser.add_argument("-R","--restrictionfile",default = None)
 args = parser.parse_args()
 
 if not "time" in args.columns:
@@ -37,6 +38,9 @@ if not args.lowersignalcutoff is None:
     data.set_restriction(columns[args.signalcolumn + timecolumnoffset],"min",args.lowersignalcutoff)
 if not args.uppersignalcutoff is None:
     data.set_restriction(columns[args.signalcolumn + timecolumnoffset],"max",args.uppersignalcutoff)
+
+if not args.restrictionfile is None:
+    data.load_restrictions_from_file(args.restrictionfile)
 
 for label,trajectories in data:
     i = 0

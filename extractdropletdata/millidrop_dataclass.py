@@ -180,7 +180,7 @@ class DropletData(object):
     def remove_all_restrictions(self):
         self.__datarestrictions = list()
         
-    def restrictions_from_file(self,filename):
+    def load_restrictions_from_file(self,filename):
         try:
             fp = open(filename,"r")
         except:
@@ -194,9 +194,9 @@ class DropletData(object):
                             self.set_restriction(values[0],values[1],float(values[2]))
         fp.close()
     
-    def write_restrictions_to_file(self,filename):
+    def write_restrictions_to_file(self,filename = None):
         try:
-            if filename == "-":
+            if filename is None
                 fp = sys.stdout
             else:
                 fp = open(filename,"w")
