@@ -9,7 +9,7 @@ class DropletData(object):
     def __init__(self, templatefile = None, infiles = None, splitBackForthTrajectories = False, datacolumns = ['time','Channel1_mean'], snakelikeloading = True):
         
         if infiles is None:
-            raise IOError, "datafiles required"
+            raise IOError("datafiles required")
         
         # ===============================================================
         # = generate list of all types of experiments from templatefile =
@@ -19,7 +19,7 @@ class DropletData(object):
             try:
                 fptemp = open(templatefile,"r")
             except:
-                raise IOError,"could not open file"
+                raise IOError("could not open file")
             first = True
             for line in fptemp.readlines():
                 if line[0] != "#":
@@ -30,7 +30,7 @@ class DropletData(object):
                             IDdescription    = names.index("description")
                             IDdroplet_number = names.index("droplet_number")
                         except:
-                            raise ValueError, "templatefile does not contain columns 'description' and 'droplet_number'"
+                            raise ValueError("templatefile does not contain columns 'description' and 'droplet_number'")
 
                         self.__droplettype = None
                         typesinrow         = None
@@ -79,7 +79,7 @@ class DropletData(object):
                 tmpdata = np.genfromtxt(filename,names = True, delimiter = ',', dtype = float)
             except:
                 # raise IOError
-                print "Error while loading file '{:s}'. Continuing ...".format(filename)
+                print("Error while loading file '{:s}'. Continuing ...".format(filename))
                 continue
             self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
         
@@ -110,16 +110,16 @@ class DropletData(object):
 
     def dropletID_to_label(self,dropletID = None):
         if dropletID is None:
-            raise KeyError, "dropletID is None"
+            raise KeyError("dropletID is None")
         try:
             return self.__droplettype[dropletID]
         except:
-            raise KeyError, "did not find experiment type for droplet '{}'".format(dropletID)
+            raise KeyError("did not find experiment type for droplet '{}'".format(dropletID))
 
 
     def add_trajectory(self,dropletID = None, data = None, columns = None, splitBackForthTrajectories = False):
         if data is None:
-            raise ValueError,"need timestamps for experimental data"
+            raise ValueError("need timestamps for experimental data")
 
         dropletLabel = self.dropletID_to_label(dropletID)
         if not self.__data.has_key(dropletLabel):
@@ -163,6 +163,8 @@ class DropletData(object):
         else:
             super(DropletData,self).__getattr__(key)
     
+    def getDropletTypes(self):
+        return self.__droplettype
     
     # routines to work with restricted data (ie. a lower cutoff for the droplet signal, or a maximal time)
     def set_restriction(self,column,operation,value, droplettype = None):
@@ -173,7 +175,7 @@ class DropletData(object):
                     newrestriction.append(str(datalabel))
             self.__datarestrictions.append(newrestriction)
         else:
-            raise ValueError,"cannot apply restriction to data (column: '{:s}', operation: {:s})".format(column,operation)
+            raise ValueError("cannot apply restriction to data (column: '{:s}', operation: {:s})".format(column,operation))
 
     def remove_all_restrictions(self):
         self.__datarestrictions = list()
@@ -182,7 +184,7 @@ class DropletData(object):
         try:
             fp = open(filename,"r")
         except:
-            raise IOError, "could not open file '{:s}' to load restrictions".format(filename)
+            raise IOError("could not open file '{:s}' to load restrictions".format(filename))
         for line in fp.readlines():
             values = line.split()
             if len(values) >= 3:
@@ -202,7 +204,7 @@ class DropletData(object):
             else:
                 fp = open(filename,"w")
         except:
-            raise IOError, "could not open file '{:s}' to save restrictions".format(filename)
+            raise IOError("could not open file '{:s}' to save restrictions".format(filename))
         for restriction in self.__datarestrictions:
             print >> fp, restriction[0] + " " + restriction[2] + " " + str(restriction[1]),
             if len(restriction) == 4:
