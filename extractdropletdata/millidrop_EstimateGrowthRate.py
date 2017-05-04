@@ -18,7 +18,8 @@ ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
 ioparser.add_argument("-i","--infiles",nargs="*")
 ioparser.add_argument("-t","--templatefile",default=None)
 ioparser.add_argument("-r","--restrictionfile",default=None)
-ioparser.add_argument("-o","--outbasename",default=None)
+ioparser.add_argument("-o","--outbasename",default='')
+ioparser.add_argument("-V","--write_values_to_outfile",default=False,action = "store_true")
 
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
 aparser.add_argument("-m","--maxfev",default=5000,type=int)
@@ -83,18 +84,24 @@ for experimentLabel, trajectories in data:
         r = args.histogramrange
     h,b = np.histogram(growthrates[experimentLabel],bins=args.bins,range = r,density = True)
     b = b[:-1] + np.diff(b)/2.
-    if not args.outbasename is None:    outfilename = args.outbasename + experimentLabel + ".growthrates"
-    else:                               outfilename = experimentLabel + ".growthrates"
-    np.savetxt(outfilename,np.transpose([b,h]))
+    outfilename = args.outbasename + experimentLabel + ".growthrates"
+    np.savetxt(outfilename,np.transpose([b,h]),fmt = '%.6e')
+    
+    if args.write_values_to_outfile:
+        np.savetxt(args.outbasename + experimentLabel + '.allgrowthrates',np.transpose(growthrates[experimentLabel]),fmt = '%.6e')
     
     if args.computeyield:
         if (len(yields[experimentLabel]) >= 2) and (mode == "logistic"):
             r = (0,1)
             h,b = np.histogram(yields[experimentLabel],bins=args.bins,range = r,density = True)
             b = b[:-1] + np.diff(b)/2.
-            if not args.outbasename is None:    outfilename = args.outbasename + experimentLabel + ".yields"
-            else:                               outfilename = experimentLabel + ".yields"
-            np.savetxt(outfilename,np.transpose([b,h]))
+            outfilename = args.outbasename + experimentLabel + ".yields"
+            np.savetxt(outfilename,np.transpose([b,h]),fmt = '%.6e')
+            
+            if args.write_values_to_outfile:
+                np.savetxt(args.outbasename + experimentLabel + '.allyields',yields[experimentLabel], fmt = '%.6e')
+            
+            
 
 
 
