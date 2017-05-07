@@ -136,7 +136,7 @@ class DropletData(object):
         else:
             newdatablock0 = dict()
             for column in columns:
-                newdatablock0[column] = np.array(data[column][0::2])
+                newdatablock0[column] = np.array(data[column])
             self.__data[dropletLabel].append(newdatablock0)
             
             
