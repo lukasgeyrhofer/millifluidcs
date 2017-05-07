@@ -33,7 +33,9 @@ for label,trajectories in data:
     if n >= 1:
         if args.maxtime is None:
             maxtime = np.max([t[-1,0] for t in trajectories if len(t) >= 1])
-        timegrid        = np.linspace(start = args.mintime,stop = args.maxtime,num = args.datapoints)
+        else:
+            maxtime = args.maxtime
+        timegrid        = np.linspace(start = args.mintime,stop = maxtime,num = args.datapoints)
         sumtrajectories = np.zeros((np.shape(trajectories[0])[1]-1,args.datapoints))
         if args.stddev:
             sum2trajectories = np.zeros((np.shape(trajectories[0])[1]-1,args.datapoints))
