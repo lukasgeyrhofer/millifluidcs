@@ -32,7 +32,7 @@ else:
 
 
 
-data = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, datacolumns = columns, splitBackForthTrajectories = True)
+data = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, datacolumns = columns, splitBackForthTrajectories = args.splitBackForthTrajectories)
 if not args.lowertimecutoff is None:
     data.set_restriction("time","min",args.lowertimecutoff)
 if not args.uppertimecutoff is None:
