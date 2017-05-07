@@ -88,7 +88,7 @@ class DropletData(object):
         # = restrictions on data
         # ===============================================================
         self.__datarestrictions = list()
-        self.__permittedoperations = ["min","max"]
+        self.__permittedoperations = ["min","max","end","start"]
     
     
     def concat(self,list1 = None,list2 = None, direction1 = 1, direction2 = 1):
@@ -240,6 +240,17 @@ class DropletData(object):
                             pattern = (datablock[restriction[0]] > restriction[1])
                         else:
                             pattern = np.logical_and(pattern,datablock[restriction[0]] > restriction[1])
+                    elif restriction[2] == "end":
+                        if pattern is None:
+                            pattern = (datablock[restriction[0]] < (1-restriction[1])* datablock[restriction[0]][-1])
+                        else:
+                            pattern = np.logical_and(pattern,datablock[restriction[0]] < (1-restriction[1])* datablock[restriction[0]][-1])
+                    elif restriction[2] == "start":
+                        if pattern is None:
+                            pattern = (datablock[restriction[0]] > (1+restriction[1]) * datablock[restriction[0]][0])
+                        else:
+                            pattern = np.logical_and(pattern,datablock[restriction[0]] (1+restriction[1]) * datablock[restriction[0]][0])
+                        
                 pattern = np.transpose(np.repeat([pattern],len(rdata[0]),axis = 0))
                 rdata   = np.reshape(rdata[pattern],(len(rdata[pattern])/2,2))
             r.append(rdata)
