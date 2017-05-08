@@ -78,7 +78,6 @@ class DropletData(object):
             try:
                 tmpdata = np.genfromtxt(filename,names = True, delimiter = ',', dtype = float)
             except:
-                # raise IOError
                 print("Error while loading file '{:s}'. Continuing ...".format(filename))
                 continue
             self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
@@ -121,6 +120,9 @@ class DropletData(object):
         if data is None:
             raise ValueError("need timestamps for experimental data")
 
+        for column in columns:
+            if not column in data.dtype.names:
+                raise ValueError("No field of name '{}'. Possible values are ('".format(column) + "', '".join(data.dtype.names) + "')")
         dropletLabel = self.dropletID_to_label(dropletID)
         if not self.__data.has_key(dropletLabel):
             self.__data[dropletLabel] = list()
