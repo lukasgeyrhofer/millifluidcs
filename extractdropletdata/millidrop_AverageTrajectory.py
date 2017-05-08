@@ -12,6 +12,7 @@ ioparser.add_argument("-i","--infiles",nargs="*")
 ioparser.add_argument("-t","--templatefile",default=None)
 ioparser.add_argument("-r","--restrictionfile",default=None)
 ioparser.add_argument("-o","--outbasename",default=None)
+ioparser.add_argument("-B","--splitBackForthTrajectories",default=False,action="store_true")
 
 tparser = parser.add_argument_group(description = "==== New grid parameters ====")
 tparser.add_argument("-M","--maxtime",default=None,type=float)
