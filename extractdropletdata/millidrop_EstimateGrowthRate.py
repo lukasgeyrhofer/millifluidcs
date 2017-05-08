@@ -86,6 +86,11 @@ for experimentLabel, trajectories in data:
                 if (args.R2threshold is None) or (args.R2threshold <= r2):
                     growthrates[experimentLabel].append(gr)
                 
+                if args.verbose:
+                    print "{:20s} {:5d} {:12.4e} {:12.4e} {:6.4f}".format(experimentLabel,i,gr,np.exp(offset),r2)
+                    i += 1
+                                                                          
+                
                 
         elif mode == "logistic":
             # length of trajectory has to contain more points than number of fitting parameters
@@ -105,18 +110,20 @@ for experimentLabel, trajectories in data:
     if not args.verbose:
         print "{:15s} {:.4f} (± {:.4f}) 1/h".format(experimentLabel,np.mean(growthrates[experimentLabel]),np.sqrt(np.std(growthrates[experimentLabel])))
 
-    if args.histogramrange is None:
-        r = (.99 * np.min(growthrates[experimentLabel]), 1.01 * np.max(growthrates[experimentLabel]))
+    if len(growthrates[experimentLabel]) > 1:
+        if args.histogramrange is None:
+            r = (.99 * np.min(growthrates[experimentLabel]), 1.01 * np.max(growthrates[experimentLabel]))
+        else:
+            r = args.histogramrange
+        h,b = np.histogram(growthrates[experimentLabel],bins=args.bins,range = r,density = True)
+        b = b[:-1] + np.diff(b)/2.
+        outfilename = args.outbasename + experimentLabel + ".growthrates"
+        np.savetxt(outfilename,np.transpose([b,h]),fmt = '%.6e')
+        
+        if args.write_values_to_outfile:
+            np.savetxt(args.outbasename + experimentLabel + '.allgrowthrates',np.transpose(growthrates[experimentLabel]),fmt = '%.6e')
     else:
-        r = args.histogramrange
-    h,b = np.histogram(growthrates[experimentLabel],bins=args.bins,range = r,density = True)
-    b = b[:-1] + np.diff(b)/2.
-    outfilename = args.outbasename + experimentLabel + ".growthrates"
-    np.savetxt(outfilename,np.transpose([b,h]),fmt = '%.6e')
-    
-    if args.write_values_to_outfile:
-        np.savetxt(args.outbasename + experimentLabel + '.allgrowthrates',np.transpose(growthrates[experimentLabel]),fmt = '%.6e')
-    
+        print "# could not find enough trajectories for histogram"
     if args.computeyield:
         if (len(yields[experimentLabel]) >= 2) and (mode == "logistic"):
             r = (0,1)
