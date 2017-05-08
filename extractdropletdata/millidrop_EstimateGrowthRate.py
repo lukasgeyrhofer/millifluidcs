@@ -21,8 +21,8 @@ def rsquared_log(t,b,parameters):
     
     
 def rsquared_exp(t,b,gr,offset):
-    ss_res = np.sum((b - np.exp(gr*t + offset))**2)
-    ss_tot = np.sum((b - np.mean(b))**2)
+    ss_res = np.sum((np.log(b) - gr*t + offset)**2)
+    ss_tot = np.sum((np.log(b) - np.mean(np.log(b)))**2)
     if ss_tot > 0:  return 1. - ss_res/ss_tot
     else:           return None
     
@@ -87,7 +87,7 @@ for experimentLabel, trajectories in data:
                     growthrates[experimentLabel].append(gr)
                 
                 if args.verbose:
-                    print "{:20s} {:5d} {:12.4e} {:12.4e} {:6.4f}".format(experimentLabel,i,gr,np.exp(offset),r2)
+                    print "{:20s} {:5d} {:12.4e} {:12.4e} {:8.6f}".format(experimentLabel,i,gr,np.exp(offset),r2)
                     i += 1
                                                                           
                 
@@ -103,7 +103,7 @@ for experimentLabel, trajectories in data:
                     yields[experimentLabel].append(np.exp(fitMEAN[2]))
                 
                 if args.verbose:
-                    print "{:20s} {:5d} {:12.4e} {:12.4e} {:12.4e} {:12.4e} {:6.4f}".format(experimentLabel,i,np.exp(fitMEAN[0]),np.exp(fitMEAN[1]),np.exp(fitMEAN[2]),fitMEAN[3],r2)
+                    print "{:20s} {:5d} {:12.4e} {:12.4e} {:12.4e} {:12.4e} {:8.6f}".format(experimentLabel,i,np.exp(fitMEAN[0]),np.exp(fitMEAN[1]),np.exp(fitMEAN[2]),fitMEAN[3],r2)
                     i += 1
                 
 

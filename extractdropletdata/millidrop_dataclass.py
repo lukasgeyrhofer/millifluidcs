@@ -252,7 +252,7 @@ class DropletData(object):
                             pattern = np.logical_and(pattern,datablock[restriction[0]] (1+restriction[1]) * datablock[restriction[0]][0])
                         
                 pattern = np.transpose(np.repeat([pattern],len(rdata[0]),axis = 0))
-                rdata   = np.reshape(rdata[pattern],(len(rdata[pattern])/2,2))
+                rdata   = np.reshape(rdata[pattern],(len(rdata[pattern])/len(self.__datacolumns),len(self.__datacolumns)))
             r.append(rdata)
         return r
                 
