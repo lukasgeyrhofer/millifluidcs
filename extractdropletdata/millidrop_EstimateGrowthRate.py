@@ -40,6 +40,7 @@ aparser = parser.add_argument_group(description = "==== Algorithm parameters ===
 aparser.add_argument("-m","--maxfev",default=5000,type=int)
 aparser.add_argument("-Y","--computeyield",default=False,action="store_true")
 aparser.add_argument("-T","--R2threshold",default=None,type=float)
+aparser.add_argument("-C","--channel",default="Channel1_mean",type=str)
 
 ffparser = aparser.add_mutually_exclusive_group()
 ffparser.add_argument("-E","--exponential", default = False, action = "store_true")
@@ -60,6 +61,10 @@ if not args.exponential and not args.logistic:
 else:
     mode = "exponential" if args.exponential else "logistic"
 
+
+if not data.getChannelIndex(args.channel) is None:
+    ci = data.getChannelIndex(args.channel)
+
 growthrates = dict()
 yields      = dict()
 
@@ -70,7 +75,7 @@ for experimentLabel, trajectories in data:
     i = 0
     for trajectory in trajectories:
         t = trajectory[:,0] / 3600.
-        b = trajectory[:,1]
+        b = trajectory[:,ci]
         
         if mode == "exponential":
             if len(t) >= 2:

@@ -166,6 +166,12 @@ class DropletData(object):
     def getDropletTypes(self):
         return self.__droplettype
     
+    def getChannelIndex(self,key):
+        if key in self.__datacolumns:
+            return self.__datacolumns.index(key)
+        else:
+            return None
+    
     # routines to work with restricted data (ie. a lower cutoff for the droplet signal, or a maximal time)
     def set_restriction(self,column,operation,value, droplettype = None):
         if (column in self.__datacolumns) and (operation in self.__permittedoperations):
@@ -210,8 +216,6 @@ class DropletData(object):
             if len(restriction) == 4:
                 print >> fp, " " + restriction[3],
             print >> fp
-
-
 
     def restricted_data(self,key):
         r = list()
