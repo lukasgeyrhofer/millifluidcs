@@ -94,8 +94,6 @@ def WriteDistanceToLabel(data,emptylabel):
                 r.append([data[i][0],data[i][1],data[i][2] + '-{:s}-{:03d}'.format(la[1],la[0]),data[i][3]])
             elif la[0] > ne[0]:
                 r.append([data[i][0],data[i][1],data[i][2] + '-{:s}-{:03d}'.format(ne[1],ne[0]),data[i][3]])
-            else:
-                raise ValueError("something went wrong")
     return r
 
 
