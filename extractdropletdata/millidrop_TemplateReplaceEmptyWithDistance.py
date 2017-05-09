@@ -53,6 +53,7 @@ def WriteData(filename,data,names,delimiter = ','):
         print >> fp,"{}{},{},{}".format(*x)
     fp.close()
 
+
 def ReplaceEmptyWells(data,emptylabel):
     r = list()
     for x in data:
@@ -62,6 +63,7 @@ def ReplaceEmptyWells(data,emptylabel):
             for i in range(x[3]):
                 r.append([x[0],x[1],emptylabel,1])
     return r
+
 
 def ComputeDistancesToNonEmpty(data,index,emptylabel):
     i = index
@@ -75,6 +77,7 @@ def ComputeDistancesToNonEmpty(data,index,emptylabel):
     else:               nextNonEmpty = (None,None)
             
     return prevNonEmpty,nextNonEmpty
+
 
 def WriteDistanceToLabel(data,emptylabel):
     r = list()
@@ -91,6 +94,8 @@ def WriteDistanceToLabel(data,emptylabel):
                 r.append([data[i][0],data[i][1],data[i][2] + '-{:s}-{:03d}'.format(la[1],la[0]),data[i][3]])
             elif la[0] > ne[0]:
                 r.append([data[i][0],data[i][1],data[i][2] + '-{:s}-{:03d}'.format(ne[1],ne[0]),data[i][3]])
+            else:
+                raise ValueError("something went wrong")
     return r
 
 
