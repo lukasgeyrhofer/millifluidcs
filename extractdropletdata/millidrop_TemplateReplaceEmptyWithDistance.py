@@ -66,7 +66,7 @@ def ReplaceEmptyWells(data,emptylabel):
 def ComputeDistancesToNonEmpty(data,index,emptylabel):
     i = index
     while data[i][2] == emptylabel: i -= 1
-    if i > 0:           prevNonEmpty = (index - i,data[i][2])
+    if i >= 0:          prevNonEmpty = (index - i,data[i][2])
     else:               prevNonEmpty = (None,None)
         
     i = index
