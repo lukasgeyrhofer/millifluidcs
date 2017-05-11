@@ -39,8 +39,10 @@ if not g.hasGrowthMatrix():
 if isinstance(g.growthmatrixgrid,int):
     m = np.arange(g.growthmatrixgrid)
 elif isinstance(g.growthmatrixgrid,(tuple,list,np.ndarray)):
-    if len(len(g.grothmatrixgrid)) == 1:
-        m = g.growthmatrix
+    if len(g.growthmatrixgrid) == 2:
+        m = g.growthmatrixgrid[0]
+    elif len(len(g.growthmatrixgrid)) == 1:
+        m = g.growthmatrixgrid
     else:
         raise ValueError
 else:

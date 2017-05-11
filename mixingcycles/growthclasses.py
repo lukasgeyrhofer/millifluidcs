@@ -472,7 +472,10 @@ class GrowthDynamics(object):
                 return self.__growthmatrix
         elif key == "growthmatrixgrid":
             if self.__growthmatrixgrid is None:
-                raise ValueError,"Growthmatrix not yet computed"
+                if self.__growthmatrix is None:
+                    raise ValueError,"Growthmatrix not yet computed"
+                else:
+                    self.__growthmatrixgrid = self.__growthmatrix
             else:
                 return self.__growthmatrixgrid
         #else:
