@@ -265,12 +265,15 @@ class GrowthDynamics(object):
       
 
     def checkInitialCells(self,initialcells = None):
-        try:
-            # check if initialcells can be cast to array of floats
-            ret_ic = np.array(initialcells,dtype=float)
-        except:
-            # fall back to (1,...,1) if cast does not work
-            ret_ic = np.ones(self.numstrains,dype=float)
+        if initialcells is None:
+            ret_ic = np.ones(self.numstrains,dtype = float)
+        else:
+            try:
+                # check if initialcells can be cast to array of floats
+                ret_ic = np.array(initialcells,dtype=float)
+            except:
+                # fall back to (1,...,1) if cast does not work
+                ret_ic = np.ones(self.numstrains,dype=float)
         if len(ret_ic) < self.numstrains:
             # fill up list of initial conditions with zeros
             ret_ic = np.concatenate((ret_ic,np.zeros(self.numstrains - len(ret_ic),dtype=float)))
@@ -917,8 +920,11 @@ class GrowthDynamicsPyoverdin(GrowthDynamics):
 
     def dynPVD(self,t,x,params):
         p = self.PVDparams['PVDincreaseS'] if x[-1] <= self.env.substrate * self.PVDparams['PVDmaxFactorS'] else 0
-        a = self.growthrates if x[-3] >= 0 else np.zeros(self.numstrains)
-        return np.concatenate([ a*x[:-3],   np.array([  -a*x[:-3]/self.yieldfactors + p * x[-2],
+        if x[-3] >= 0:
+            a = self.growthrates
+        else:
+            a = np.zeros(self.numstrains)
+        return np.concatenate([ a*x[:-3],   np.array([  np.sum(-a*x[:-3]/self.yieldfactors) + p * x[-2],
                                                         np.sum(self.PVDparams['PVDproduction']*x[:-3]),
                                                         p * x[-2]   ])])
 

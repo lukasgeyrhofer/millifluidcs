@@ -31,3 +31,5 @@ g = gc.GrowthDynamicsPyoverdin(**vars(args))
 
 
 print g.ParameterString()
+
+print g.Growth()
