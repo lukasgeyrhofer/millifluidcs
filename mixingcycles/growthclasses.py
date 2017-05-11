@@ -472,8 +472,8 @@ class GrowthDynamics(object):
                 raise ValueError,"Growthmatrix not yet computed"
             else:
                 return self.__growthmatrixgrid
-        else:
-            super(GrowthDynamics,self).__getattr__(key,value)
+        #else:
+            #super(GrowthDynamics,self).__getattr__(key,value)
 
     def __setattr__(self,key,value):
         if key == "growthrates":
@@ -892,3 +892,50 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
         s += "enzyme initial conc.    " + str(self.ABparams['PGconc']) +r
         return s
 
+class GrowthDynamicsPyoverdin(GrowthDynamics):
+    def __init__(self,**kwargs):
+
+        if kwargs.get("mixingtime") is None:
+            kwargs["mixingtime"] = 12.
+
+        super(GrowthDynamicsPyoverdin,self).__init__(**kwargs)
+        
+        self.PVDparams = {  'PVDproduction' :  np.array(kwargs.get("PVDproduction",np.zeros(self.numstrains)),dtype=np.float64),
+                            'PVDincreaseS'  :  kwargs.get("PVDincreaseS",1),
+                            'PVDmaxFactorS' :  kwargs.get("PVDmaxFactorS",1),   # initial condition PG concentration
+                            'PVDconc' :        kwargs.get("PVDconc",0)}  # initial concentration antibiotics measured in zMIC
+
+        assert len(self.PVDparams['PVDproduction']) == self.numstrains, "PVD production not defined correctly"
+        assert sum(self.PVDparams['PVDproduction']) > 0, "PVD is not produced"
+        
+        self.dyn = TimeIntegrator(dynamics = self.dynPVD,initialconditions = np.zeros(self.numstrains + 3),params = None,requiredpositive = True)
+        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        self.dyn.SetEndCondition("reachzero",self.numstrains)
+        for i in range(self.numstrains):
+            self.dyn.setPopulationExtinctionThreshold(i,1)
+
+
+    def dynPVD(self,t,x,params):
+        p = self.PVDparams['PVDincreaseS'] if x[-1] <= self.env.substrate * self.PVDparams['PVDmaxFactorS'] else 0
+        a = self.growthrates if x[-3] >= 0 else np.zeros(self.numstrains)
+        return np.concatenate([ a*x[:-3],   np.array([  -a*x[:-3]/self.yieldfactors + p * x[-2],
+                                                        np.sum(self.PVDparams['PVDproduction']*x[:-3]),
+                                                        p * x[-2]   ])])
+
+    def Growth(self,initialcells = None):
+        ic = self.checkInitialCells(initialcells)
+        ic = np.concatenate([ic,np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])])
+        self.dyn.ResetInitialConditions(ic)
+        self.dyn.IntegrateToEndConditions()
+        return self.dyn.populations[:-3]*self.env.dilution
+                                          
+    
+    def ParameterString(self):
+        r = '\n'
+        s  = super(GrowthDynamicsPyoverdin,self).ParameterString() +r
+        s += "*** pyoverdin parameters ***" +r
+        s += "initial concentration   " + str(self.PVDparams['PVDconc']) +r
+        s += "increase rate S         " + str(self.PVDparams['PVDincreaseS']) +r
+        s += "max ratio S             " + str(self.PVDparams['PVDmaxFactorS']) +r
+        s += "pyoverdin production    " + self.arraystring(self.PVDparams['PVDproduction']) +r
+        return s
