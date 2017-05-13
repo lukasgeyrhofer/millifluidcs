@@ -36,7 +36,9 @@ if args.verbose:
     print >> sys.stderr,"# initializing growth matrix ..."
 
 g       = gc.GrowthDynamics(**vars(args))
-gm1,gm2 = g.getGrowthMatrix(size = args.maxM)
+gm      = g.getGrowthMatrix(size = args.maxM)
+gm1     = gm[:,:,0]
+gm2     = gm[:,:,1]
 m       = np.arange(args.maxM)
 
 
