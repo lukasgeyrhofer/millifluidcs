@@ -51,9 +51,9 @@ else:
     n   = np.array(args.initialconditions,dtype=float)
     assert len(n) == g.numstrains
 
-dn = n
-j = np.zeros((2,2))
-i = 0
+dn         = n                  # increase in one step
+j          = np.zeros((2,2))    # jacobian
+stepcount  = 0                  # number of steps for debugging
 
 if args.verbose:
     print >> sys.stderr,"# starting iterations ..."
@@ -94,7 +94,7 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
     if not args.maxiterations is None:
         if i > args.maxiterations:
             break
-    i += 1
+    stepcount += 1
 
 
 # stability of fixed point is checked with jacobian
@@ -109,13 +109,15 @@ j[1,1] = np.dot(dpx[1], np.dot( px[0], gm2))
 w,v = np.linalg.eig(j)
 
 # final output
-print "{:10.6f} {:10.6f} {:14.8e} {:14.8e} {:6d}".format(g.growthrates[1]/g.growthrates[0],g.yieldfactors[1]/g.yieldfactors[0],n[0],n[1],i),
-print "{:11.6f} {:11.6f}".format(re(w[0]),re(w[1])),
-#print "{:11.6f} {:11.6f}".format(im(w[0]),im(w[1])),
+
+outputstring  = "{:14.6f} {:14.6f} {:14.6e} {:14.6e} {:4d} ".format(g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
+outputstring += "{:14.6f} {:14.6f} ".format(re(w[0]),re(w[1]))
+#outputstring += "{:11.6f} {:11.6f}".format(im(w[0]),im(w[1])),
+
 if args.printeigenvectors:
-    print "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1])),
-    #print "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1])),
-print
+    outputstring += "{:14.6f} {:14.6f} {:14.6f} {:14.6f}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1]))
+    #outputstring += "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1]))
+print outputstring
 
 # have yet to find complex eigenvalues
 
