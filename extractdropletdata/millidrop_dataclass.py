@@ -11,53 +11,9 @@ class DropletData(object):
         if infiles is None:
             raise IOError("datafiles required")
         
-        # ===============================================================
-        # = generate list of all types of experiments from templatefile =
-        # ===============================================================
         self.__listoftypes = list()
         if not templatefile is None:
-            try:
-                fptemp = open(templatefile,"r")
-            except:
-                raise IOError("could not open file")
-            first = True
-            for line in fptemp.readlines():
-                if line[0] != "#":
-                    values = line.strip().split(',')
-                    if first:
-                        names = values
-                        try:
-                            IDdescription    = names.index("description")
-                            IDdroplet_number = names.index("droplet_number")
-                        except:
-                            raise ValueError("templatefile does not contain columns 'description' and 'droplet_number'")
-
-                        self.__droplettype = None
-                        typesinrow         = None
-                        lastrow            = '.'
-                        first              = False
-                    else:
-                        if line[0] != lastrow:
-                            if snakelikeloading:
-                                # check if forward
-                                direction      = 2 * (ord(lastrow)%2) - 1   # ord('A') == 65
-                                                                            # seems quite a hack, not sure how general this is
-                            else:
-                                direction      = 1
-
-                            self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
-                            typesinrow         = None
-                        
-                        typesinrow = self.concat(typesinrow,np.repeat(values[IDdescription],int(values[IDdroplet_number])))
-                        lastrow = line[0]
-            
-            # add the last buffer 'typesinrow'
-            if snakelikeloading:    direction      = 2 * (ord(lastrow)%2) - 1
-            else:                   direction      = 1
-            self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
-            
-            # close templatefile
-            fptemp.close()
+            load_templatefile(templatefile,snakelikeloading)
         else:
             # if no templatefile, group everything under label 'default'
             self.__droplettype = np.repeat("default",len(infiles))
@@ -88,34 +44,59 @@ class DropletData(object):
         # ===============================================================
         self.__datarestrictions = list()
         self.__permittedoperations = ["min","max","end","start"]
-    
-    
-    def concat(self,list1 = None,list2 = None, direction1 = 1, direction2 = 1):
-        if (list1 is None) and (list2 is None):
-            return None
-        elif (list1 is None):
-            return list2[::direction2]
-        elif (list2 is None):
-            return list1[::direction1]
-        else:
-            return np.concatenate([list1[::direction1],list2[::direction2]])
-
-    def filename_to_dropletID(self,filename):
-        # in current implementation, filename is just 'dropletnumber.CSV'
-        # change here if necessary
-        r = int(os.path.basename(filename).split('.')[0])
-        return r
 
 
-    def dropletID_to_label(self,dropletID = None):
-        if dropletID is None:
-            raise KeyError("dropletID is None")
+
+    # ===============================================================
+    # = generate list of all types of experiments from templatefile =
+    # ===============================================================
+    def load_templatefile(templatefile = None, snakelikeloading = True):
         try:
-            return self.__droplettype[dropletID]
+            fptemp = open(templatefile,"r")
         except:
-            raise KeyError("did not find experiment type for droplet '{}'".format(dropletID))
+            raise IOError("could not open file")
+        first = True
+        for line in fptemp.readlines():
+            if line[0] != "#":
+                values = line.strip().split(',')
+                if first:
+                    names = values
+                    try:
+                        IDdescription    = names.index("description")
+                        IDdroplet_number = names.index("droplet_number")
+                    except:
+                        raise ValueError("templatefile does not contain columns 'description' and 'droplet_number'")
 
+                    self.__droplettype = None
+                    typesinrow         = None
+                    lastrow            = '.'
+                    first              = False
+                else:
+                    if line[0] != lastrow:
+                        if snakelikeloading:
+                            # check if forward
+                            direction      = 2 * (ord(lastrow)%2) - 1   # ord('A') == 65
+                                                                        # seems quite a hack, not sure how general this is
+                        else:
+                            direction      = 1
 
+                        self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
+                        typesinrow         = None
+                    
+                    typesinrow = self.concat(typesinrow,np.repeat(values[IDdescription],int(values[IDdroplet_number])))
+                    lastrow = line[0]
+        
+        # add the last buffer 'typesinrow'
+        if snakelikeloading:    direction      = 2 * (ord(lastrow)%2) - 1
+        else:                   direction      = 1
+        self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
+        
+        # close templatefile
+        fptemp.close()
+
+    # ===============================================================
+    # = load data from a single dropletfile and add to internal datastructure
+    # ===============================================================
     def add_trajectory(self,dropletID = None, data = None, columns = None, splitBackForthTrajectories = False):
         if data is None:
             raise ValueError("need timestamps for experimental data")
@@ -141,17 +122,41 @@ class DropletData(object):
                 newdatablock0[column] = np.array(data[column])
             self.__data[dropletLabel].append(newdatablock0)
             
-            
-    def __getitem__(self,key):
-        if key in self.__listoftypes:
-            return self.restricted_data(key)
+    # ===============================================================
+    # = helper routines
+    # ===============================================================
+
+    def concat(self,list1 = None,list2 = None, direction1 = 1, direction2 = 1):
+        if (list1 is None) and (list2 is None):
+            return None
+        elif (list1 is None):
+            return list2[::direction2]
+        elif (list2 is None):
+            return list1[::direction1]
+        else:
+            return np.concatenate([list1[::direction1],list2[::direction2]])
+
+
+    def filename_to_dropletID(self,filename):
+        # in current implementation, filename is just 'dropletnumber.CSV'
+        # change here if necessary
+        r = int(os.path.basename(filename).split('.')[0])
+        return r
+
+
+    def dropletID_to_label(self,dropletID = None):
+        if dropletID is None:
+            raise KeyError("dropletID is None")
+        try:
+            return self.__droplettype[dropletID]
+        except:
+            raise KeyError("did not find experiment type for droplet '{}'".format(dropletID))
     
     
-    def __iter__(self):
-        for key in self.__listoftypes:
-            yield key,self[key]
-    
-    
+    # ===============================================================
+    # = output of specific information from internal datastructure
+    # ===============================================================
+
     def CountTrajectories(self):
         r = dict()
         for key in self.__listoftypes:
@@ -159,14 +164,9 @@ class DropletData(object):
         return r
     
     
-    def __getattr__(self,key):
-        if key == "datacolumns":
-            return self.__datacolumns
-        else:
-            super(DropletData,self).__getattr__(key)
-    
     def getDropletTypes(self):
         return self.__droplettype
+    
     
     def getChannelIndex(self,key):
         if key in self.__datacolumns:
@@ -174,7 +174,9 @@ class DropletData(object):
         else:
             return None
     
+    # ===============================================================
     # routines to work with restricted data (ie. a lower cutoff for the droplet signal, or a maximal time)
+    # ===============================================================
     def set_restriction(self,column,operation,value, droplettype = None):
         if (column in self.__datacolumns) and (operation in self.__permittedoperations):
             newrestriction = [str(column),value,str(operation)]
@@ -219,6 +221,9 @@ class DropletData(object):
                 print >> fp, " " + restriction[3],
             print >> fp
 
+
+    # all output of data is funneled through this routine
+    # only return datapoints that match all criteria in the restrictionfile
     def restricted_data(self,key):
         r = list()
         for datablock in self.__data[key]:
@@ -261,7 +266,40 @@ class DropletData(object):
                 rdata   = np.reshape(rdata[pattern],(len(rdata[pattern])/len(self.__datacolumns),len(self.__datacolumns)))
             r.append(rdata)
         return r
-                
+          
+    
+    # ===============================================================
+    # = object logic                                                =
+    # ===============================================================
+    
+    # after object initialization, this is how the dataobject reacts
+    # example code lines start with '>'
+    # > data = DropletData()
+    
+    # get all trajectories of a certain experiment as list,
+    # when EXPERIMENTLABEL is a string also contained in TEMPLATEFILE as label for a well
+    # > data[EXPERIMENTLABEL]
+    def __getitem__(self,key):
+        if key in self.__listoftypes:
+            return self.restricted_data(key)
+    
+    # iterate over the whole dataset
+    # > for ExperimentLabel, Trajectories in data:
+    # >     print ExperimentLabel
+    # >     for trajectory in Trajectories:
+    # >         print trajectory
+    def __iter__(self):
+        for key in self.__listoftypes:
+            yield key,self[key]
+
+    # catch any specific attributes of the DropletData object
+    # so far only single attribute implemented
+    # > print data.datacolumns
+    def __getattr__(self,key):
+        if key == "datacolumns":
+            return self.__datacolumns
+        else:
+            super(DropletData,self).__getattr__(key)
 
 
 # working example of loading files and printing them again
