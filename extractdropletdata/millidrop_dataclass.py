@@ -53,7 +53,7 @@ class DropletData(object):
     # ===============================================================
     # = generate list of all types of experiments from templatefile =
     # ===============================================================
-    def load_templatefile(templatefile = None, snakelikeloading = True):
+    def load_templatefile(self,templatefile = None, snakelikeloading = True):
         try:
             fptemp = open(templatefile,"r")
         except:
