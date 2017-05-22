@@ -177,9 +177,11 @@ class DropletData(object):
         else:
             return None
     
+    
     # ===============================================================
     # routines to work with restricted data (ie. a lower cutoff for the droplet signal, or a maximal time)
     # ===============================================================
+    
     def set_restriction(self,column,operation,value, droplettype = None):
         if (column in self.__datacolumns) and (operation in self.__permittedoperations):
             newrestriction = [str(column),value,str(operation)]
@@ -190,8 +192,10 @@ class DropletData(object):
         else:
             raise ValueError("cannot apply restriction to data (column: '{:s}', operation: {:s})".format(column,operation))
 
+
     def remove_all_restrictions(self):
         self.__datarestrictions = list()
+        
         
     def load_restrictions_from_file(self,filename):
         try:
@@ -210,6 +214,7 @@ class DropletData(object):
                                 self.set_restriction(values[0],values[1],float(values[2]))
         fp.close()
     
+    
     def write_restrictions_to_file(self,filename = None):
         try:
             if filename is None:
@@ -225,8 +230,10 @@ class DropletData(object):
             print >> fp
 
 
+    # ===============================================================
     # all output of data is funneled through this routine
     # only return datapoints that match all criteria in the restrictionfile
+    # ===============================================================
     def restricted_data(self,key):
         r = list()
         for datablock in self.__data[key]:
