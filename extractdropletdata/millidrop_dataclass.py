@@ -6,14 +6,13 @@ import sys,math
 import os
 
 class DropletData(object):
-    def __init__(self, templatefile = None, infiles = None, splitBackForthTrajectories = False, datacolumns = ['time','Channel1_mean'], snakelikeloading = True):
+    def __init__(self, templatefile = None, infiles = None, splitBackForthTrajectories = False, datacolumns = ['time','Channel1_mean'], snakelikeloading = True, restrictionfile = None):
         
         if infiles is None:
             raise IOError("datafiles required")
         
-        self.__listoftypes = list()
         if not templatefile is None:
-            load_templatefile(templatefile,snakelikeloading)
+            self.load_templatefile(templatefile,snakelikeloading)
         else:
             # if no templatefile, group everything under label 'default'
             self.__droplettype = np.repeat("default",len(infiles))
@@ -21,9 +20,11 @@ class DropletData(object):
         # ===============================================================
         # = variable initialization
         # ===============================================================
-        self.__data        = dict()
-        self.__listoftypes = list(set(self.__droplettype))
-        self.__datacolumns = datacolumns
+        self.__listoftypes         = list(set(self.__droplettype))  # list of all possible "experiments", ie. labels of different wells
+        self.__data                = dict()                         # store all trajectories, each keys of the dictionary are the experiment labels, "values" of such an entry is list of np-arrays
+        self.__datacolumns         = datacolumns                    # keep only those columns from the original datafile
+        self.__datarestrictions    = list()                         # list of all restrictions
+        self.__permittedoperations = ["min","max","end","start"]    # hardcoded allowed restriction types: min/max chop trajectories if the fall below or rise above the threshold value, end/start is for time
 
 
         # ===============================================================
@@ -42,8 +43,10 @@ class DropletData(object):
         # ===============================================================
         # = restrictions on data
         # ===============================================================
-        self.__datarestrictions = list()
-        self.__permittedoperations = ["min","max","end","start"]
+        
+        if not restrictionfile is None:
+            self.load_restrictions_from_file(restrictionfile)
+        
 
 
 
