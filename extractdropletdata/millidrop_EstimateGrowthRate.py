@@ -35,12 +35,14 @@ ioparser.add_argument("-r","--restrictionfile",default=None)
 ioparser.add_argument("-o","--outbasename",default='')
 ioparser.add_argument("-V","--write_values_to_outfile",default=False,action = "store_true")
 ioparser.add_argument("-v","--verbose",default=False,action="store_true")
-
+ioparser.add_argument("-u","--timerescale",default=1e3,type=float)
+    
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
 aparser.add_argument("-m","--maxfev",default=5000,type=int)
 aparser.add_argument("-Y","--computeyield",default=False,action="store_true")
 aparser.add_argument("-T","--R2threshold",default=None,type=float)
 aparser.add_argument("-C","--channel",default="Channel1_mean",type=str)
+
 
 ffparser = aparser.add_mutually_exclusive_group()
 ffparser.add_argument("-E","--exponential", default = False, action = "store_true")
@@ -74,7 +76,7 @@ for experimentLabel, trajectories in data:
         yields[experimentLabel] = list()
     i = 0
     for trajectory in trajectories:
-        t = trajectory[:,0] / 3600.
+        t = trajectory[:,0] / args.timerescale
         b = trajectory[:,ci]
         
         if mode == "exponential":

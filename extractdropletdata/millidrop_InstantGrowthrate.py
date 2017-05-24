@@ -17,8 +17,8 @@ ioparser.add_argument("-v","--verbose",default=False,action="store_true")
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
 
 hparser = parser.add_argument_group(description = "==== Histogram parameters ====")
-hparser.add_argument("-B","--bins",default=10,type=int)
-hparser.add_argument("-R","--histogramrange",nargs=2,type=float,default=None)
+hparser.add_argument("-B","--bins",default=120,type=int)
+hparser.add_argument("-R","--histogramrange",nargs=2,type=float,default=[-.1,1.1])
 
 args = parser.parse_args()
 data = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = True)
@@ -31,7 +31,7 @@ for experimentLabel, trajectories in data:
     instantgrowthrate = list()
     for trajectory in trajectories:
         for i in range(1,len(trajectory)):
-            instantgrowthrate.append(np.log(trajectory[i,1]/trajectory[i-1,1])/(trajectory[i,0]-trajectory[i-1,0]))
+            instantgrowthrate.append(np.log(trajectory[i,1]/trajectory[i-1,1])/(trajectory[i,0]-trajectory[i-1,0])*1e3)
     instantgrowthrate = np.array(instantgrowthrate)
     if args.histogramrange is None:
         r = (.99 * np.min(instantgrowthrate), 1.01 * np.max(instantgrowthrate))
