@@ -107,10 +107,12 @@ def main():
 
     names,data = LoadData(args.templatefile)
 
-    data = ReverseData(data)
+    if args.snakelikeloading:
+        data = ReverseData(data)
     data = ReplaceEmptyWells(data,args.emptylabel)
     data = WriteDistanceToLabel(data,args.emptylabel)
-    data = ReverseData(data)
+    if args.snakelikeloading:
+        data = ReverseData(data)
 
     WriteData(args.outfile,data,names)
 
