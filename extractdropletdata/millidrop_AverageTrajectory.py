@@ -18,15 +18,20 @@ tparser = parser.add_argument_group(description = "==== New grid parameters ====
 tparser.add_argument("-M","--maxtime",default=None,type=float)
 tparser.add_argument("-m","--mintime",default=0,type=float)
 tparser.add_argument("-n","--datapoints",default=50,type=int)
-tparser.add_argument("-C","--channel",type=str,default="Channel1_mean")
+tparser.add_argument("-C","--channel",nargs="*",default=["Channel1_mean"])
 
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
 aparser.add_argument("-d","--stddev",default=False,action="store_true")
 
 args = parser.parse_args()
 
+if "time" not in args.channel:
+    datacolumns = ["time"] + args.channel
+else:
+    datacolumns = args.channel
+print args.channel
 
-data = mdc.DropletData(infiles = args.infiles,templatefile = args.templatefile, splitBackForthTrajectories = True, datacolumns = ["time",args.channel])
+data = mdc.DropletData(infiles = args.infiles,templatefile = args.templatefile, splitBackForthTrajectories = True, datacolumns = datacolumns)
 if not args.restrictionfile is None:
     data.load_restrictions_from_file(args.restrictionfile)
 
@@ -37,32 +42,39 @@ for label,trajectories in data:
             maxtime = np.max([t[-1,0] for t in trajectories if len(t) >= 1])
         else:
             maxtime = args.maxtime
-        timegrid        = np.linspace(start = args.mintime,stop = maxtime,num = args.datapoints)
-        sumtrajectories = np.zeros((np.shape(trajectories[0])[1]-1,args.datapoints))
-        if args.stddev:
-            sum2trajectories = np.zeros((np.shape(trajectories[0])[1]-1,args.datapoints))
-        for t in trajectories:
-            if len(t) > 0:
-                for i in range(1,np.shape(trajectories[0])[1]):
-                    values = np.interp(timegrid,t[:,0],t[:,i])
-                    sumtrajectories[i-1] += values
-                    if args.stddev:
-                        sum2trajectories[i-1] += values*values
+        timegrid         = np.linspace(start = args.mintime,stop = maxtime,num = args.datapoints)
+        sumtrajectories  = dict()
+        sum2trajectories = dict()
+        for column in args.channel:
+            sumtrajectories[column] = np.zeros((np.shape(trajectories[0])[1]-1,args.datapoints))
+            if args.stddev:
+                sum2trajectories = np.zeros((np.shape(trajectories[0])[1]-1,args.datapoints))
+            for t in trajectories:
+                if len(t) > 0:
+                    for i in range(1,np.shape(trajectories[0])[1]):
+                        values = np.interp(timegrid,t[:,0],t[:,i])
+                        sumtrajectories[column][i-1] += values
+                        if args.stddev:
+                            sum2trajectories[column][i-1] += values*values
             else:
                 n -= 1
     if n >= 1:
-        sumtrajectories /= n
         if not args.outbasename is None:
             outbasename = args.outbasename
         else:
             outbasename = ""
         outfilename = outbasename + label + ".average"
         print "{:12s}: saving average from {:d} trajectories to file '{:s}'".format(label,n,outfilename)
-        np.savetxt(outfilename,np.transpose(np.concatenate([[np.array(timegrid)],sumtrajectories],axis=0)),fmt = '%.6e')
+        outdata = np.array([timegrid])
+        for column in args.channel:
+            outdata = np.concatenate([outdata,np.array(sumtrajectories[column]/n)],axis=0)
+        np.savetxt(outfilename,np.transpose(outdata),fmt = '%.6e')
         if args.stddev:
             outfilename = outbasename + label + ".stddev"
-            sum2trajectories /= n
-            np.savetxt(outfilename,np.transpose(np.concatenate([[np.array(timegrid)],np.sqrt(sum2trajectories - sumtrajectories**2)],axis=0)),fmt = '%.6e')
+            outdatastddev = np.array([timegrid])
+            for column in args.channel:
+                outdatastddev = np.concatenate([outdatastddev,np.sqrt(n*sum2trajectories[column] - sumtrajectories[column]*sumtrajectories[column])/np.sqrt(n*n-n)],axis=0)
+            np.savetxt(outfilename,np.transpose(outdatastddev),fmt = '%.6e')
             
         
 
