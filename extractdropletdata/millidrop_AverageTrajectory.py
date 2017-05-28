@@ -18,6 +18,7 @@ tparser = parser.add_argument_group(description = "==== New grid parameters ====
 tparser.add_argument("-M","--maxtime",default=None,type=float)
 tparser.add_argument("-m","--mintime",default=0,type=float)
 tparser.add_argument("-n","--datapoints",default=50,type=int)
+tparser.add_argument("-C","--channel",type=str,default="Channel1_mean")
 
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
 aparser.add_argument("-d","--stddev",default=False,action="store_true")
@@ -25,7 +26,7 @@ aparser.add_argument("-d","--stddev",default=False,action="store_true")
 args = parser.parse_args()
 
 
-data = mdc.DropletData(infiles = args.infiles,templatefile = args.templatefile, splitBackForthTrajectories = True)
+data = mdc.DropletData(infiles = args.infiles,templatefile = args.templatefile, splitBackForthTrajectories = True, datacolumns = ["time",args.channel])
 if not args.restrictionfile is None:
     data.load_restrictions_from_file(args.restrictionfile)
 
