@@ -12,7 +12,7 @@ ioparser.add_argument("-i","--infiles",nargs="*")
 ioparser.add_argument("-t","--templatefile",default=None)
 ioparser.add_argument("-r","--restrictionfile",default=None)
 ioparser.add_argument("-o","--outbasename",default=None)
-ioparser.add_argument("-B","--splitBackForthTrajectories",default=False,action="store_true")
+ioparser.add_argument("-B","--splitBackForthTrajectories",default=True,action="store_false")
 
 tparser = parser.add_argument_group(description = "==== New grid parameters ====")
 tparser.add_argument("-M","--maxtime",default=None,type=float)
@@ -30,7 +30,7 @@ if "time" not in args.channel:
 else:
     datacolumns = args.channel
 
-data = mdc.DropletData(infiles = args.infiles,templatefile = args.templatefile, splitBackForthTrajectories = True, datacolumns = datacolumns)
+data = mdc.DropletData(infiles = args.infiles,templatefile = args.templatefile, splitBackForthTrajectories = args.splitBackForthTrajectories, datacolumns = datacolumns)
 if not args.restrictionfile is None:
     data.load_restrictions_from_file(args.restrictionfile)
 
