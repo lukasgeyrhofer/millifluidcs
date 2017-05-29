@@ -30,7 +30,7 @@ if "time" not in args.channel:
 else:
     datacolumns = args.channel
 
-data = mdc.DropletData(infiles = args.infiles,templatefile = args.templatefile, splitBackForthTrajectories = args.splitBackForthTrajectories, datacolumns = datacolumns)
+data = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = args.splitBackForthTrajectories, datacolumns = datacolumns)
 if not args.restrictionfile is None:
     data.load_restrictions_from_file(args.restrictionfile)
 
