@@ -14,8 +14,9 @@ class DropletData(object):
         if not templatefile is None:
             self.load_templatefile(templatefile,snakelikeloading)
         else:
-            # if no templatefile, group everything under label 'default'
+            # if no templatefile, group everything under label 'default' with 'unkown' well ID
             self.__droplettype = np.repeat("default",len(infiles))
+            self.__well        = np.repeat("unknown",len(infiles))
         
         # ===============================================================
         # = variable initialization
@@ -24,7 +25,8 @@ class DropletData(object):
         self.__data                = dict()                         # store all trajectories, each keys of the dictionary are the experiment labels, "values" of such an entry is list of np-arrays
         self.__datacolumns         = datacolumns                    # keep only those columns from the original datafile
         self.__datarestrictions    = list()                         # list of all restrictions
-        self.__permittedoperations = ["min","max","end","start"]    # hardcoded allowed restriction types: min/max chop trajectories if the fall below or rise above the threshold value, end/start is for time
+        self.__permittedoperations = ["min","max","end","start","excludewell"]
+                                                                    # hardcoded allowed restriction types: min/max chop trajectories if the fall below or rise above the threshold value, end/start is for time
 
 
         # ===============================================================
@@ -67,11 +69,14 @@ class DropletData(object):
                     try:
                         IDdescription    = names.index("description")
                         IDdroplet_number = names.index("droplet_number")
+                        IDwell           = names.index("well")
                     except:
                         raise ValueError("templatefile does not contain columns 'description' and 'droplet_number'")
 
                     self.__droplettype = None
+                    self.__well        = None
                     typesinrow         = None
+                    wellsinrow         = None
                     lastrow            = '.'
                     first              = False
                 else:
@@ -85,14 +90,18 @@ class DropletData(object):
 
                         self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
                         typesinrow         = None
+                        self.__well        = self.concat(self.__well,wellsinrow,direction2 = direction)
+                        wellsinrow         = None
                     
                     typesinrow = self.concat(typesinrow,np.repeat(values[IDdescription],int(values[IDdroplet_number])))
+                    wellsinrow = self.concat(wellsinrow,np.repeat(values[IDwell],int(values[IDdroplet_number])))
                     lastrow = line[0]
         
         # add the last buffer 'typesinrow'
         if snakelikeloading:    direction      = 2 * (ord(lastrow)%2) - 1
         else:                   direction      = 1
         self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
+        self.__well        = self.concat(self.__well,wellsinrow,direction2 = direction)
         
         # close templatefile
         fptemp.close()
