@@ -35,7 +35,7 @@ ioparser.add_argument("-r","--restrictionfile",default=None)
 ioparser.add_argument("-o","--outbasename",default='')
 ioparser.add_argument("-V","--write_values_to_outfile",default=False,action = "store_true")
 ioparser.add_argument("-v","--verbose",default=False,action="store_true")
-ioparser.add_argument("-u","--timerescale",default=1e3,type=float)
+ioparser.add_argument("-u","--timerescale",default=3.6e3,type=float)
     
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
 aparser.add_argument("-m","--maxfev",default=5000,type=int)
@@ -52,8 +52,9 @@ hparser = parser.add_argument_group(description = "==== Histogram parameters ===
 hparser.add_argument("-B","--bins",default=10,type=int)
 hparser.add_argument("-R","--histogramrange",nargs=2,type=float,default=None)
 
-args = parser.parse_args()
-data = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = True)
+args     = parser.parse_args()
+channels = ["time",args.channel]
+data     = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = True, datacolumns = channels)
 
 if not args.restrictionfile is None:
     data.load_restrictions_from_file(args.restrictionfile)
@@ -62,10 +63,6 @@ if not args.exponential and not args.logistic:
     mode = "exponential"
 else:
     mode = "exponential" if args.exponential else "logistic"
-
-
-if not data.getChannelIndex(args.channel) is None:
-    ci = data.getChannelIndex(args.channel)
 
 growthrates = dict()
 yields      = dict()
@@ -77,7 +74,7 @@ for experimentLabel, trajectories in data:
     i = 0
     for trajectory in trajectories:
         t = trajectory[:,0] / args.timerescale
-        b = trajectory[:,ci]
+        b = trajectory[:,1]
         
         if mode == "exponential":
             if len(t) >= 2:
