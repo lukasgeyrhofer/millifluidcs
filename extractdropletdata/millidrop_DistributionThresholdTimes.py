@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 
 import numpy as np
 import argparse
@@ -44,7 +46,7 @@ for ExperimentLabel,Trajectories in data:
         bins = bins[:-1] + np.diff(bins)/2.
         
         if args.verbose:
-            print "{:15s}: storing histogram of {:d} values".format(ExperimentLabel,len(thresholdtimes))
+            print "{:15s}: storing histogram of {:d} values, ({:.2f} ± {:.2f})".format(ExperimentLabel,len(thresholdtimes),np.mean(thresholdtimes),np.std(thresholdtimes))
         
         outfilename = args.outbasename + ExperimentLabel + ".threshold{:0.3e}".format(args.threshold)
         np.savetxt(outfilename,np.transpose(np.array([bins,hist])),fmt = "%.6e")
