@@ -13,6 +13,7 @@ ioparser.add_argument("-t","--templatefile",default=None)
 ioparser.add_argument("-r","--restrictionfile",default=None)
 ioparser.add_argument("-o","--outbasename",default=None)
 ioparser.add_argument("-B","--splitBackForthTrajectories",default=True,action="store_false")
+ioparser.add_argument("-u","--timerescale",default=3.6e3,type=float)
 
 tparser = parser.add_argument_group(description = "==== New grid parameters ====")
 tparser.add_argument("-M","--maxtime",default=None,type=float)
@@ -61,12 +62,12 @@ for label,trajectories in data:
             outbasename = ""
         outfilename = outbasename + label + ".average"
         print "{:12s}: saving average from {:d} trajectories to file '{:s}'".format(label,n,outfilename)
-        outdata = np.array([timegrid])
+        outdata = np.array([timegrid/args.timerescale])
         outdata = np.concatenate([outdata,np.array(sumtrajectories/n)],axis=0)
         np.savetxt(outfilename,np.transpose(outdata),fmt = '%.6e')
         if args.stddev:
             outfilename = outbasename + label + ".stddev"
-            outdatastddev = np.array([timegrid])
+            outdatastddev = np.array([timegrid*/rgs.timerescale])
             outdatastddev = np.concatenate([outdatastddev,np.sqrt(n*sum2trajectories - sumtrajectories*sumtrajectories)/np.sqrt(n*n-n)],axis=0)
             np.savetxt(outfilename,np.transpose(outdatastddev),fmt = '%.6e')
             
