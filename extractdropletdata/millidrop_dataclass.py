@@ -25,7 +25,7 @@ class DropletData(object):
         self.__data                = dict()                         # store all trajectories, each keys of the dictionary are the experiment labels, "values" of such an entry is list of np-arrays
         self.__datacolumns         = datacolumns                    # keep only those columns from the original datafile
         self.__datarestrictions    = list()                         # list of all restrictions
-        self.__permittedoperations = ["min","max","end","start","excludewell"]
+        self.__permittedoperations = [("min",2),("max",2),("end",2),("start",2),("excludewell",1),("excludelabel",1)]
                                                                     # hardcoded allowed restriction types: min/max chop trajectories if the fall below or rise above the threshold value, end/start is for time
 
 
