@@ -25,7 +25,7 @@ class DropletData(object):
         self.__data                = dict()                         # store all trajectories, each keys of the dictionary are the experiment labels, "values" of such an entry is list of np-arrays
         self.__datacolumns         = datacolumns                    # keep only those columns from the original datafile
         self.__datarestrictions    = list()                         # list of all restrictions
-        self.__permittedoperations = [("min",2),("max",2),("end",2),("start",2),("excludewell",1),("excludelabel",1)]
+        self.__permittedoperations = {"min":2,"max":2,"end":2,"start":2,"exclude":0}
                                                                     # hardcoded allowed restriction types: min/max chop trajectories if the fall below or rise above the threshold value, end/start is for time
 
 
@@ -191,13 +191,14 @@ class DropletData(object):
     # routines to work with restricted data (ie. a lower cutoff for the droplet signal, or a maximal time)
     # ===============================================================
     
-    def set_restriction(self,column,operation,value, droplettype = None):
-        if (column in self.__datacolumns) and (operation in self.__permittedoperations):
-            newrestriction = [str(column),value,str(operation)]
-            if not droplettype is None:
-                if droplettype in self.__droplettype:
-                    newrestriction.append(str(datalabel))
-            self.__datarestrictions.append(newrestriction)
+    def set_restriction(self,restictiontype, applies_to = None, params = None):
+        if restrictiontype in self.__permittedoperations.keys():
+            if applies_to is None:
+                applies_to = "all"
+            if (applies_to in self.__droplettype) or (applies_to in set(self.__well)) or (applies_to == "all"):
+                if len(params) == self.__permittedoperations[restrictiontype]:
+                    newrestriction = list(restrictiontype,applies_to,params)
+                    self.__datarestrictions.append(newrestriction)
         else:
             raise ValueError("cannot apply restriction to data (column: '{:s}', operation: {:s})".format(column,operation))
 
@@ -213,14 +214,11 @@ class DropletData(object):
             raise IOError("could not open file '{:s}' to load restrictions".format(filename))
         for line in fp.readlines():
             values = line.split()
-            if len(values) >= 3:
-                if values[0] in self.__datacolumns:
-                    if values[1] in self.__permittedoperations:
-                        if not np.isnan(float(values[2])):
-                            if len(values) >= 4:
-                                self.set_restriction(values[0],values[1],float(values[2]),values[3])
-                            else:
-                                self.set_restriction(values[0],values[1],float(values[2]))
+            if len(values) >= 2:
+                if values[0] in self.__permittedoperations.keys():
+                    if (values[1] in self.__droplettype) or (values[1] in set(self.__well)) or (values[1] == "all"):
+                        if len(values) == 2 + self.__permittedoperations[values[0]]:
+                            self.set_restriction(values[0],values[1],values[2:])
         fp.close()
     
     
@@ -233,16 +231,21 @@ class DropletData(object):
         except:
             raise IOError("could not open file '{:s}' to save restrictions".format(filename))
         for restriction in self.__datarestrictions:
-            print >> fp, restriction[0] + " " + restriction[2] + " " + str(restriction[1]),
-            if len(restriction) == 4:
-                print >> fp, " " + restriction[3],
-            print >> fp
-
+            print >> fp, restriction[0] + " " + restriction[0] + " " + " ".join([str(x) for x in restriction[2]])
+        if not filename is None:
+            fp.close()
 
     # ===============================================================
     # all output of data is funneled through this routine
     # only return datapoints that match all criteria in the restrictionfile
     # ===============================================================
+    
+    def pattern_and(self,pattern1,pattern2):
+        if pattern1 is None:
+            return pattern2
+        else:
+            return np.logical_and(pattern1,pattern2)
+    
     def restricted_data(self,key):
         r = list()
         for datablock in self.__data[key]:
@@ -256,30 +259,43 @@ class DropletData(object):
             pattern = None
             if len(self.__datarestrictions) > 0:
                 for restriction in self.__datarestrictions:
-                    if len(restriction) == 4:
-                        if restriction[3] == key:
-                            continue
-                    IDrestiction = self.__datacolumns.index(restriction[0])
-                    if restriction[2] == "max":
-                        if pattern is None:
-                            pattern = (datablock[restriction[0]] < restriction[1])
-                        else:
-                            pattern = np.logical_and(pattern, datablock[restriction[0]] < restriction[1])
-                    elif restriction[2] == "min":
-                        if pattern is None:
-                            pattern = (datablock[restriction[0]] > restriction[1])
-                        else:
-                            pattern = np.logical_and(pattern,datablock[restriction[0]] > restriction[1])
-                    elif restriction[2] == "end":
-                        if pattern is None:
-                            pattern = (datablock[restriction[0]] < (1-restriction[1])* datablock[restriction[0]][-1])
-                        else:
-                            pattern = np.logical_and(pattern,datablock[restriction[0]] < (1-restriction[1])* datablock[restriction[0]][-1])
-                    elif restriction[2] == "start":
-                        if pattern is None:
-                            pattern = (datablock[restriction[0]] > (1+restriction[1]) * datablock[restriction[0]][0])
-                        else:
-                            pattern = np.logical_and(pattern,datablock[restriction[0]] (1+restriction[1]) * datablock[restriction[0]][0])
+                    if   restriction[0] == "max":
+                        pattern = self.pattern_and(pattern, datablock[restriction[2,0]] < float(restriction[2,1]) )
+                    elif restriction[0] == "min":
+                        pattern = self.pattern_and(pattern, datablock[restriction[2,0]] > float(restriction[2,1]) )
+                    elif restriction[0] == "end":
+                        pattern = self.pattern_and(pattern, datablock[restriction[2,0]] < (1-restriction[2,1]) * datablock[restriction[2,0]][-1] )
+                    elif restriction[0] == "start":
+                        pattern = self.pattern_and(pattern, datablock[restriction[2,0]] > (1+restriction[2,1]) * datablock[restriction[2,0]][0] )
+                    elif restriction[0] == "exclude":
+                        continue
+                        #pattern = self.pattern_and(pattern, )
+                
+                #for restriction in self.__datarestrictions:
+                    #if len(restriction) == 4:
+                        #if restriction[3] == key:
+                            #continue
+                    #IDrestiction = self.__datacolumns.index(restriction[0])
+                    #if restriction[2] == "max":
+                        #if pattern is None:
+                            #pattern = (datablock[restriction[0]] < restriction[1])
+                        #else:
+                            #pattern = np.logical_and(pattern, datablock[restriction[0]] < restriction[1])
+                    #elif restriction[2] == "min":
+                        #if pattern is None:
+                            #pattern = (datablock[restriction[0]] > restriction[1])
+                        #else:
+                            #pattern = np.logical_and(pattern,datablock[restriction[0]] > restriction[1])
+                    #elif restriction[2] == "end":
+                        #if pattern is None:
+                            #pattern = (datablock[restriction[0]] < (1-restriction[1])* datablock[restriction[0]][-1])
+                        #else:
+                            #pattern = np.logical_and(pattern,datablock[restriction[0]] < (1-restriction[1])* datablock[restriction[0]][-1])
+                    #elif restriction[2] == "start":
+                        #if pattern is None:
+                            #pattern = (datablock[restriction[0]] > (1+restriction[1]) * datablock[restriction[0]][0])
+                        #else:
+                            #pattern = np.logical_and(pattern,datablock[restriction[0]] (1+restriction[1]) * datablock[restriction[0]][0])
                         
                 pattern = np.transpose(np.repeat([pattern],len(rdata[0]),axis = 0))
                 rdata   = np.reshape(rdata[pattern],(len(rdata[pattern])/len(self.__datacolumns),len(self.__datacolumns)))
