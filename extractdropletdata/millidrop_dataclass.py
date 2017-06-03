@@ -23,6 +23,7 @@ class DropletData(object):
         # ===============================================================
         self.__listoftypes         = list(set(self.__droplettype))  # list of all possible "experiments", ie. labels of different wells
         self.__data                = dict()                         # store all trajectories, each keys of the dictionary are the experiment labels, "values" of such an entry is list of np-arrays
+        self.__welldata            = dict()
         self.__datacolumns         = datacolumns                    # keep only those columns from the original datafile
         self.__datarestrictions    = list()                         # list of all restrictions
         self.__permittedoperations = {"min":2,"max":2,"end":2,"start":2,"exclude":1}
@@ -117,6 +118,7 @@ class DropletData(object):
             if not column in data.dtype.names:
                 raise ValueError("No field of name '{}'. Possible values are ('".format(column) + "', '".join(data.dtype.names) + "')")
         dropletLabel = self.dropletID_to_label(dropletID)
+        dropletWell  = self.dropletID_to_well(dropletID)
         if not self.__data.has_key(dropletLabel):
             self.__data[dropletLabel] = list()
         
@@ -128,11 +130,14 @@ class DropletData(object):
                 newdatablock1[column] = np.array(data[column][1::2])                                                    
             self.__data[dropletLabel].append(newdatablock0)
             self.__data[dropletLabel].append(newdatablock1)
+            self.__welldata[dropletLabel].append(dropletWell)
+            self.__welldata[dropletLabel].append(dropletWell)
         else:
             newdatablock0 = dict()
             for column in columns:
                 newdatablock0[column] = np.array(data[column])
             self.__data[dropletLabel].append(newdatablock0)
+            self.__welldata[dropletLabel].append(dropletWell)
             
     # ===============================================================
     # = helper routines
@@ -164,6 +169,14 @@ class DropletData(object):
         except:
             raise KeyError("did not find experiment type for droplet '{}'".format(dropletID))
     
+    
+    def dropletID_to_well(self,dropletID = None):
+        if dropletID is None:
+            raise KeyError("dropletID is None")
+        try:
+            return self.__well[dropletID]
+        except:
+            raise KeyError("did not find well type for droplet '{}'".format(dropletID))
     
     # ===============================================================
     # = output of specific information from internal datastructure
@@ -248,7 +261,9 @@ class DropletData(object):
     
     def restricted_data(self,key):
         r = list()
-        for datablock in self.__data[key]:
+        for i in len(self.__data[key]):
+            datablock = self.__data[key][i]
+            well      = self.__welldata[key][i]
             rdata = None
             for column in self.__datacolumns:
                 if rdata is None:
@@ -272,12 +287,10 @@ class DropletData(object):
                         try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > (1+restriction[2][1]) * datablock[restriction[2][0]][0] )
                         except: continue
                     elif str(restriction[0]).lower() == "exclude":
-                        if   str(restriction[2]).lower() == "experiment":
-                            if key == str(restriction[1]):
-                                shape = np.shape(rdata)
-                                pattern = np.repeat(np.repeat([[False]],shape[0],axis=0),shape[1],axis=1)
-                        elif str(restriction[2]).lower() == "well":
-                            # not yet implemented
+                        if ((str(restriction[2]).lower() == "experiment") and (key == str(restriction[1]))) or ((str(restriction[2]).lower() == "well") and (well == str(restriction[1]))):
+                            shape = np.shape(rdata)
+                            pattern = np.repeat(np.repeat([[False]],shape[0],axis=0),shape[1],axis=1)
+                        else:
                             continue
 
                 pattern = np.transpose(np.repeat([pattern],len(rdata[0]),axis = 0))
