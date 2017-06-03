@@ -191,13 +191,13 @@ class DropletData(object):
     # routines to work with restricted data (ie. a lower cutoff for the droplet signal, or a maximal time)
     # ===============================================================
     
-    def set_restriction(self,restictiontype, applies_to = None, params = None):
+    def set_restriction(self,restrictiontype, applies_to = None, params = None):
         if restrictiontype in self.__permittedoperations.keys():
             if applies_to is None:
                 applies_to = "all"
             if (applies_to in self.__droplettype) or (applies_to in set(self.__well)) or (applies_to == "all"):
                 if len(params) == self.__permittedoperations[restrictiontype]:
-                    newrestriction = list(restrictiontype,applies_to,params)
+                    newrestriction = list([restrictiontype,applies_to,params])
                     self.__datarestrictions.append(newrestriction)
         else:
             raise ValueError("cannot apply restriction to data (column: '{:s}', operation: {:s})".format(column,operation))
@@ -260,43 +260,16 @@ class DropletData(object):
             if len(self.__datarestrictions) > 0:
                 for restriction in self.__datarestrictions:
                     if   restriction[0] == "max":
-                        pattern = self.pattern_and(pattern, datablock[restriction[2,0]] < float(restriction[2,1]) )
+                        pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < float(restriction[2][1]) )
                     elif restriction[0] == "min":
-                        pattern = self.pattern_and(pattern, datablock[restriction[2,0]] > float(restriction[2,1]) )
+                        pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > float(restriction[2][1]) )
                     elif restriction[0] == "end":
-                        pattern = self.pattern_and(pattern, datablock[restriction[2,0]] < (1-restriction[2,1]) * datablock[restriction[2,0]][-1] )
+                        pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < (1-restriction[2][1]) * datablock[restriction[2][0]][-1] )
                     elif restriction[0] == "start":
-                        pattern = self.pattern_and(pattern, datablock[restriction[2,0]] > (1+restriction[2,1]) * datablock[restriction[2,0]][0] )
+                        pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > (1+restriction[2][1]) * datablock[restriction[2][0]][0] )
                     elif restriction[0] == "exclude":
                         continue
-                        #pattern = self.pattern_and(pattern, )
-                
-                #for restriction in self.__datarestrictions:
-                    #if len(restriction) == 4:
-                        #if restriction[3] == key:
-                            #continue
-                    #IDrestiction = self.__datacolumns.index(restriction[0])
-                    #if restriction[2] == "max":
-                        #if pattern is None:
-                            #pattern = (datablock[restriction[0]] < restriction[1])
-                        #else:
-                            #pattern = np.logical_and(pattern, datablock[restriction[0]] < restriction[1])
-                    #elif restriction[2] == "min":
-                        #if pattern is None:
-                            #pattern = (datablock[restriction[0]] > restriction[1])
-                        #else:
-                            #pattern = np.logical_and(pattern,datablock[restriction[0]] > restriction[1])
-                    #elif restriction[2] == "end":
-                        #if pattern is None:
-                            #pattern = (datablock[restriction[0]] < (1-restriction[1])* datablock[restriction[0]][-1])
-                        #else:
-                            #pattern = np.logical_and(pattern,datablock[restriction[0]] < (1-restriction[1])* datablock[restriction[0]][-1])
-                    #elif restriction[2] == "start":
-                        #if pattern is None:
-                            #pattern = (datablock[restriction[0]] > (1+restriction[1]) * datablock[restriction[0]][0])
-                        #else:
-                            #pattern = np.logical_and(pattern,datablock[restriction[0]] (1+restriction[1]) * datablock[restriction[0]][0])
-                        
+
                 pattern = np.transpose(np.repeat([pattern],len(rdata[0]),axis = 0))
                 rdata   = np.reshape(rdata[pattern],(len(rdata[pattern])/len(self.__datacolumns),len(self.__datacolumns)))
             r.append(rdata)
