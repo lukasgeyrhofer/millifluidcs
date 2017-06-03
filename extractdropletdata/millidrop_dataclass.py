@@ -25,7 +25,7 @@ class DropletData(object):
         self.__data                = dict()                         # store all trajectories, each keys of the dictionary are the experiment labels, "values" of such an entry is list of np-arrays
         self.__datacolumns         = datacolumns                    # keep only those columns from the original datafile
         self.__datarestrictions    = list()                         # list of all restrictions
-        self.__permittedoperations = {"min":2,"max":2,"end":2,"start":2,"exclude":0}
+        self.__permittedoperations = {"min":2,"max":2,"end":2,"start":2,"exclude":1}
                                                                     # hardcoded allowed restriction types: min/max chop trajectories if the fall below or rise above the threshold value, end/start is for time
 
 
@@ -259,20 +259,35 @@ class DropletData(object):
             pattern = None
             if len(self.__datarestrictions) > 0:
                 for restriction in self.__datarestrictions:
-                    if   restriction[0] == "max":
-                        pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < float(restriction[2][1]) )
-                    elif restriction[0] == "min":
-                        pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > float(restriction[2][1]) )
-                    elif restriction[0] == "end":
-                        pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < (1-restriction[2][1]) * datablock[restriction[2][0]][-1] )
-                    elif restriction[0] == "start":
-                        pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > (1+restriction[2][1]) * datablock[restriction[2][0]][0] )
-                    elif restriction[0] == "exclude":
-                        continue
+                    if   str(restriction[0]).lower() == "max":
+                        try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < float(restriction[2][1]) )
+                        except: continue
+                    elif str(restriction[0]).lower() == "min":
+                        try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > float(restriction[2][1]) )
+                        except: continue
+                    elif str(restriction[0]).lower() == "end":
+                        try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < (1-restriction[2][1]) * datablock[restriction[2][0]][-1] )
+                        except: continue
+                    elif str(restriction[0]).lower() == "start":
+                        try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > (1+restriction[2][1]) * datablock[restriction[2][0]][0] )
+                        except: continue
+                    elif str(restriction[0]).lower() == "exclude":
+                        if   str(restriction[2]).lower() == "experiment":
+                            if key == str(restriction[1]):
+                                shape = np.shape(rdata)
+                                pattern = np.repeat(np.repeat([[False]],shape[0],axis=0),shape[1],axis=1)
+                        elif str(restriction[2]).lower() == "well":
+                            # not yet implemented
+                            continue
 
                 pattern = np.transpose(np.repeat([pattern],len(rdata[0]),axis = 0))
-                rdata   = np.reshape(rdata[pattern],(len(rdata[pattern])/len(self.__datacolumns),len(self.__datacolumns)))
-            r.append(rdata)
+                datapattern = rdata[pattern]
+                if len(datapattern) > 0:
+                    rdata   = np.reshape(datapattern,(len(datapattern)/len(self.__datacolumns),len(self.__datacolumns)))
+                else:
+                    rdata   = datapattern
+            if len(rdata) > 0:
+                r.append(rdata)
         return r
           
     
@@ -298,7 +313,9 @@ class DropletData(object):
     # >         print trajectory
     def __iter__(self):
         for key in self.__listoftypes:
-            yield key,self[key]
+            data = self[key]
+            if len(data) > 0:
+                yield key,data
 
     # catch any specific attributes of the DropletData object
     # so far only single attribute implemented
