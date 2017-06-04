@@ -34,8 +34,12 @@ tlist  = thdata[:,0]
 dt     = tlist[1] - tlist[0]
 ptlist = thdata[:,1] * dt
 
-nlist  = np.arange(1,args.Nmax)
-pnlist = poisson.pmf(nlist,args.initialconditionsPoisson)
+if args.Nmax > 0:
+    nlist  = np.arange(1,args.Nmax)
+    pnlist = poisson.pmf(nlist,args.initialconditionsPoisson)
+else:
+    nlist  = np.array([args.initialconditionsPoisson])
+    pnlist = np.ones(1)
 
 alist  = np.arange(start = args.amin,stop = args.amax, step = args.da)
 Calist = np.zeros(len(alist))
