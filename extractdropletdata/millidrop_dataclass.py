@@ -120,7 +120,8 @@ class DropletData(object):
         dropletLabel = self.dropletID_to_label(dropletID)
         dropletWell  = self.dropletID_to_well(dropletID)
         if not self.__data.has_key(dropletLabel):
-            self.__data[dropletLabel] = list()
+            self.__data[dropletLabel]     = list()
+            self.__welldata[dropletLabel] = list()
         
         if splitBackForthTrajectories:        
             newdatablock0 = dict()
@@ -261,7 +262,7 @@ class DropletData(object):
     
     def restricted_data(self,key):
         r = list()
-        for i in len(self.__data[key]):
+        for i in range(len(self.__data[key])):
             datablock = self.__data[key][i]
             well      = self.__welldata[key][i]
             rdata = None
