@@ -34,15 +34,17 @@ parser = gc.AddGrowthParameters(parser,defaultmixingtime = 24)
 parserAB = parser.add_argument_group(description = "Parameters for interactions with antibiotics")
 parserAB.add_argument("-k","--kappa",type=float,default=1)
 parserAB.add_argument("-l","--logkill",type=float,default=2)
-parserAB.add_argument("-B","--ABconc",type=float,default=.5)
 parserAB.add_argument("-P","--PGproduction",nargs="*",default=[1,0])
 parserAB.add_argument("-R","--PGreductionAB",type=float,default=1)
 parserAB.add_argument("-K","--monodKC",type=float,default=1e2)
 
-parser.add_argument("-t","--integrationstep",default=1e-3,type=float)
-parser.add_argument("-o","--outputstep",default=100,type=int)
-parser.add_argument("-N","--initialN",default=1,type=float)
-#parser.add_argument("-B","--initialB",default=.5,type=float)
+parserALG = parser.add_argument_group(description = "Parameters for algorithm")
+parserALG.add_argument("-t","--integrationstep",default=1e-3,type=float)
+parserALG.add_argument("-o","--outputstep",default=100,type=int)
+
+parserIC = parser.add_argument_group(desciption = "Initial conditions")
+parserIC.add_argument("-B","--ABconc",type=float,default=.5)
+parserIC.add_argument("-N","--initialN",default=1,type=float)
 
 global args
 args = parser.parse_args()

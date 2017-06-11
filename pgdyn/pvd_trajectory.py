@@ -22,16 +22,18 @@ def dynPVD(t,x,params):
 parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser,defaultmixingtime = 24)
 
-parser_ab = parser.add_argument_group(description = "Parameters for dynamics of PVD")
-parser_ab.add_argument("-V","--PVDconc",type=float,default=0.0)
-parser_ab.add_argument("-k","--PVDincreaseS",type=float,default=.2)
-parser_ab.add_argument("-K","--PVDmaxFactorS",type=float,default=1.2)
-parser_ab.add_argument("-p","--PVDproduction",nargs="*",default=[1,0])
+parserPVD = parser.add_argument_group(description = "Parameters for dynamics of PVD")
+parserPVD.add_argument("-k","--PVDincreaseS",type=float,default=.2)
+parserPVD.add_argument("-K","--PVDmaxFactorS",type=float,default=1.2)
+parserPVD.add_argument("-p","--PVDproduction",nargs="*",default=[1,0])
 
-parser.add_argument("-t","--integrationstep",default=1e-3,type=float)
-parser.add_argument("-o","--outputstep",default=100,type=int)
-parser.add_argument("-N","--initialN",default=1,type=float)
-#parser.add_argument("-B","--initialB",default=.5,type=float)
+parserALG = parser.add_argument_group(description = "Parameters for algorithm")
+parserALG.add_argument("-t","--integrationstep",default=1e-3,type=float)
+parserALG.add_argument("-o","--outputstep",default=100,type=int)
+
+parserIC = parser.add_argument_group(description = "Initial conditions")
+parserIC.add_argument("-N","--initialN",default=1,type=float)
+parserIC.add_argument("-V","--PVDconc",type=float,default=0.0)
 
 args = parser.parse_args()
 kwargs = vars(args)
