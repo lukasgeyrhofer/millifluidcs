@@ -40,7 +40,7 @@ def RungeKutta4(func,xx,tt,step):
 
 def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = False,dilution = False,
                         defaultgrowthrates = [2.,1.],defaultyieldfactors = [1.,2.],defaultdeathrates = [0.,0.],
-                        defaultsubstrate = 1e4, defaultmixingtime = None,defaultdilution = 2e-4, defaultnumdroplets = 1000):
+                        defaultsubstrate = 1e4, defaultmixingtime = 24,defaultdilution = 2e-4, defaultnumdroplets = 1000):
     # Helper routine to generate all cmdline parameters for microbial growth
     gp = p.add_argument_group(description = "Parameters for growth in droplets")
     gp.add_argument("-a","--growthrates",type=float,nargs="*",default=defaultgrowthrates)
@@ -244,7 +244,7 @@ class GrowthDynamics(object):
     def delLastStrain(self):
         return self.strains.pop()
     
-    def __getTimeToDepletion(self,initialcells):
+    def getTimeToDepletion(self,initialcells):
         # internal function to determine when substrate is used up
         t0 = 0
         if np.sum(initialcells) > 0.:
@@ -285,7 +285,7 @@ class GrowthDynamics(object):
 
     def Growth(self,initialcells = None):
         ic  = self.checkInitialCells(initialcells) # generate list with same dimensions as number of microbial strains
-        ttd = self.__getTimeToDepletion(ic)          # time to depletion
+        ttd = self.getTimeToDepletion(ic)          # time to depletion
         return self.env.dilution * ic * np.exp(self.growthrates * ttd - self.deathrates * self.env.mixingtime)
 
 
