@@ -981,7 +981,7 @@ class GrowthDynamicsPyoverdin2(GrowthDynamics):
 
     def dynPVD(self,t,x,params):
         p = self.PVDparams['PVDincreaseS'] if x[-1] <= self.env.substrate * self.PVDparams['PVDmaxFactorS'] else 0
-        if x[-3] >= 0:
+        if x[-3] > 0:
             a = self.growthrates
         else:
             a = np.zeros(self.numstrains)

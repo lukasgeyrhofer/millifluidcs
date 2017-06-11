@@ -17,7 +17,7 @@ def dyn(t,xx,parameter):
     if xx[1] < 1e-200:
         gr = 0
     return np.array([   gr * xx[0],
-                        -gr/yieldfactor(xx[1])*xx[0],
+                        -gr/yieldfactor(xx[1]/xx[0])*xx[0],
                         params['production']*xx[0] ])
                         
                        
@@ -29,8 +29,8 @@ parserP = parser.add_argument_group(description = "other physiological parameter
 parserP.add_argument("-P","--production",type=float,default=1)
 parserP.add_argument("-D","--degradation",type=float,default=1e-2)
 parserP.add_argument("-d","--deltaY",type=float,default=1)
-parserP.add_argument("-m","--yieldhalfeffect",type=float,default=1e3)
-parserP.add_argument("-M","--yieldspread",type=float,default=2e2)
+parserP.add_argument("-m","--yieldhalfeffect",type=float,default=5)
+parserP.add_argument("-M","--yieldspread",type=float,default=1)
 parserP.add_argument("-N","--initialN",type=float,default=10)
 parserP.add_argument("-B","--initialB",type=float,default=.5)
 
