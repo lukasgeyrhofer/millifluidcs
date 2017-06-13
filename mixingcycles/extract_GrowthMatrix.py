@@ -35,6 +35,13 @@ if isinstance(g.growthmatrixgrid,int):
         for y in range(g.growthmatrixgrid):
             print >> out,x,y,g.growthmatrix[x,y,0],g.growthmatrix[x,y,1]
         print >> out
+if isinstance(g.growthmatrixgrid,np.ndarray):
+    gridx = g.growthmatrixgrid[0]
+    gridy = g.growthmatrixgrid[1]
+    for i in range(len(gridx)):
+        for j in range(len(gridy)):
+            print >> out,gridx[i],gridy[j],g.growthmatrix[i,j,0],g.growthmatrix[i,j,1]
+        print >> out
 else:
     raise NotImplementedError
 
