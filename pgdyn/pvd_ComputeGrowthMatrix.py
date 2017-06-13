@@ -30,7 +30,7 @@ parser.add_argument("-v","--verbose",default=False,action="store_true")
 args = parser.parse_args()
 
 if args.outfile is None:
-    raise IOError, "filename not specified"
+    raise IOError, "filename for output not specified"
 
 if args.infile is None:
     g    = gc.GrowthDynamicsPyoverdin(**vars(args))
