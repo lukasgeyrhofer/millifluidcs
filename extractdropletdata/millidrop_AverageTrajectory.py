@@ -67,7 +67,7 @@ for label,trajectories in data:
         np.savetxt(outfilename,np.transpose(outdata),fmt = '%.6e')
         if args.stddev:
             outfilename = outbasename + label + ".stddev"
-            outdatastddev = np.array([timegrid*/rgs.timerescale])
+            outdatastddev = np.array([timegrid/args.timerescale])
             outdatastddev = np.concatenate([outdatastddev,np.sqrt(n*sum2trajectories - sumtrajectories*sumtrajectories)/np.sqrt(n*n-n)],axis=0)
             np.savetxt(outfilename,np.transpose(outdatastddev),fmt = '%.6e')
             
