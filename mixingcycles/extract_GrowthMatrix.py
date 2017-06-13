@@ -12,6 +12,7 @@ import growthclasses as gc
 parser = argparse.ArgumentParser()
 parser.add_argument("-i","--infile")
 parser.add_argument("-o","--outfile",default=None)
+parser.add_argument("-v","--verbose",default=False,action="store_true")
 args = parser.parse_args()
 
 try:
@@ -30,12 +31,16 @@ if not args.outfile is None:
 else:
     out = sys.stdout
 
+if args.verbose:
+    print >> sys.stderr,g.ParameterString()
+
+
 if isinstance(g.growthmatrixgrid,int):
     for x in range(g.growthmatrixgrid):
         for y in range(g.growthmatrixgrid):
             print >> out,x,y,g.growthmatrix[x,y,0],g.growthmatrix[x,y,1]
         print >> out
-if isinstance(g.growthmatrixgrid,np.ndarray):
+elif isinstance(g.growthmatrixgrid,np.ndarray):
     gridx = g.growthmatrixgrid[0]
     gridy = g.growthmatrixgrid[1]
     for i in range(len(gridx)):
