@@ -5,14 +5,45 @@ import argparse
 import sys,math
 import os
 
+
+def AddCommandLineParameters(parser):
+    ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
+    
+    ioparser.add_argument("-i", "--infiles", nargs="*")
+    ioparser.add_argument("-t", "--templatefile", default=None)
+    ioparser.add_argument("-r", "--restrictionfile", default=None)
+    ioparser.add_argument("-o", "--outbasename", default=None)
+    
+    ioparser.add_argument("-C", "--datacolumns",nargs="*",type=str)
+    ioparser.add_argument("-u", "--timerescale", default=3.6e3, type=float)
+    
+    ioparser.add_argument("-B", "--SplitBackForthTrajectories", default=True, action="store_false")
+    ioparser.add_argument("-H", "--HiccupLoading", default = False,action = "store_true")
+    ioparser.add_argument("-D", "--IgnoreAdditionalDroplets", default = False, action = "store_true")
+    return parser
+
+
 class DropletData(object):
-    def __init__(self, templatefile = None, infiles = None, splitBackForthTrajectories = False, datacolumns = ['time','Channel1_mean'], snakelikeloading = True, restrictionfile = None):
+    def __init__(self, **kwargs):
+        self.__infiles                    = kwargs.get("infiles",None)
+        self.__templatefile               = kwargs.get("templatefile",None)
+        self.__restrictionfile            = kwargs.get("restrictionfile",None)
+        self.__outbasename                = kwargs.get("outbasename","")
         
-        if infiles is None:
+        self.__datacolumns                = kwargs.get("datacolumns",['time','Channel1_mean'])
+        self.__timerescale                = kwargs.get("timerescale",3.6e3)
+        
+        self.__splitBackForthTrajectories = kwargs.get("SplitBackForthTrajectories",True)
+        self.__snakelikeloading           = kwargs.get("SnakeLikeLoading",True)
+        self.__hiccuploading              = kwargs.get("HiccupLoading",False)
+        self.__ignoreadditionaldroplets   = kwargs.get("IgnoreAdditionalDroplets",False)
+                                                       
+        
+        if self.__infiles is None:
             raise IOError("datafiles required")
         
-        if not templatefile is None:
-            self.load_templatefile(templatefile,snakelikeloading)
+        if not self.__templatefile is None:
+            self.load_templatefile(self.__templatefile)
         else:
             # if no templatefile, group everything under label 'default' with 'unkown' well ID
             self.__droplettype = np.repeat("default",len(infiles))
@@ -24,7 +55,6 @@ class DropletData(object):
         self.__listoftypes         = list(set(self.__droplettype))  # list of all possible "experiments", ie. labels of different wells
         self.__data                = dict()                         # store all trajectories, each keys of the dictionary are the experiment labels, "values" of such an entry is list of np-arrays
         self.__welldata            = dict()
-        self.__datacolumns         = datacolumns                    # keep only those columns from the original datafile
         self.__datarestrictions    = list()                         # list of all restrictions
         self.__permittedoperations = {"min":2,"max":2,"end":2,"start":2,"exclude":1}
                                                                     # hardcoded allowed restriction types: min/max chop trajectories if the fall below or rise above the threshold value, end/start is for time
@@ -33,22 +63,22 @@ class DropletData(object):
         # ===============================================================
         # = iterate over all separate droplet files
         # ===============================================================
-        for filename in infiles:
+        for filename in self.__infiles:
             dropletID = self.filename_to_dropletID(filename)
             try:
                 tmpdata = np.genfromtxt(filename,names = True, delimiter = ',', dtype = float)
             except:
                 print("Error while loading file '{:s}'. Continuing ...".format(filename))
                 continue
-            self.add_trajectory(dropletID, tmpdata, self.__datacolumns, splitBackForthTrajectories)
+            self.add_trajectory(dropletID, tmpdata)
         
         
         # ===============================================================
         # = restrictions on data
         # ===============================================================
         
-        if not restrictionfile is None:
-            self.load_restrictions_from_file(restrictionfile)
+        if not self.__restrictionfile is None:
+            self.load_restrictions_from_file(self.__restrictionfile)
         
 
 
@@ -56,7 +86,7 @@ class DropletData(object):
     # ===============================================================
     # = generate list of all types of experiments from templatefile =
     # ===============================================================
-    def load_templatefile(self,templatefile = None, snakelikeloading = True):
+    def load_templatefile(self,templatefile = None):
         try:
             fptemp = open(templatefile,"r")
         except:
@@ -99,8 +129,8 @@ class DropletData(object):
                     lastrow = line[0]
         
         # add the last buffer 'typesinrow'
-        if snakelikeloading:    direction      = 2 * (ord(lastrow)%2) - 1
-        else:                   direction      = 1
+        if self.__snakelikeloading: direction      = 2 * (ord(lastrow)%2) - 1
+        else:                       direction      = 1
         self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
         self.__well        = self.concat(self.__well,wellsinrow,direction2 = direction)
         
@@ -110,11 +140,11 @@ class DropletData(object):
     # ===============================================================
     # = load data from a single dropletfile and add to internal datastructure
     # ===============================================================
-    def add_trajectory(self,dropletID = None, data = None, columns = None, splitBackForthTrajectories = False):
+    def add_trajectory(self,dropletID = None, data = None):
         if data is None:
             raise ValueError("need timestamps for experimental data")
 
-        for column in columns:
+        for column in self.__datacolumns:
             if not column in data.dtype.names:
                 raise ValueError("No field of name '{}'. Possible values are ('".format(column) + "', '".join(data.dtype.names) + "')")
         dropletLabel = self.dropletID_to_label(dropletID)
@@ -123,10 +153,10 @@ class DropletData(object):
             self.__data[dropletLabel]     = list()
             self.__welldata[dropletLabel] = list()
         
-        if splitBackForthTrajectories:        
+        if self.__splitBackForthTrajectories:        
             newdatablock0 = dict()
             newdatablock1 = dict()
-            for column in columns:
+            for column in self.__datacolumns:
                 newdatablock0[column] = np.array(data[column][0::2])
                 newdatablock1[column] = np.array(data[column][1::2])                                                    
             self.__data[dropletLabel].append(newdatablock0)
@@ -135,7 +165,7 @@ class DropletData(object):
             self.__welldata[dropletLabel].append(dropletWell)
         else:
             newdatablock0 = dict()
-            for column in columns:
+            for column in self.__datacolumns:
                 newdatablock0[column] = np.array(data[column])
             self.__data[dropletLabel].append(newdatablock0)
             self.__welldata[dropletLabel].append(dropletWell)
