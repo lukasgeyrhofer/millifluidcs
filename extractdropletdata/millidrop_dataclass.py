@@ -369,7 +369,6 @@ class DropletData(object):
             return self.__datacolumns
         elif key == "outbasename":
             return self.__outbasename
-        elif key == 
         else:
             super(DropletData,self).__getattr__(key)
 
