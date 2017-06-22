@@ -28,21 +28,12 @@ def rsquared_exp(t,b,gr,offset):
     
     
 parser = argparse.ArgumentParser()
-ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
-ioparser.add_argument("-i","--infiles",nargs="*")
-ioparser.add_argument("-t","--templatefile",default=None)
-ioparser.add_argument("-r","--restrictionfile",default=None)
-ioparser.add_argument("-o","--outbasename",default='')
-ioparser.add_argument("-V","--write_values_to_outfile",default=False,action = "store_true")
-ioparser.add_argument("-v","--verbose",default=False,action="store_true")
-ioparser.add_argument("-u","--timerescale",default=3.6e3,type=float)
-ioparser.add_argument("-B","--splitBackForthTrajectories",default=True,action="store_false")
+parser = mdc.AddCommandLineParameters(parser)
 
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
 aparser.add_argument("-m","--maxfev",default=5000,type=int)
 aparser.add_argument("-Y","--computeyield",default=False,action="store_true")
 aparser.add_argument("-T","--R2threshold",default=None,type=float)
-aparser.add_argument("-C","--channel",default="Channel1_mean",type=str)
 
 
 ffparser = aparser.add_mutually_exclusive_group()
@@ -53,12 +44,8 @@ hparser = parser.add_argument_group(description = "==== Histogram parameters ===
 hparser.add_argument("-b","--bins",default=10,type=int)
 hparser.add_argument("-R","--histogramrange",nargs=2,type=float,default=None)
 
-args     = parser.parse_args()
-channels = ["time",args.channel]
-data     = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = args.splitBackForthTrajectories, datacolumns = channels)
-
-if not args.restrictionfile is None:
-    data.load_restrictions_from_file(args.restrictionfile)
+args = parser.parse_args()
+data = mdc.DropletData(**vars(args))
 
 if not args.exponential and not args.logistic:
     mode = "exponential"

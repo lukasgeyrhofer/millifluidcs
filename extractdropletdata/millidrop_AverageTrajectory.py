@@ -7,33 +7,18 @@ import sys,math
 import millidrop_dataclass as mdc
 
 parser = argparse.ArgumentParser()
-ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
-ioparser.add_argument("-i","--infiles",nargs="*")
-ioparser.add_argument("-t","--templatefile",default=None)
-ioparser.add_argument("-r","--restrictionfile",default=None)
-ioparser.add_argument("-o","--outbasename",default=None)
-ioparser.add_argument("-B","--splitBackForthTrajectories",default=True,action="store_false")
-ioparser.add_argument("-u","--timerescale",default=3.6e3,type=float)
+parser = mdc.AddCommandLineParameters(parser)
 
 tparser = parser.add_argument_group(description = "==== New grid parameters ====")
 tparser.add_argument("-M","--maxtime",default=None,type=float)
 tparser.add_argument("-m","--mintime",default=0,type=float)
 tparser.add_argument("-n","--datapoints",default=50,type=int)
-tparser.add_argument("-C","--channel",nargs="*",default=["Channel1_mean"])
 
 aparser = parser.add_argument_group(description = "==== Algorithm parameters ====")
 aparser.add_argument("-d","--stddev",default=False,action="store_true")
 
 args = parser.parse_args()
-
-if "time" not in args.channel:
-    datacolumns = ["time"] + args.channel
-else:
-    datacolumns = args.channel
-
-data = mdc.DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = args.splitBackForthTrajectories, datacolumns = datacolumns)
-if not args.restrictionfile is None:
-    data.load_restrictions_from_file(args.restrictionfile)
+data = mdc.DropletData(**vars(args))
 
 for label,trajectories in data:
     n = len(trajectories)
@@ -56,11 +41,7 @@ for label,trajectories in data:
             else:
                 n -= 1
     if n >= 1:
-        if not args.outbasename is None:
-            outbasename = args.outbasename
-        else:
-            outbasename = ""
-        outfilename = outbasename + label + ".average"
+        outfilename = data.outbasename + label + ".average"
         print "{:12s}: saving average from {:d} trajectories to file '{:s}'".format(label,n,outfilename)
         outdata = np.array([timegrid/args.timerescale])
         outdata = np.concatenate([outdata,np.array(sumtrajectories/n)],axis=0)
