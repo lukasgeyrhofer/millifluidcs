@@ -131,8 +131,8 @@ class DropletData(object):
         if self.__hiccuploading:
             for i in np.arange(start = 0,stop = len(well),step = 2):
                 assert droplet_number[i] == droplet_number[i+1]
-                self.__droplettype = self.concat(self.__droplettype, np.repeat([[description[i],description[i+1]]],droplet_number[i],axis=0).flatten()))
-                self.__well        = self.concat(self.__well,        np.repeat([[well[i],well[i+1]]],droplet_number[i],axis=0).flatten()))
+                self.__droplettype = self.concat(self.__droplettype, np.repeat([[description[i],description[i+1]]],droplet_number[i],axis=0).flatten())
+                self.__well        = self.concat(self.__well,        np.repeat([[well[i],well[i+1]]],droplet_number[i],axis=0).flatten())
         else:
             for w,d,n in zip(well,description,droplet_number):
                 self.__droplettype = self.concat(self.__droplettype, np.repeat(d,n))
@@ -152,7 +152,7 @@ class DropletData(object):
 
         for column in self.__datacolumns:
             if not column in data.dtype.names:
-                raise ValueError("No field of name '{}'. Possible values are ('".format(column) + "', '".join(data.dtype.names) + "')")
+                raise ValueError("DropletID: {} --- No field of name '{}'. Possible values are ('".format(dropletID,column) + "', '".join(data.dtype.names) + "')")
         try:
             dropletLabel = self.dropletID_to_label(dropletID)
             dropletWell  = self.dropletID_to_well(dropletID)
