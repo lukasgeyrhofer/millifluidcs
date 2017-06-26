@@ -45,10 +45,7 @@ class DropletData(object):
         self.__hiccuploading              = self.extractvalue(kwargs,"HiccupLoading",False)
         self.__ignoreadditionaldroplets   = self.extractvalue(kwargs,"IgnoreAdditionalDroplets",False)
                                                        
-        
-        print self.__splitBackForthTrajectories
-        exit(1)
-        
+
         if self.__infiles is None:
             raise IOError("datafiles required")
         
