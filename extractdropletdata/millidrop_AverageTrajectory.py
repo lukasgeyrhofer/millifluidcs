@@ -20,6 +20,7 @@ aparser.add_argument("-d","--stddev",default=False,action="store_true")
 args = parser.parse_args()
 data = mdc.DropletData(**vars(args))
 
+
 for label,trajectories in data:
     n = len(trajectories)
     if n >= 1:

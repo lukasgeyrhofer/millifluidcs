@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import sys,math
 import os
+import pandas as pd
 
 
 def AddCommandLineParameters(parser):
@@ -25,18 +26,21 @@ def AddCommandLineParameters(parser):
 
 class DropletData(object):
     def __init__(self, **kwargs):
-        self.__infiles                    = kwargs.get("infiles",None)
-        self.__templatefile               = kwargs.get("templatefile",None)
-        self.__restrictionfile            = kwargs.get("restrictionfile",None)
-        self.__outbasename                = kwargs.get("outbasename","")
         
-        self.__datacolumns                = kwargs.get("datacolumns",['time','Channel1_mean'])
-        self.__timerescale                = kwargs.get("timerescale",3.6e3)
+        self.__restrictedvaluesforparameters = list([None,""])
         
-        self.__splitBackForthTrajectories = kwargs.get("SplitBackForthTrajectories",True)
-        self.__snakelikeloading           = kwargs.get("SnakeLikeLoading",True)
-        self.__hiccuploading              = kwargs.get("HiccupLoading",False)
-        self.__ignoreadditionaldroplets   = kwargs.get("IgnoreAdditionalDroplets",False)
+        self.__infiles                    = self.extractvalue(kwargs,"infiles",None)
+        self.__templatefile               = self.extractvalue(kwargs,"templatefile",None)
+        self.__restrictionfile            = self.extractvalue(kwargs,"restrictionfile",None)
+        self.__outbasename                = self.extractvalue(kwargs,"outbasename","")
+        
+        self.__timerescale                = self.extractvalue(kwargs,"timerescale",3.6e3)
+        self.__datacolumns                = self.extractvalue(kwargs,"datacolumns",['time','Channel1_mean'])
+        
+        self.__splitBackForthTrajectories = self.extractvalue(kwargs,"SplitBackForthTrajectories",True)
+        self.__snakelikeloading           = self.extractvalue(kwargs,"SnakeLikeLoading",True)
+        self.__hiccuploading              = self.extractvalue(kwargs,"HiccupLoading",False)
+        self.__ignoreadditionaldroplets   = self.extractvalue(kwargs,"IgnoreAdditionalDroplets",False)
                                                        
         
         if self.__infiles is None:
@@ -86,56 +90,58 @@ class DropletData(object):
     # ===============================================================
     # = generate list of all types of experiments from templatefile =
     # ===============================================================
-    def load_templatefile(self,templatefile = None,templatefileseparator = ','):
+    def load_templatefile(self,templatefile = None, templatefileseparator = ','):
         try:
-            fptemp = open(templatefile,"r")
+            templatedata = pd.read_csv(templatefile, comment = "#", sep = templatefileseparator)
         except:
-            raise IOError("could not open file")
-        first = True
-        for line in fptemp.readlines():
-            if line[0] != "#":
-                values = line.strip().split(templatefileseparator)
-                if first:
-                    names = values
-                    try:
-                        IDdescription    = names.index("description")
-                        IDdroplet_number = names.index("droplet_number")
-                        IDwell           = names.index("well")
-                    except:
-                        raise ValueError("templatefile '%s' does not contain columns 'description', 'droplet_number' and 'well'".format(templatefile))
-
-                    self.__droplettype = None
-                    self.__well        = None
-                    typesinrow         = None
-                    wellsinrow         = None
-                    lastrow            = '.'
-                    first              = False
-                else:
-                    if line[0] != lastrow:
-                        if snakelikeloading:
-                            # check if forward
-                            direction      = 2 * (ord(lastrow)%2) - 1   # ord('A') == 65
-                                                                        # seems quite a hack, not sure how general this is
-                        else:
-                            direction      = 1
-
-                        self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
-                        typesinrow         = None
-                        self.__well        = self.concat(self.__well,wellsinrow,direction2 = direction)
-                        wellsinrow         = None
-                    
-                    typesinrow = self.concat(typesinrow,np.repeat(values[IDdescription],int(values[IDdroplet_number])))
-                    wellsinrow = self.concat(wellsinrow,np.repeat(values[IDwell],int(values[IDdroplet_number])))
-                    lastrow = line[0]
+            raise IOError("could not open templatefile '{}'".format(templatefile))
         
-        # add the last buffer 'typesinrow'
-        if self.__snakelikeloading: direction      = 2 * (ord(lastrow)%2) - 1
-        else:                       direction      = 1
-        self.__droplettype = self.concat(self.__droplettype,typesinrow,direction2 = direction)
-        self.__well        = self.concat(self.__well,wellsinrow,direction2 = direction)
+        if 'well' in templatedata and 'description' in templatedata and 'droplet_number' in templatedata:
+            well           = np.array(templatedata['well'],dtype=str)
+            description    = np.array(templatedata['description'],dtype=str)
+            droplet_number = np.array(templatedata['droplet_number'],dtype=int)
+            
+        else:
+            raise ValueError("relevant data not found in templatefile. need columns 'well', 'description' and 'droplet_number'")
         
-        # close templatefile
-        fptemp.close()
+        
+        # generate correct order of loading from microwell plate
+        if 'order' in templatedata:
+            # newer versions of templatefile seem to have an 'order' column, ignore flag 'snakelikeloading' if this is present
+            order = np.array(templatedata['order'],dtype=int)
+            order, well, description, droplet_number = zip(*sorted(zip(order,well,description,droplet_number))) # sort all columns with respect to 'order'
+        elif self.__snakelikeloading:
+            # construct same order list as above by hand
+            order = None
+            totalcount = 0
+            all_rows = [x[0] for x in well]
+            for row in set(all_rows):
+                direction   = 2 * (ord(row)%2) - 1
+                countrow    = np.count(all_rows,row)
+                order       = self.concat(order, np.arange(totalcount,totalcount + countrow)[::direction])
+                totalcount += countrow
+            order, well, description, droplet_number = zip(*sorted(zip(order,well,description,droplet_number))) # sort all columns with respect to 'order'
+        else:
+            # otherwise just use default order
+            pass
+        
+        # use this correct order to generate lists with experiments and wells, which will be later matched to a dropletID
+        self.__droplettype = None
+        self.__well        = None
+        if self.__hiccuploading:
+            for i in np.arange(start = 0,stop = len(well),step = 2):
+                assert droplet_number[i] == droplet_number[i+1]
+                self.__droplettype = self.concat(self.__droplettype, np.repeat([[description[i],description[i+1]]],droplet_number[i],axis=0).flatten()))
+                self.__well        = self.concat(self.__well,        np.repeat([[well[i],well[i+1]]],droplet_number[i],axis=0).flatten()))
+        else:
+            for w,d,n in zip(well,description,droplet_number):
+                self.__droplettype = self.concat(self.__droplettype, np.repeat(d,n))
+                self.__well        = self.concat(self.__well,        np.repeat(w,n))
+                                                                   
+
+        
+    
+        
 
     # ===============================================================
     # = load data from a single dropletfile and add to internal datastructure
@@ -147,8 +153,15 @@ class DropletData(object):
         for column in self.__datacolumns:
             if not column in data.dtype.names:
                 raise ValueError("No field of name '{}'. Possible values are ('".format(column) + "', '".join(data.dtype.names) + "')")
-        dropletLabel = self.dropletID_to_label(dropletID)
-        dropletWell  = self.dropletID_to_well(dropletID)
+        try:
+            dropletLabel = self.dropletID_to_label(dropletID)
+            dropletWell  = self.dropletID_to_well(dropletID)
+        except:
+            if not self.__ignoreadditionaldroplets:
+                raise KeyError("Error while assigning Label and/or Well to droplet")
+            else:
+                return
+        
         if not self.__data.has_key(dropletLabel):
             self.__data[dropletLabel]     = list()
             self.__welldata[dropletLabel] = list()
@@ -169,10 +182,21 @@ class DropletData(object):
                 newdatablock0[column] = np.array(data[column])
             self.__data[dropletLabel].append(newdatablock0)
             self.__welldata[dropletLabel].append(dropletWell)
-            
+    
+    
+    
     # ===============================================================
     # = helper routines
     # ===============================================================
+    
+    def extractvalue(self,dict1,key1,default):
+        if dict1.has_key(key1):
+            if dict1[key1] in self.__restrictedvaluesforparameters:
+                return default
+            else:
+                return dict1[key1]
+        else:
+            return default
 
     def concat(self,list1 = None,list2 = None, direction1 = 1, direction2 = 1):
         if (list1 is None) and (list2 is None):
