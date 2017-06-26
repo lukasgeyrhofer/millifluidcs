@@ -86,7 +86,7 @@ class DropletData(object):
     # ===============================================================
     # = generate list of all types of experiments from templatefile =
     # ===============================================================
-    def load_templatefile(self,templatefile = None):
+    def load_templatefile(self,templatefile = None,templatefileseparator = ','):
         try:
             fptemp = open(templatefile,"r")
         except:
@@ -94,7 +94,7 @@ class DropletData(object):
         first = True
         for line in fptemp.readlines():
             if line[0] != "#":
-                values = line.strip().split(',')
+                values = line.strip().split(templatefileseparator)
                 if first:
                     names = values
                     try:
@@ -102,7 +102,7 @@ class DropletData(object):
                         IDdroplet_number = names.index("droplet_number")
                         IDwell           = names.index("well")
                     except:
-                        raise ValueError("templatefile does not contain columns 'description' and 'droplet_number'")
+                        raise ValueError("templatefile '%s' does not contain columns 'description', 'droplet_number' and 'well'".format(templatefile))
 
                     self.__droplettype = None
                     self.__well        = None
@@ -369,6 +369,8 @@ class DropletData(object):
             return self.__datacolumns
         elif key == "outbasename":
             return self.__outbasename
+        elif key == "listoftypes":
+            return self.__listoftypes
         else:
             super(DropletData,self).__getattr__(key)
 
@@ -393,7 +395,8 @@ def main():
     # should also work like that:
     # given that the label 'SBW25mC-10' is defined in the templatefile
     # this is the same as the 'Trajectories' in the loop above
-    print data['SBW25mC-10']
+    if 'SBW25mC-10' in data.listoftypes:
+        print data['SBW25mC-10']
 
 
 # run through working example, if program is executed directly
