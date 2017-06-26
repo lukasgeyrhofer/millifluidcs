@@ -10,17 +10,20 @@ import pandas as pd
 def AddCommandLineParameters(parser):
     ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
     
-    ioparser.add_argument("-i", "--infiles", nargs="*")
-    ioparser.add_argument("-t", "--templatefile", default=None)
+    ioparser.add_argument("-i", "--infiles",         nargs="*")
+    ioparser.add_argument("-t", "--templatefile",    default=None)
     ioparser.add_argument("-r", "--restrictionfile", default=None)
-    ioparser.add_argument("-o", "--outbasename", default=None)
+    ioparser.add_argument("-o", "--outbasename",     default=None)
     
-    ioparser.add_argument("-C", "--datacolumns",nargs="*",type=str)
+    ioparser.add_argument("-C", "--datacolumns", nargs="*",type=str)
     ioparser.add_argument("-u", "--timerescale", default=3.6e3, type=float)
     
-    ioparser.add_argument("-B", "--SplitBackForthTrajectories", default=True, action="store_false")
-    ioparser.add_argument("-H", "--HiccupLoading", default = False,action = "store_true")
-    ioparser.add_argument("-D", "--IgnoreAdditionalDroplets", default = False, action = "store_true")
+    ioparser.add_argument("-B", "--SplitBackForthTrajectories", default = False, action = "store_true")
+    ioparser.add_argument("-H", "--HiccupLoading",              default = False, action = "store_true")
+    ioparser.add_argument("-D", "--IgnoreAdditionalDroplets",   default = False, action = "store_true")
+    
+    ioparser.add_argument("-v","--verbose",                     default = False, action = "store_true")
+    
     return parser
 
 
@@ -42,6 +45,9 @@ class DropletData(object):
         self.__hiccuploading              = self.extractvalue(kwargs,"HiccupLoading",False)
         self.__ignoreadditionaldroplets   = self.extractvalue(kwargs,"IgnoreAdditionalDroplets",False)
                                                        
+        
+        print self.__splitBackForthTrajectories
+        exit(1)
         
         if self.__infiles is None:
             raise IOError("datafiles required")
@@ -125,6 +131,7 @@ class DropletData(object):
             # otherwise just use default order
             pass
         
+        
         # use this correct order to generate lists with experiments and wells, which will be later matched to a dropletID
         self.__droplettype = None
         self.__well        = None
@@ -166,7 +173,7 @@ class DropletData(object):
             self.__data[dropletLabel]     = list()
             self.__welldata[dropletLabel] = list()
         
-        if self.__splitBackForthTrajectories:        
+        if self.__splitBackForthTrajectories:
             newdatablock0 = dict()
             newdatablock1 = dict()
             for column in self.__datacolumns:
@@ -329,24 +336,25 @@ class DropletData(object):
             pattern = None
             if len(self.__datarestrictions) > 0:
                 for restriction in self.__datarestrictions:
-                    if   str(restriction[0]).lower() == "max":
-                        try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < float(restriction[2][1]) )
-                        except: continue
-                    elif str(restriction[0]).lower() == "min":
-                        try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > float(restriction[2][1]) )
-                        except: continue
-                    elif str(restriction[0]).lower() == "end":
-                        try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < (1-restriction[2][1]) * datablock[restriction[2][0]][-1] )
-                        except: continue
-                    elif str(restriction[0]).lower() == "start":
-                        try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > (1+restriction[2][1]) * datablock[restriction[2][0]][0] )
-                        except: continue
-                    elif str(restriction[0]).lower() == "exclude":
-                        if ((str(restriction[2]).lower() == "experiment") and (key == str(restriction[1]))) or ((str(restriction[2]).lower() == "well") and (well == str(restriction[1]))):
-                            shape = np.shape(rdata)
-                            pattern = np.repeat(np.repeat([[False]],shape[0],axis=0),shape[1],axis=1)
-                        else:
-                            continue
+                    if (restriction[1] == key) or (restriction[1] == well) or (restriction[1].lower() == "all"):
+                        if   str(restriction[0]).lower() == "max":
+                            try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < float(restriction[2][1]) )
+                            except: continue
+                        elif str(restriction[0]).lower() == "min":
+                            try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > float(restriction[2][1]) )
+                            except: continue
+                        elif str(restriction[0]).lower() == "end":
+                            try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] < (1-restriction[2][1]) * datablock[restriction[2][0]][-1] )
+                            except: continue
+                        elif str(restriction[0]).lower() == "start":
+                            try:    pattern = self.pattern_and(pattern, datablock[restriction[2][0]] > (1+restriction[2][1]) * datablock[restriction[2][0]][0] )
+                            except: continue
+                        elif str(restriction[0]).lower() == "exclude":
+                            if ((str(restriction[2]).lower() == "experiment") and (key == str(restriction[1]))) or ((str(restriction[2]).lower() == "well") and (well == str(restriction[1]))):
+                                shape = np.shape(rdata)
+                                pattern = np.repeat(np.repeat([[False]],shape[0],axis=0),shape[1],axis=1)
+                            else:
+                                continue
 
                 pattern = np.transpose(np.repeat([pattern],len(rdata[0]),axis = 0))
                 datapattern = rdata[pattern]
@@ -389,7 +397,7 @@ class DropletData(object):
     # so far only single attribute implemented
     # > print data.datacolumns
     def __getattr__(self,key):
-        if key == "datacolumns":
+        if   key == "datacolumns":
             return self.__datacolumns
         elif key == "outbasename":
             return self.__outbasename

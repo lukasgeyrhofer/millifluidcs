@@ -34,7 +34,7 @@ aparser = parser.add_argument_group(description = "==== Algorithm parameters ===
 aparser.add_argument("-m","--maxfev",default=5000,type=int)
 aparser.add_argument("-Y","--computeyield",default=False,action="store_true")
 aparser.add_argument("-T","--R2threshold",default=None,type=float)
-
+aparser.add_argument("-w","--write_values_to_outfile",default=False,action="store_true")
 
 ffparser = aparser.add_mutually_exclusive_group()
 ffparser.add_argument("-E","--exponential", default = False, action = "store_true")
@@ -81,8 +81,6 @@ for experimentLabel, trajectories in data:
                 if args.verbose:
                     print "{:20s} {:5d} {:12.4e} {:12.4e} {:8.6f}".format(experimentLabel,i,gr,np.exp(offset),r2)
                     i += 1
-                                                                          
-                
                 
         elif mode == "logistic":
             # length of trajectory has to contain more points than number of fitting parameters
@@ -109,11 +107,11 @@ for experimentLabel, trajectories in data:
             r = args.histogramrange
         h,b = np.histogram(growthrates[experimentLabel],bins=args.bins,range = r,density = True)
         b = b[:-1] + np.diff(b)/2.
-        outfilename = args.outbasename + experimentLabel + ".growthrates"
+        outfilename = data.outbasename + experimentLabel + ".growthrates"
         np.savetxt(outfilename,np.transpose([b,h]),fmt = '%.6e')
         
         if args.write_values_to_outfile:
-            np.savetxt(args.outbasename + experimentLabel + '.allgrowthrates',np.transpose(growthrates[experimentLabel]),fmt = '%.6e')
+            np.savetxt(data.outbasename + experimentLabel + '.allgrowthrates',np.transpose(growthrates[experimentLabel]),fmt = '%.6e')
     else:
         print "# could not find enough trajectories for histogram"
     if args.computeyield:
@@ -121,11 +119,11 @@ for experimentLabel, trajectories in data:
             r = (0,1)
             h,b = np.histogram(yields[experimentLabel],bins=args.bins,range = r,density = True)
             b = b[:-1] + np.diff(b)/2.
-            outfilename = args.outbasename + experimentLabel + ".yields"
+            outfilename = data.outbasename + experimentLabel + ".yields"
             np.savetxt(outfilename,np.transpose([b,h]),fmt = '%.6e')
             
             if args.write_values_to_outfile:
-                np.savetxt(args.outbasename + experimentLabel + '.allyields',yields[experimentLabel], fmt = '%.6e')
+                np.savetxt(data.outbasename + experimentLabel + '.allyields',yields[experimentLabel], fmt = '%.6e')
             
             
 
