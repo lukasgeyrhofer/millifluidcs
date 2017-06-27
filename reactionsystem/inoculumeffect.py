@@ -43,9 +43,8 @@ class inoculumeffect(object):
             generations        = self.__initialgenerations
         
         self.__overnightculture = list()
-        self.__currentsubstrate = 0.5 * (self.__yieldinterval[1] + self.__yieldinterval[0]) * np.power(2.,generations) * initialpopulation
         
-        # make the initial seeding for the overnight cultute
+        # make the initial seeding for the overnight culture
         x = self.rng()
         for i in range(initialpopulation-1):
             self.__overnightculture.append(x)
@@ -53,10 +52,14 @@ class inoculumeffect(object):
             for j in range(int(initialcorrelation)):
                 x = self.newyield(x)
         
+        # from these initial seedings, run on average g generations
+        self.__currentsubstrate = np.power(2.,generations) * initialpopulation / np.mean(self.__overnightculture)
         # add more cells, but not to a different population
         while self.add(population = "overnightculture"):
             continue
         
+        
+        self.__ONyieldmean = np.mean(self.__overnightculture)
         # we're done here
         self.__haveovernightculture = True
     
@@ -74,7 +77,7 @@ class inoculumeffect(object):
         
         # set initial conditions
         self.__population = list(np.random.choice(self.__overnightculture,size = initialpopulation))
-        self.__currentsubstrate = 0.5 * (self.__yieldinterval[1] + self.__yieldinterval[0]) * np.power(2.,generations) * initialpopulation
+        self.__currentsubstrate = np.power(2.,generations) * initialpopulation/self.__ONyieldmean
 
         # run until nutrients are out
         while self.add():
@@ -82,13 +85,16 @@ class inoculumeffect(object):
         
         # do statistics on run
         self.__histograms.append(np.histogram(self.__population,range = self.__yieldinterval, bins = self.__histogrambins))
-        self.__finalpopulationsize.append(len(self.__population))
+        fps = len(self.__population)
+        self.__finalpopulationsize.append(fps)
+        return fps
 
     
     def add(self,population = "population"):
-        x = self.newyield(np.random.choice(self.__dict__["_inoculumeffect__{:s}".format(population)]))
-        if self.__currentsubstrate > x:
-            self.__currentsubstrate -= x
+        x  = self.newyield(np.random.choice(self.__dict__["_inoculumeffect__{:s}".format(population)]))
+        xi = 1./x
+        if self.__currentsubstrate > xi:
+            self.__currentsubstrate -= xi
             self.__dict__["_inoculumeffect__{:s}".format(population)].append(x)
             return True
         else:
@@ -113,7 +119,7 @@ class inoculumeffect(object):
             else:
                 raise ValueError("no histograms found. run the populations")
         elif "substraterange":
-            return self.__yieldinterval/np.sum(self.__yieldinterval) * np.power(2,self.__generations) * self.__initialpopulation
+            return np.sort(np.power(2,self.__generations) * self.__initialpopulation/self.__yieldinterval)
 
 def main():
 
@@ -133,21 +139,29 @@ def main():
     args = parser.parse_args()
 
 
-    substraterange = np.array([args.yieldmin,args.yieldmax])/(args.yieldmin + args.yieldmax) * np.power(2,args.generations) * args.initialpopulation
     ie = inoculumeffect(**vars(args))
     
     
     for i in range(args.overnightculturecount):
         ie.run_overnightculture()
     
+        # mimick all droplets seeded from this ON culture
         for j in range(args.populationcount):
-            ie.run()
+            print ie.run()
 
-
-        ps,psbin = np.histogram(ie.finalpopulationsize,ie.substraterange,bins = 20)
-        psbin = psbin[:-1] + 0.5 * np.diff(psbin)
-        np.savetxt("{}-Pdistr{:04d}".format(args.outfilebasename,i),np.transpose(np.array([psbin,ps])))
-        np.savetxt("{}-Ydistr{:04d}".format(args.outfilebasename,i),ie.histograms)
+        # reading destroys the data, so only read once
+        fps    = ie.finalpopulationsize
+        Hyield = ie.histograms
+        
+        print fps
+        print ie.substraterange
+        # make histogram for population sizes
+        ps,psbin = np.histogram(fps,range = ie.substraterange,bins = 100)
+        Hfps = np.transpose(np.array([psbin[:-1] + 0.5 * np.diff(psbin),ps]))
+        
+        # save histograms to files
+        np.savetxt("{}-Pdistr{:04d}".format(args.outfilebasename,i),Hfps)
+        np.savetxt("{}-Ydistr{:04d}".format(args.outfilebasename,i),Hyield)
 
 
 
