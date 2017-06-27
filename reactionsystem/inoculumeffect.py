@@ -136,6 +136,8 @@ def main():
     parser.add_argument("-N","--populationcount",type=int,default=1000)
     parser.add_argument("-O","--overnightculturecount",type=int,default=3)
     parser.add_argument("-o","--outfilebasename",default="out")
+    
+    parser.add_argument("-v","--verbose",default=False,action="store_true")
     args = parser.parse_args()
 
 
@@ -143,10 +145,14 @@ def main():
     
     
     for i in range(args.overnightculturecount):
+        if args.verbose:
+            print "# starting overnight culture"
         ie.run_overnightculture()
     
         # mimick all droplets seeded from this ON culture
         for j in range(args.populationcount):
+            if args.verbose:
+                print "#   droplet {:4d}".format(j)
             ie.run()
 
         # reading destroys the data, so only read once
