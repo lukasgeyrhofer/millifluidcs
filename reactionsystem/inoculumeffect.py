@@ -147,14 +147,12 @@ def main():
     
         # mimick all droplets seeded from this ON culture
         for j in range(args.populationcount):
-            print ie.run()
+            ie.run()
 
         # reading destroys the data, so only read once
         fps    = ie.finalpopulationsize
         Hyield = ie.histograms
         
-        print fps
-        print ie.substraterange
         # make histogram for population sizes
         ps,psbin = np.histogram(fps,range = ie.substraterange,bins = 100)
         Hfps = np.transpose(np.array([psbin[:-1] + 0.5 * np.diff(psbin),ps]))
