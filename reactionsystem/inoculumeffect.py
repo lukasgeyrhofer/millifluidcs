@@ -11,11 +11,11 @@ class inoculumeffect(object):
         # parse cmdline arguments
         self.__generations          = kwargs.get("generations",8)
         self.__correlation          = kwargs.get("correlation",8)
-        self.__seedingsize          = kwargs.get("seedingsize",25)
+        self.__seedingsize          = int(kwargs.get("seedingsize",25))
         
         self.__ONinitialcorrelation = kwargs.get("ON_initialcorrelation",8)
         self.__ONgenerations        = kwargs.get("ON_generations",8)
-        self.__ONseedingsize        = kwargs.get("ON_seedingsize",25)
+        self.__ONseedingsize        = int(kwargs.get("ON_seedingsize",25))
         
         self.__yieldinterval        = np.array([kwargs.get("yieldmin",.5),kwargs.get("yieldmax",1.5)])
         self.__verbose              = kwargs.get("verbose",False)
@@ -33,8 +33,8 @@ class inoculumeffect(object):
     
     
     
-    def rng(self,count=1):
-        return np.random.uniform(low = self.__yieldinterval[0], high = self.__yieldinterval[1],size = count)
+    def rng(self):
+        return np.random.uniform(low = self.__yieldinterval[0], high = self.__yieldinterval[1])
             
     def newyield(self,xn):
         return self.__coefficient[0] * xn + self.__coefficient[1] * self.rng()
@@ -77,9 +77,9 @@ class inoculumeffect(object):
             
         # use default values from object creation is no argument given here
         if  seedingsize is None:
-            seedingsize = self.__initialpopulation
-        if  generations       is None:
-            generations       = self.__generations
+            seedingsize = self.__seedingsize
+        if  generations is None:
+            generations = self.__generations
         
         # set initial conditions
         self.__population = list(np.random.choice(self.__overnightculture,size = seedingsize))
@@ -106,7 +106,11 @@ class inoculumeffect(object):
             return True
         else:
             return False
-        
+    
+    def verbose(self,msg = ""):
+        if self.__verbose:
+            print msg
+    
 
     def __getattr__(self,key):
         # reading out those attributes resets them to empty!
@@ -141,10 +145,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-g","--generations",           type = float, default = 8.)
     parser.add_argument("-t","--correlation",           type = float, default = 8.)
-    parser.add_argument("-n","--seedingsize",           type = float, default = 25.)
+    parser.add_argument("-n","--seedingsize",           type = int,   default = 25)
     parser.add_argument("-T","--ON_initialcorrelation", type = float, default = 8.)
     parser.add_argument("-G","--ON_generations",        type = float, default = 8.)
-    parser.add_argument("-N","--ON_seedingsize",        type = int,   default = 25.)
+    parser.add_argument("-N","--ON_seedingsize",        type = int,   default = 25)
     
     parser.add_argument("-y","--yieldmin", type = float, default = 0.5)
     parser.add_argument("-Y","--yieldmax", type = float, default = 1.5)
@@ -161,12 +165,12 @@ def main():
     
     # loop over different ON cultures
     for i in range(args.overnightculturecount):
-        if args.verbose:    print "# starting overnight culture"
+        ie.verbose("# starting overnight culture")
         ie.run_overnightculture()
     
         # seed droplets from this ON culture
-        for j in range(args.populationcount):
-            if args.verbose:    print "#   droplet {:4d}".format(j)
+        for j in range(args.droplets):
+            ie.verbose("#   droplet {:4d}".format(j))
             ie.run()
 
         # reading destroys the data, so only read once
