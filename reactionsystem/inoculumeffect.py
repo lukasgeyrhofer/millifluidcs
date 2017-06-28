@@ -108,11 +108,13 @@ class inoculumeffect(object):
         else:
             return False
     
-    def verbose(self,msg = "", handle = None):
+    def verbose(self,msg = "", handle = None, flush = False):
         if self.__verbose:
             if handle is None:
                 handle = sys.stdout
             print >>handle, msg
+            if flush:
+                handle.flush()
     
 
     def __getattr__(self,key):
@@ -168,27 +170,34 @@ def main():
     parser.add_argument("-H","--onlymeanhisto",default=False,action="store_true")
     args = parser.parse_args()
 
+
+    # create logfile, otherwise default later to sys.stdout
+    try:
+        logfile = open(args.logfile,"w")
+        if args.verbose:
+            print "opening logfile '{}'".format(args.logfile)
+        if not args.verbose:
+            args.verbose = True
+    except:
+        logfile = None
+
+
     # initialize object and datastructure
     ie = inoculumeffect(**vars(args))
     
-    try:
-        logfile = open(args.logfile)
-    except:
-        logfile = None
-    
     # loop over different ON cultures
     for i in range(args.overnightculturecount):
-        ie.verbose("# starting overnight culture", handle = logfile)
+        ie.verbose("# starting overnight culture ({:4d}/{:4d})".format(i,args.overnightculturecount), handle = logfile, flush = True)
         ie.run_overnightculture()
     
         # seed droplets from this ON culture
         for j in range(args.droplets):
-            ie.verbose("#   droplet {:4d}".format(j),handle = logfile)
+            ie.verbose("#   droplet ({:4d}/{:4d})".format(j,args.droplets),handle = logfile)
             ie.run()
 
         # reading destroys the data, so only read once
-        fps        = ie.finalpopulationsize
-        hist_yield = ie.histograms
+        fps         = ie.finalpopulationsize
+        histo_yield = ie.histograms
         
         # make histogram for population sizes
         ps,psbin = np.histogram(fps,range = ie.substraterange,bins = 100)
