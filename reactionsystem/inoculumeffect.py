@@ -1,8 +1,30 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# ==================================================================== #
+#                                                                      #
+#  Simulation program to investigate growing populations of cells,     #
+#  that have a decorrelation timescale tau for inheriting yield        #
+#  from their parent                                                   #
+#                                                                      #
+#  First, an ON (overnight) culture is created, that starts from       #
+#  'ON_seedingsize' cells for 'ON_generations' generations. This       #
+#  ON culture is used to seed multiple droplets with 'seedingsize'     #
+#  cells initially, this time for 'generation' generations.            #
+#                                                                      #
+#  Inheritance follows a stochastic process,                           #
+#    Y(n+1) = a Y(n) + (1-a) xi,     xi ~ Uniform(YieldMin,YieldMax),  #
+#  where 1/tau = log(1/a)                                              #
+#                                                                      #
+#  Lukas Geyrhofer, 2017                                               #
+#  l.geyrhofer@technion.ac.il                                          #
+#                                                                      #
+# ==================================================================== #
+
 
 import numpy as np
 import argparse
-import sys,math
+import sys
 
 
 
@@ -204,7 +226,7 @@ def main():
         histo_fps = np.transpose(np.array([psbin[:-1] + 0.5 * np.diff(psbin),ps]))
         
         # save histograms to files
-        np.savetxt("{}_P{:04d}".format(args.outfilebasename,i),histo_fps)
+        np.savetxt("{}_N{:04d}".format(args.outfilebasename,i),histo_fps)
         np.savetxt("{}_Y{:04d}".format(args.outfilebasename,i),histo_yield)
 
 
