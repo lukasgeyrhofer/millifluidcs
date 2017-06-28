@@ -75,7 +75,7 @@ class inoculumeffect(object):
         if not self.__haveovernightculture:
             self.run_overnightculture()
             
-        # use default values from object creation is no argument given here
+        # use default values from object creation if no argument given here
         if  seedingsize is None:
             seedingsize = self.__seedingsize
         if  generations is None:
@@ -107,9 +107,11 @@ class inoculumeffect(object):
         else:
             return False
     
-    def verbose(self,msg = ""):
+    def verbose(self,msg = "", handle = None):
         if self.__verbose:
-            print msg
+            if handle is None:
+                handle = sys.stdout
+            print >>handle, msg
     
 
     def __getattr__(self,key):
