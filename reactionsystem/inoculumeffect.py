@@ -48,7 +48,7 @@ class inoculumeffect(object):
         
         # make the initial seeding for the overnight culture
         x = self.rng()
-        for i in range(initialpopulation-1):
+        for i in range(initialpopulation):
             self.__overnightculture.append(x)
             # wait 'initialcorrelation' generations before adding a new value, this is only a rough estimate of this distribution
             for j in range(int(initialcorrelation)):
