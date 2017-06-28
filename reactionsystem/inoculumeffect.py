@@ -90,7 +90,6 @@ class inoculumeffect(object):
         # starting substrate chosen such that the ON culture would take on average g generations to use up all nutrients
         self.__ONyieldmean_inv = 1./ np.mean(self.__overnightculture)
         self.__startingsubstrate = np.power(2.,self.__generations) * seedingsize * self.__ONyieldmean_inv
-        print self.__startingsubstrate
         # we're done here
         self.__haveovernightculture = True
     
