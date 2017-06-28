@@ -19,6 +19,7 @@ class inoculumeffect(object):
         
         self.__yieldinterval        = np.array([kwargs.get("yieldmin",.5),kwargs.get("yieldmax",1.5)])
         self.__verbose              = kwargs.get("verbose",False)
+        self.__onlymeanhisto        = kwargs.get("onlymeanhisto",False)
         
         # coefficients for faster reference instead of computing them every step
         self.__coefficient          = np.array([np.exp(-1./self.__correlation),1. - np.exp(-1./self.__correlation)])
@@ -122,12 +123,15 @@ class inoculumeffect(object):
             return fps
         elif key == "histograms":
             if len(self.__histograms) > 0:
-                r = np.array([self.__histograms[0][1][:-1] + 0.5 * np.diff(self.__histograms[0][1])])
-                for h in self.__histograms:
-                    r = np.concatenate([r,np.array([h[0]])],axis=0)
-                
+                bins  = self.__histograms[0][1][:-1] + 0.5 * np.diff(self.__histograms[0][1])
+                h     = np.concatenate([[x[0] for x in self.__histograms]],axis=0)
+                meanh = np.mean(h,axis=0)
+
+                r     = np.transpose([bins,meanh])
+                if not self.__onlymeanhisto:
+                    r = np.concatenate([r,h.T],axis=1)
                 self.__histograms = list()
-                return r.T
+                return r
                 
             else:
                 raise ValueError("no histograms found. run the populations")
@@ -160,32 +164,39 @@ def main():
     parser.add_argument("-o","--outfilebasename",                   default = "out")
     
     parser.add_argument("-v","--verbose",default=False,action="store_true")
+    parser.add_argument("-L","--logfile",default=None)
+    parser.add_argument("-H","--onlymeanhisto",default=False,action="store_true")
     args = parser.parse_args()
 
     # initialize object and datastructure
     ie = inoculumeffect(**vars(args))
     
+    try:
+        logfile = open(args.logfile)
+    except:
+        logfile = None
+    
     # loop over different ON cultures
     for i in range(args.overnightculturecount):
-        ie.verbose("# starting overnight culture")
+        ie.verbose("# starting overnight culture", handle = logfile)
         ie.run_overnightculture()
     
         # seed droplets from this ON culture
         for j in range(args.droplets):
-            ie.verbose("#   droplet {:4d}".format(j))
+            ie.verbose("#   droplet {:4d}".format(j),handle = logfile)
             ie.run()
 
         # reading destroys the data, so only read once
-        fps    = ie.finalpopulationsize
-        Hyield = ie.histograms
+        fps        = ie.finalpopulationsize
+        hist_yield = ie.histograms
         
         # make histogram for population sizes
         ps,psbin = np.histogram(fps,range = ie.substraterange,bins = 100)
-        Hfps = np.transpose(np.array([psbin[:-1] + 0.5 * np.diff(psbin),ps]))
+        histo_fps = np.transpose(np.array([psbin[:-1] + 0.5 * np.diff(psbin),ps]))
         
         # save histograms to files
-        np.savetxt("{}_P{:04d}".format(args.outfilebasename,i),Hfps)
-        np.savetxt("{}_Y{:04d}".format(args.outfilebasename,i),Hyield)
+        np.savetxt("{}_P{:04d}".format(args.outfilebasename,i),histo_fps)
+        np.savetxt("{}_Y{:04d}".format(args.outfilebasename,i),histo_yield)
 
 
 
