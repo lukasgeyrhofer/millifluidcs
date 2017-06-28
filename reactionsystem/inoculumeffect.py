@@ -26,7 +26,9 @@ class inoculumeffect(object):
         self.__finalpopulationsize = list()
         
         self.__haveovernightculture = False
-        
+    
+    
+    
     def rng(self,count=1):
         return self.__yieldinterval[0] + (self.__yieldinterval[1] - self.__yieldinterval[0]) * np.random.uniform()
             
@@ -102,7 +104,7 @@ class inoculumeffect(object):
         
 
     def __getattr__(self,key):
-        # reading out those attributes resets them to empty
+        # reading out those attributes resets them to empty!
         if key == "finalpopulationsize":
             fps = self.__finalpopulationsize
             self.__finalpopulationsize = list()
@@ -121,8 +123,16 @@ class inoculumeffect(object):
         elif "substraterange":
             return np.sort(np.power(2,self.__generations) * self.__initialpopulation/self.__yieldinterval)
 
-def main():
 
+
+
+
+
+
+def main():
+    # run multiple ON cultures with many 'droplets' (=second populations) each
+    
+    # add cmdline arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-g","--generations",        type=float, default=8.)
     parser.add_argument("-t","--correlationtime",    type=float, default=8.)
@@ -140,19 +150,17 @@ def main():
     parser.add_argument("-v","--verbose",default=False,action="store_true")
     args = parser.parse_args()
 
-
+    # initialize object and datastructure
     ie = inoculumeffect(**vars(args))
     
-    
+    # loop over different ON cultures
     for i in range(args.overnightculturecount):
-        if args.verbose:
-            print "# starting overnight culture"
+        if args.verbose:    print "# starting overnight culture"
         ie.run_overnightculture()
     
-        # mimick all droplets seeded from this ON culture
+        # seed droplets from this ON culture
         for j in range(args.populationcount):
-            if args.verbose:
-                print "#   droplet {:4d}".format(j)
+            if args.verbose:    print "#   droplet {:4d}".format(j)
             ie.run()
 
         # reading destroys the data, so only read once
