@@ -88,7 +88,9 @@ class inoculumeffect(object):
             continue
         
         # starting substrate chosen such that the ON culture would take on average g generations to use up all nutrients
-        self.__startingsubstrate = np.power(2.,generations) * seedingsize / np.mean(self.__overnightculture)
+        self.__ONyieldmean_inv = 1./ np.mean(self.__overnightculture)
+        self.__startingsubstrate = np.power(2.,self.__generations) * seedingsize * self.__ONyieldmean_inv
+        print self.__startingsubstrate
         # we're done here
         self.__haveovernightculture = True
     
@@ -103,15 +105,16 @@ class inoculumeffect(object):
             seedingsize = self.__seedingsize
         if  generations is None:
             generations = self.__generations
+            self.__currentsubstrate = self.__startingsubstrate
+        else:
+            self.__currentsubstrate = np.power(2,generations) * seedingsize * self.__ONyieldmean_inv
         
         # set initial conditions
         self.__population = list(np.random.choice(self.__overnightculture,size = seedingsize))
-        self.__currentsubstrate = self.__startingsubstrate
 
         # run until nutrients are out
         while self.add():
             continue
-        
         # do statistics on run
         self.__histograms.append(np.histogram(self.__population,range = self.__yieldinterval, bins = self.__histogrambins))
         fps = len(self.__population)
@@ -150,8 +153,12 @@ class inoculumeffect(object):
                 bins  = self.__histograms[0][1][:-1] + 0.5 * np.diff(self.__histograms[0][1])
                 h     = np.concatenate([[x[0] for x in self.__histograms]],axis=0)
                 meanh = np.mean(h,axis=0)
+                
+                # ON culture yield histo
+                ONh,ONb = np.histogram(self.__overnightculture,range = self.__yieldinterval, bins = self.__histogrambins)
+                
 
-                r     = np.transpose([bins,meanh])
+                r     = np.transpose([bins,meanh,ONh])
                 if not self.__onlymeanhisto:
                     r = np.concatenate([r,h.T],axis=1)
                 self.__histograms = list()
