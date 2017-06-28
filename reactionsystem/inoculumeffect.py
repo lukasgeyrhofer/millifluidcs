@@ -8,78 +8,82 @@ import sys,math
 
 class inoculumeffect(object):
     def __init__(self,**kwargs):
-        self.__generations     = kwargs.get("generations",8)
-        self.__correlationtime = kwargs.get("correlationtime",8)
-        self.__initialpopulation  = kwargs.get("initialpopulation",25)
-        self.__initialcorrelation = kwargs.get("initialcorrelation",8)
-        self.__initialgenerations = kwargs.get("initialgenerations",8)
+        # parse cmdline arguments
+        self.__generations          = kwargs.get("generations",8)
+        self.__correlation          = kwargs.get("correlation",8)
+        self.__seedingsize          = kwargs.get("seedingsize",25)
         
-        self.__yieldinterval = np.array([kwargs.get("yieldmin",.5),kwargs.get("yieldmax",1.5)])
+        self.__ONinitialcorrelation = kwargs.get("ON_initialcorrelation",8)
+        self.__ONgenerations        = kwargs.get("ON_generations",8)
+        self.__ONseedingsize        = kwargs.get("ON_seedingsize",25)
         
+        self.__yieldinterval        = np.array([kwargs.get("yieldmin",.5),kwargs.get("yieldmax",1.5)])
+        self.__verbose              = kwargs.get("verbose",False)
         
-        #self.__substrate = 0.5 * (self.__yieldinterval[1] + self.__yieldinterval[0]) * np.power(2.,self.__generations) * self.__initialpopulation
-        self.__coefficient = np.array([np.exp(-1./self.__correlationtime),1. - np.exp(-1./self.__correlationtime)])
+        # coefficients for faster reference instead of computing them every step
+        self.__coefficient          = np.array([np.exp(-1./self.__correlation),1. - np.exp(-1./self.__correlation)])
         
-        
-        self.__histogrambins = 20
-        self.__histograms = list()
+        # statistics, analysis
+        self.__histogrambins       = 20
+        self.__histograms          = list()
         self.__finalpopulationsize = list()
         
+        # have startingconditions?
         self.__haveovernightculture = False
     
     
     
     def rng(self,count=1):
-        return self.__yieldinterval[0] + (self.__yieldinterval[1] - self.__yieldinterval[0]) * np.random.uniform()
+        return np.random.uniform(low = self.__yieldinterval[0], high = self.__yieldinterval[1],size = count)
             
     def newyield(self,xn):
         return self.__coefficient[0] * xn + self.__coefficient[1] * self.rng()
     
     
-    def run_overnightculture(self,initialpopulation = None, initialcorrelation = None, generations = None):
-        if  initialpopulation  is None:
-            initialpopulation  = self.__initialpopulation
+    def run_overnightculture(self,seedingsize = None, generations = None, initialcorrelation = None):
+        if  seedingsize        is None:
+            seedingsize        = self.__ONseedingsize
         if  initialcorrelation is None:
-            initialcorrelation = self.__initialcorrelation
+            initialcorrelation = self.__ONinitialcorrelation
         if  generations        is None:
-            generations        = self.__initialgenerations
+            generations        = self.__ONgenerations
         
         self.__overnightculture = list()
         
         # make the initial seeding for the overnight culture
         x = self.rng()
-        for i in range(initialpopulation):
+        for i in range(seedingsize):
             self.__overnightculture.append(x)
             # wait 'initialcorrelation' generations before adding a new value, this is only a rough estimate of this distribution
             for j in range(int(initialcorrelation)):
                 x = self.newyield(x)
         
         # from these initial seedings, run on average g generations
-        self.__currentsubstrate = np.power(2.,generations) * initialpopulation / np.mean(self.__overnightculture)
+        self.__currentsubstrate = np.power(2.,generations) * seedingsize / np.mean(self.__overnightculture)
         # add more cells, but not to a different population
         while self.add(population = "overnightculture"):
             continue
         
-        
-        self.__ONyieldmean = np.mean(self.__overnightculture)
+        # starting substrate chosen such that the ON culture would take on average g generations to use up all nutrients
+        self.__startingsubstrate = np.power(2.,generations) * seedingsize / np.mean(self.__overnightculture)
         # we're done here
         self.__haveovernightculture = True
     
     
-    def run(self,generations = None,initialpopulation = None):
+    def run(self,seedingsize = None, generations = None):
         # need overnightculture for seeding
         if not self.__haveovernightculture:
             self.run_overnightculture()
             
         # use default values from object creation is no argument given here
-        if  initialpopulation is None:
-            initialpopulation = self.__initialpopulation
+        if  seedingsize is None:
+            seedingsize = self.__initialpopulation
         if  generations       is None:
             generations       = self.__generations
         
         # set initial conditions
-        self.__population = list(np.random.choice(self.__overnightculture,size = initialpopulation))
-        self.__currentsubstrate = np.power(2.,generations) * initialpopulation/self.__ONyieldmean
+        self.__population = list(np.random.choice(self.__overnightculture,size = seedingsize))
+        self.__currentsubstrate = self.__startingsubstrate
 
         # run until nutrients are out
         while self.add():
@@ -93,6 +97,7 @@ class inoculumeffect(object):
 
     
     def add(self,population = "population"):
+        # use dict representation of self to chose either "self.__population" or "self.__overnightculture"
         x  = self.newyield(np.random.choice(self.__dict__["_inoculumeffect__{:s}".format(population)]))
         xi = 1./x
         if self.__currentsubstrate > xi:
@@ -121,7 +126,7 @@ class inoculumeffect(object):
             else:
                 raise ValueError("no histograms found. run the populations")
         elif "substraterange":
-            return np.sort(np.power(2,self.__generations) * self.__initialpopulation/self.__yieldinterval)
+            return np.sort(np.power(2,self.__generations) * self.__seedingsize / self.__yieldinterval)
 
 
 
@@ -134,18 +139,19 @@ def main():
     
     # add cmdline arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("-g","--generations",        type=float, default=8.)
-    parser.add_argument("-t","--correlationtime",    type=float, default=8.)
-    parser.add_argument("-T","--initialcorrelation", type=float, default=8.)
-    parser.add_argument("-G","--initialgenerations", type=float, default=8.)
-    parser.add_argument("-n","--initialpopulation",  type=int,   default=20)
+    parser.add_argument("-g","--generations",           type = float, default = 8.)
+    parser.add_argument("-t","--correlation",           type = float, default = 8.)
+    parser.add_argument("-n","--seedingsize",           type = float, default = 25.)
+    parser.add_argument("-T","--ON_initialcorrelation", type = float, default = 8.)
+    parser.add_argument("-G","--ON_generations",        type = float, default = 8.)
+    parser.add_argument("-N","--ON_seedingsize",        type = int,   default = 25.)
     
-    parser.add_argument("-y","--yieldmin",type=float,default=.5)
-    parser.add_argument("-Y","--yieldmax",type=float,default=1.5)
+    parser.add_argument("-y","--yieldmin", type = float, default = 0.5)
+    parser.add_argument("-Y","--yieldmax", type = float, default = 1.5)
     
-    parser.add_argument("-N","--populationcount",type=int,default=1000)
-    parser.add_argument("-O","--overnightculturecount",type=int,default=3)
-    parser.add_argument("-o","--outfilebasename",default="out")
+    parser.add_argument("-k","--droplets",              type = int, default = 1000)
+    parser.add_argument("-O","--overnightculturecount", type = int, default = 3)
+    parser.add_argument("-o","--outfilebasename",                   default = "out")
     
     parser.add_argument("-v","--verbose",default=False,action="store_true")
     args = parser.parse_args()
@@ -172,8 +178,8 @@ def main():
         Hfps = np.transpose(np.array([psbin[:-1] + 0.5 * np.diff(psbin),ps]))
         
         # save histograms to files
-        np.savetxt("{}-Pdistr{:04d}".format(args.outfilebasename,i),Hfps)
-        np.savetxt("{}-Ydistr{:04d}".format(args.outfilebasename,i),Hyield)
+        np.savetxt("{}_P{:04d}".format(args.outfilebasename,i),Hfps)
+        np.savetxt("{}_Y{:04d}".format(args.outfilebasename,i),Hyield)
 
 
 
