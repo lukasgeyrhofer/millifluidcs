@@ -31,9 +31,13 @@ import sys
 class inoculumeffect(object):
     def __init__(self,**kwargs):
         # parse cmdline arguments
+        self.__PoissonSeeding       = kwargs.get("PoissonSeeding",False)
+        
         self.__generations          = kwargs.get("generations",8)
         self.__correlation          = kwargs.get("correlation",8)
-        self.__seedingsize          = int(kwargs.get("seedingsize",25))
+        self.__seedingsize          = kwargs.get("seedingsize",25)
+        if not self.__PoissonSeeding:
+            self.__seedingsize      = int(self.__seedingsize)
         
         self.__ONinitialcorrelation = kwargs.get("ON_initialcorrelation",8)
         self.__ONgenerations        = kwargs.get("ON_generations",8)
@@ -111,6 +115,9 @@ class inoculumeffect(object):
         else:
             self.__currentsubstrate = np.power(2,generations) * seedingsize * self.__ONyieldmean_inv
         
+        if self.__PoissonSeeding:
+            seedingsize = np.random.poisson(seedingsize)
+        
         # set initial conditions
         self.__population = list(np.random.choice(self.__overnightculture,size = seedingsize))
 
@@ -187,13 +194,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-g","--generations",           type = float, default = 8.)
     parser.add_argument("-t","--correlation",           type = float, default = 8.)
-    parser.add_argument("-n","--seedingsize",           type = int,   default = 25)
+    parser.add_argument("-n","--seedingsize",           type = float, default = 25) # can assume float for PoissonSeeding
     parser.add_argument("-T","--ON_initialcorrelation", type = float, default = 8.)
     parser.add_argument("-G","--ON_generations",        type = float, default = 8.)
     parser.add_argument("-N","--ON_seedingsize",        type = int,   default = 25)
     
     parser.add_argument("-y","--yieldmin", type = float, default = 0.5)
     parser.add_argument("-Y","--yieldmax", type = float, default = 1.5)
+    
+    parser.add_argument("-P","--PoissonSeeding", default = False, action = "store_true")
     
     parser.add_argument("-k","--droplets",              type = int, default = 1000)
     parser.add_argument("-O","--overnightculturecount", type = int, default = 3)
