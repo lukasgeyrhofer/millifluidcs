@@ -63,6 +63,7 @@ class inoculumeffect(object):
         return self.__coefficient[0] * xn + self.__coefficient[1] * self.rng()
     
     
+    # seed an ON culture to generate starting conditions for single droplets
     def run_overnightculture(self,seedingsize = None, generations = None, initialcorrelation = None):
         if  seedingsize        is None:
             seedingsize        = self.__ONseedingsize
@@ -83,6 +84,7 @@ class inoculumeffect(object):
         
         # from these initial seedings, run on average g generations
         self.__currentsubstrate = np.power(2.,generations) * seedingsize / np.mean(self.__overnightculture)
+        
         # add more cells, but not to a different population
         while self.add(population = "overnightculture"):
             continue
@@ -90,10 +92,11 @@ class inoculumeffect(object):
         # starting substrate chosen such that the ON culture would take on average g generations to use up all nutrients
         self.__ONyieldmean_inv = 1./ np.mean(self.__overnightculture)
         self.__startingsubstrate = np.power(2.,self.__generations) * seedingsize * self.__ONyieldmean_inv
+        
         # we're done here
         self.__haveovernightculture = True
     
-    
+    # seed a droplet and let cells grow until substrate is depleted
     def run(self,seedingsize = None, generations = None):
         # need overnightculture for seeding
         if not self.__haveovernightculture:
@@ -114,13 +117,14 @@ class inoculumeffect(object):
         # run until nutrients are out
         while self.add():
             continue
+        
         # do statistics on run
         self.__histograms.append(np.histogram(self.__population,range = self.__yieldinterval, bins = self.__histogrambins))
         fps = len(self.__population)
         self.__finalpopulationsize.append(fps)
         return fps
 
-    
+    # add a single cell to the population, return False if not enough substrate anymore
     def add(self,population = "population"):
         # use dict representation of self to chose either "self.__population" or "self.__overnightculture"
         x  = self.newyield(np.random.choice(self.__dict__["_inoculumeffect__{:s}".format(population)]))
@@ -132,6 +136,7 @@ class inoculumeffect(object):
         else:
             return False
     
+    # output funneled through this method
     def verbose(self,msg = "", handle = None, flush = False):
         if self.__verbose:
             if handle is None:
