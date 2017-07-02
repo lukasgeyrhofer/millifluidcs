@@ -118,12 +118,15 @@ class inoculumeffect(object):
         if self.__PoissonSeeding:
             seedingsize = np.random.poisson(seedingsize)
         
-        # set initial conditions
-        self.__population = list(np.random.choice(self.__overnightculture,size = seedingsize))
+        if seedingsize > 0:
+            # set initial conditions
+            self.__population = list(np.random.choice(self.__overnightculture,size = seedingsize))
 
-        # run until nutrients are out
-        while self.add():
-            continue
+            # run until nutrients are out
+            while self.add():
+                continue
+        else:
+            self.__population = list()
         
         
         # do statistics on run
