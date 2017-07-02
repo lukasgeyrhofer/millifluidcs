@@ -199,18 +199,18 @@ def main():
     parser.add_argument("-G","--ON_generations",        type = float, default = 8.)
     parser.add_argument("-N","--ON_seedingsize",        type = int,   default = 25)
     
+    parser.add_argument("-k","--droplets",              type = int, default = 1000)
+    parser.add_argument("-O","--overnightculturecount", type = int, default = 3)
+
     parser.add_argument("-y","--yieldmin", type = float, default = 0.5)
     parser.add_argument("-Y","--yieldmax", type = float, default = 1.5)
     
     parser.add_argument("-P","--PoissonSeeding", default = False, action = "store_true")
     
-    parser.add_argument("-k","--droplets",              type = int, default = 1000)
-    parser.add_argument("-O","--overnightculturecount", type = int, default = 3)
-    parser.add_argument("-o","--outfilebasename",                   default = "out")
-    
-    parser.add_argument("-v","--verbose",default=False,action="store_true")
-    parser.add_argument("-L","--logfile",default=None)
-    parser.add_argument("-H","--onlymeanhisto",default=False,action="store_true")
+    parser.add_argument("-H","--onlymeanhisto",   default = False, action = "store_true")
+    parser.add_argument("-v","--verbose",         default = False, action = "store_true")
+    parser.add_argument("-L","--logfile",         default = None)
+    parser.add_argument("-o","--outfilebasename", default = "out")
     args = parser.parse_args()
 
 
