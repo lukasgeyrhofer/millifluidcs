@@ -44,7 +44,7 @@ for experimentlabel,trajectories in data:
         stat = [np.nan,np.nan]
     
     if args.verbose:
-        print "{:15s} {:.4f} (± {:.4f})".format(experimentlabel,stat[0],stat[1])
+        print "{:15s} {:.4f} (± {:.4f}) from {:d} droplets".format(experimentlabel,stat[0],stat[1],len(finalSignal))
 
 
 
