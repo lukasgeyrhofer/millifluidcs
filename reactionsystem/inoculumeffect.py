@@ -46,6 +46,11 @@ class inoculumeffect(object):
         self.__yieldinterval        = np.array([kwargs.get("yieldmin",.5),kwargs.get("yieldmax",1.5)])
         self.__verbose              = kwargs.get("verbose",False)
         self.__onlymeanhisto        = kwargs.get("onlymeanhisto",False)
+        self.__outputgenerationstep = kwargs.get("outputgenerationstep",1)
+        if not self.__outputgenerationstep is None:
+            self.__intermediateoutput = True
+        else:
+            self.__intermediateoutput = False   
         
         # coefficients for faster reference instead of computing them every step
         self.__coefficient          = np.array([np.exp(-1./self.__correlation),1. - np.exp(-1./self.__correlation)])
@@ -105,6 +110,9 @@ class inoculumeffect(object):
         # need overnightculture for seeding
         if not self.__haveovernightculture:
             self.run_overnightculture()
+        
+        
+        
             
         # use default values from object creation if no argument given here
         if  seedingsize is None:
@@ -114,6 +122,12 @@ class inoculumeffect(object):
             self.__currentsubstrate = self.__startingsubstrate
         else:
             self.__currentsubstrate = np.power(2,generations) * seedingsize * self.__ONyieldmean_inv
+
+        if self.__intermediateoutput:
+            outgen  = np.arange(start = 0, stop = generations, step = self.__outputgenerationstep)
+            outsize = np.power(2,outgen) * seedingsize * self.__ONyieldmean_inv
+            current_outsize_index = 0
+
         
         if self.__PoissonSeeding:
             seedingsize = np.random.poisson(seedingsize)
@@ -124,7 +138,10 @@ class inoculumeffect(object):
 
             # run until nutrients are out
             while self.add():
-                continue
+                if self.__intermediateoutput:
+                    if len(self.__population) >= outsize[current_outsize_index]:
+                        self.verbose("# gen: {} size: {}".format(outgen[current_outsize_index],outsize[current_outsize_index]))
+                        current_outsize_index += 1
         else:
             self.__population = list()
         
@@ -210,10 +227,11 @@ def main():
     
     parser.add_argument("-P","--PoissonSeeding", default = False, action = "store_true")
     
-    parser.add_argument("-H","--onlymeanhisto",   default = False, action = "store_true")
-    parser.add_argument("-v","--verbose",         default = False, action = "store_true")
-    parser.add_argument("-L","--logfile",         default = None)
-    parser.add_argument("-o","--outfilebasename", default = "out")
+    parser.add_argument("-H","--onlymeanhisto",                      default = False, action = "store_true")
+    parser.add_argument("-v","--verbose",                            default = False, action = "store_true")
+    parser.add_argument("-L","--logfile",                            default = None)
+    parser.add_argument("-o","--outfilebasename",                    default = "out")
+    parser.add_argument("-s","--outputgenerationstep", type = float, default = None)
     args = parser.parse_args()
 
 
