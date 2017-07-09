@@ -251,17 +251,23 @@ def main():
     
     # loop over different ON cultures
     for i in range(args.overnightculturecount):
-        ie.verbose("# starting overnight culture ({:4d}/{:4d})".format(i,args.overnightculturecount), handle = logfile, flush = True)
+        ie.verbose("# starting overnight culture ({:4d}/{:4d})".format(i+1,args.overnightculturecount), handle = logfile, flush = True)
         ie.run_overnightculture()
     
         # seed droplets from this ON culture
         for j in range(args.droplets):
-            ie.verbose("#   droplet ({:4d}/{:4d})".format(j,args.droplets),handle = logfile)
+            ie.verbose("#   droplet ({:4d}/{:4d})".format(j+1,args.droplets),handle = logfile)
             ie.run()
 
         # reading destroys the data, so only read once
         fps         = ie.finalpopulationsize
         histo_yield = ie.histograms
+        
+        # compute moments of FPS
+        fps_mean = np.mean(fps)
+        fps_var  = np.var(fps)
+        ie.verbose("# MomentsFPS:   {:.4e} {:.4e}".format(fps_mean,fps_var), handle = logfile)
+        
         
         # make histogram for population sizes
         ps,psbin = np.histogram(fps,range = ie.substraterange,bins = 100)
