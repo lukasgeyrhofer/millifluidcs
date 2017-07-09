@@ -256,8 +256,8 @@ def main():
     
         # seed droplets from this ON culture
         for j in range(args.droplets):
-            ie.verbose("#   droplet ({:4d}/{:4d})".format(j+1,args.droplets),handle = logfile)
-            ie.run()
+            current_fps = ie.run()
+            ie.verbose("#   droplet ({:4d}/{:4d}) FPS {:d}".format(j+1,args.droplets,current_fps),handle = logfile)
 
         # reading destroys the data, so only read once
         fps         = ie.finalpopulationsize
@@ -270,7 +270,7 @@ def main():
         
         
         # make histogram for population sizes
-        ps,psbin = np.histogram(fps,range = ie.substraterange,bins = 100)
+        ps,psbin = np.histogram(fps,range = ie.substraterange,bins = 200)
         histo_fps = np.transpose(np.array([psbin[:-1] + 0.5 * np.diff(psbin),ps]))
         
         # save histograms to files
