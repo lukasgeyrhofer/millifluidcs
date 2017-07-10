@@ -94,7 +94,7 @@ class inoculumeffect(object):
         # from these initial seedings, run on average g generations
         self.__currentsubstrate = np.power(2.,generations) * seedingsize / np.mean(self.__overnightculture)
         
-        # add more cells, but not to a different population
+        # add more cells
         while self.add(population = "overnightculture"):
             continue
         
@@ -110,8 +110,6 @@ class inoculumeffect(object):
         # need overnightculture for seeding
         if not self.__haveovernightculture:
             self.run_overnightculture()
-        
-        
         
             
         # use default values from object creation if no argument given here
@@ -143,6 +141,7 @@ class inoculumeffect(object):
                         self.verbose("# gen: {} size: {}".format(outgen[current_outsize_index],outsize[current_outsize_index]))
                         current_outsize_index += 1
         else:
+            # empty droplet due to Poisson seeding
             self.__population = list()
         
         
