@@ -166,7 +166,7 @@ class DropletData(object):
             else:
                 return
         
-        if not self.__data.has_key(dropletLabel):
+        if not dropletLabel in self.__data:
             self.__data[dropletLabel]     = list()
             self.__welldata[dropletLabel] = list()
         
@@ -194,7 +194,7 @@ class DropletData(object):
     # ===============================================================
     
     def extractvalue(self,dict1,key1,default):
-        if dict1.has_key(key1):
+        if key1 in dict1:
             if dict1[key1] in self.__restrictedvaluesforparameters:
                 return default
             else:
