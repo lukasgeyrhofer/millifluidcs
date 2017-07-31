@@ -416,16 +416,16 @@ def main():
     data = DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = args.splitBackForthTrajectories)
 
     # in general, data is obtained by iterating over sets of experimental labels with their trajectories
-    for dropletLabel, Trajectories in data:
-        print dropletLabel, len(Trajectories)
-        for trajectory in Trajectories:
-                print trajectory
+    #for dropletLabel, Trajectories in data:
+        #print dropletLabel, len(Trajectories)
+        #for trajectory in Trajectories:
+                #print trajectory
                 
     # should also work like that:
     # given that the label 'SBW25mC-10' is defined in the templatefile
     # this is the same as the 'Trajectories' in the loop above
-    if 'SBW25mC-10' in data.listoftypes:
-        print data['SBW25mC-10']
+    #if 'SBW25mC-10' in data.listoftypes:
+        #print data['SBW25mC-10']
 
 
 # run through working example, if program is executed directly
