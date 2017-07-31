@@ -5,7 +5,7 @@ import argparse
 import sys,math
 import os
 import pandas as pd
-
+from itertools import groupby
 
 def AddCommandLineParameters(parser):
     ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
@@ -36,6 +36,8 @@ class DropletData(object):
         self.__templatefile               = kwargs.get("templatefile",None)
         self.__restrictionfile            = kwargs.get("restrictionfile",None)
         self.__outbasename                = kwargs.get("outbasename","")
+        if self.__outbasename is None:
+            self.__outbasename = ""
 
         self.__timerescale                = kwargs.get("timerescale",3.6e3)
         self.__datacolumns                = kwargs.get("datacolumns",['time','Channel1_mean'])
@@ -118,9 +120,10 @@ class DropletData(object):
             order = None
             totalcount = 0
             all_rows = [x[0] for x in well]
-            for row in set(all_rows):
-                direction   = 2 * (ord(row)%2) - 1
-                countrow    = np.count(all_rows,row)
+            all_row_separate = [list(j) for i,j in groupby(all_rows)]
+            for a in all_row_separate:
+                direction   = 2 * (ord(a[0])%2) - 1
+                countrow    = len(a)
                 order       = self.concat(order, np.arange(totalcount,totalcount + countrow)[::direction])
                 totalcount += countrow
             order, well, description, droplet_number = zip(*sorted(zip(order,well,description,droplet_number))) # sort all columns with respect to 'order'
@@ -193,14 +196,14 @@ class DropletData(object):
     # = helper routines
     # ===============================================================
     
-    def extractvalue(self,dict1,key1,default):
-        if key1 in dict1:
-            if dict1[key1] in self.__restrictedvaluesforparameters:
-                return default
-            else:
-                return dict1[key1]
-        else:
-            return default
+    #def extractvalue(self,dict1,key1,default):
+        #if key1 in dict1:
+            #if dict1[key1] in self.__restrictedvaluesforparameters:
+                #return default
+            #else:
+                #return dict1[key1]
+        #else:
+            #return default
 
     def concat(self,list1 = None,list2 = None, direction1 = 1, direction2 = 1):
         if (list1 is None) and (list2 is None):
