@@ -32,18 +32,18 @@ class DropletData(object):
         
         self.__restrictedvaluesforparameters = list([None,""])
         
-        self.__infiles                    = self.extractvalue(kwargs,"infiles",None)
-        self.__templatefile               = self.extractvalue(kwargs,"templatefile",None)
-        self.__restrictionfile            = self.extractvalue(kwargs,"restrictionfile",None)
-        self.__outbasename                = self.extractvalue(kwargs,"outbasename","")
-        
-        self.__timerescale                = self.extractvalue(kwargs,"timerescale",3.6e3)
-        self.__datacolumns                = self.extractvalue(kwargs,"datacolumns",['time','Channel1_mean'])
-        
-        self.__splitBackForthTrajectories = self.extractvalue(kwargs,"SplitBackForthTrajectories",True)
-        self.__snakelikeloading           = self.extractvalue(kwargs,"SnakeLikeLoading",True)
-        self.__hiccuploading              = self.extractvalue(kwargs,"HiccupLoading",False)
-        self.__ignoreadditionaldroplets   = self.extractvalue(kwargs,"IgnoreAdditionalDroplets",False)
+        self.__infiles                    = kwargs.get("infiles",None)
+        self.__templatefile               = kwargs.get("templatefile",None)
+        self.__restrictionfile            = kwargs.get("restrictionfile",None)
+        self.__outbasename                = kwargs.get("outbasename","")
+
+        self.__timerescale                = kwargs.get("timerescale",3.6e3)
+        self.__datacolumns                = kwargs.get("datacolumns",['time','Channel1_mean'])
+
+        self.__splitBackForthTrajectories = kwargs.get("SplitBackForthTrajectories",True)
+        self.__snakelikeloading           = kwargs.get("SnakeLikeLoading",True)
+        self.__hiccuploading              = kwargs.get("HiccupLoading",False)
+        self.__ignoreadditionaldroplets   = kwargs.get("IgnoreAdditionalDroplets",False)
                                                        
 
         if self.__infiles is None:
