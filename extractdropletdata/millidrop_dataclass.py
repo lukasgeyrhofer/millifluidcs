@@ -7,6 +7,8 @@ import os
 import pandas as pd
 from itertools import groupby
 
+from __future__ import print_function
+
 def AddCommandLineParameters(parser):
     ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
     
@@ -421,10 +423,10 @@ def main():
     data = DropletData(infiles = args.infiles, templatefile = args.templatefile, splitBackForthTrajectories = args.splitBackForthTrajectories)
 
     # in general, data is obtained by iterating over sets of experimental labels with their trajectories
-    #for dropletLabel, Trajectories in data:
-        #print dropletLabel, len(Trajectories)
-        #for trajectory in Trajectories:
-                #print trajectory
+    for dropletLabel, Trajectories in data:
+        print("'{:s}' with {:d} trajectories".format(dropletLabel, len(Trajectories)))
+        for trajectory in Trajectories:
+                print(trajectory)
                 
     # should also work like that:
     # given that the label 'SBW25mC-10' is defined in the templatefile
