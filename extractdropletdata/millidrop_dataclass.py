@@ -29,7 +29,7 @@ def AddCommandLineParameters(parser):
 
 class DropletData(object):
     def __init__(self, **kwargs):
-        
+
         self.__restrictedvaluesforparameters = list([None,""])
         
         self.__infiles                    = kwargs.get("infiles",None)
@@ -50,6 +50,9 @@ class DropletData(object):
 
         if self.__infiles is None:
             raise IOError("datafiles required")
+        if len(self.__infiles) < 1:
+            raise IOError("datafiles required")
+        
         
         if not self.__templatefile is None:
             self.load_templatefile(self.__templatefile)
@@ -89,7 +92,6 @@ class DropletData(object):
         if not self.__restrictionfile is None:
             self.load_restrictions_from_file(self.__restrictionfile)
         
-
 
 
     # ===============================================================
@@ -306,7 +308,7 @@ class DropletData(object):
         except:
             raise IOError("could not open file '{:s}' to save restrictions".format(filename))
         for restriction in self.__datarestrictions:
-            print >> fp, restriction[0] + " " + restriction[0] + " " + " ".join([str(x) for x in restriction[2]])
+            fp.write(restriction[0] + " " + restriction[0] + " " + " ".join([str(x) for x in restriction[2]]))
         if not filename is None:
             fp.close()
 

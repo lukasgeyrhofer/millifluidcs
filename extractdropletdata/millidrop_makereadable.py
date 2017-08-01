@@ -4,6 +4,8 @@ import numpy as np
 import argparse
 import sys,math
 
+from __future__ import print
+
 import millidrop_dataclass as mdc
 
 parser = argparse.ArgumentParser()
@@ -36,4 +38,4 @@ for label,trajectories in data:
             filename = data.outbasename + "{:s}-{:04d}.data".format(label,i)
             np.savetxt(filename,traj,fmt = '%.6e', delimiter = ' ')
             i += 1
-    print "{:12s}: saving {:4d} trajectories to readable format".format(label,i)
+    print("{:12s}: saving {:4d} trajectories to readable format".format(label,i))
