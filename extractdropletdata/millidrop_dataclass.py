@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -7,7 +7,7 @@ import os
 import pandas as pd
 from itertools import groupby
 
-from __future__ import print_function
+#from __future__ import print_function
 
 def AddCommandLineParameters(parser):
     ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
