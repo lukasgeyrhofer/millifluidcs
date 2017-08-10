@@ -119,6 +119,7 @@ class DropletData(object):
             # newer versions of templatefile seem to have an 'order' column, ignore flag 'snakelikeloading' if this is present
             order = np.array(templatedata['order'],dtype=int)
             order, well, description, droplet_number = zip(*sorted(zip(order,well,description,droplet_number))) # sort all columns with respect to 'order'
+
         elif self.__snakelikeloading:
             # construct same order list as above by hand
             order = None
