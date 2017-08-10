@@ -7,7 +7,6 @@ import os
 import pandas as pd
 from itertools import groupby
 
-#from __future__ import print_function
 
 def AddCommandLineParameters(parser):
     ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
@@ -34,16 +33,25 @@ class DropletData(object):
 
         self.__restrictedvaluesforparameters = list([None,""])
         
+        # list of all filenames, usually in droplets folder from MilliDrop pipeline, ie. droplets/0000.csv, droplets/0001.csv, ...
         self.__infiles                    = kwargs.get("infiles",None)
+        # templatefile to assign the labels from different wells
         self.__templatefile               = kwargs.get("templatefile",None)
+        # if restrictions are loaded from an external file
         self.__restrictionfile            = kwargs.get("restrictionfile",None)
+
+        # which channels should be loaded, by default do not load anything, every channel has to be specified
+        self.__datacolumns                = kwargs.get("datacolumns",['time','Channel1_mean'])
+
+        # downstream processing, not actively accessed by this data object
+        # used in several of the derivative scripts that use this object, only used to store this value
+        self.__timerescale                = kwargs.get("timerescale",3.6e3)
+        # store folder to output files
         self.__outbasename                = kwargs.get("outbasename","")
         if self.__outbasename is None:
             self.__outbasename = ""
-
-        self.__timerescale                = kwargs.get("timerescale",3.6e3)
-        self.__datacolumns                = kwargs.get("datacolumns",['time','Channel1_mean'])
-
+        
+        # further options when loading the data
         self.__splitBackForthTrajectories = kwargs.get("SplitBackForthTrajectories",True)
         self.__snakelikeloading           = kwargs.get("SnakeLikeLoading",True)
         self.__hiccuploading              = kwargs.get("NonHiccupLoading",False)
