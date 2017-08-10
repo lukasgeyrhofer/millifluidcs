@@ -21,7 +21,7 @@ def AddCommandLineParameters(parser):
     ioparser.add_argument("-u", "--timerescale", default=3.6e3, type=float)
     
     ioparser.add_argument("-B", "--SplitBackForthTrajectories", default = False, action = "store_true")
-    ioparser.add_argument("-H", "--HiccupLoading",              default = False, action = "store_true")
+    ioparser.add_argument("-H", "--NonHiccupLoading",           default = False, action = "store_true")
     ioparser.add_argument("-D", "--IgnoreAdditionalDroplets",   default = False, action = "store_true")
     
     ioparser.add_argument("-v","--verbose",                     default = False, action = "store_true")
@@ -46,7 +46,7 @@ class DropletData(object):
 
         self.__splitBackForthTrajectories = kwargs.get("SplitBackForthTrajectories",True)
         self.__snakelikeloading           = kwargs.get("SnakeLikeLoading",True)
-        self.__hiccuploading              = kwargs.get("HiccupLoading",False)
+        self.__hiccuploading              = kwargs.get("NonHiccupLoading",False)
         self.__ignoreadditionaldroplets   = kwargs.get("IgnoreAdditionalDroplets",False)
                                                        
 
@@ -140,7 +140,7 @@ class DropletData(object):
         # use this correct order to generate lists with experiments and wells, which will be later matched to a dropletID
         self.__droplettype = None
         self.__well        = None
-        if self.__hiccuploading:
+        if not self.__nonhiccuploading:
             for i in np.arange(start = 0,stop = len(well),step = 2):
                 assert droplet_number[i] == droplet_number[i+1]
                 self.__droplettype = self.concat(self.__droplettype, np.repeat([[description[i],description[i+1]]],droplet_number[i],axis=0).flatten())
