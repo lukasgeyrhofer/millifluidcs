@@ -8,26 +8,6 @@ import pandas as pd
 from itertools import groupby
 
 
-def AddCommandLineParameters(parser):
-    ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
-    
-    ioparser.add_argument("-i", "--infiles",         nargs="*")
-    ioparser.add_argument("-t", "--templatefile",    default=None)
-    ioparser.add_argument("-r", "--restrictionfile", default=None)
-    ioparser.add_argument("-o", "--outbasename",     default=None)
-    
-    ioparser.add_argument("-C", "--datacolumns", nargs="*",type=str)
-    ioparser.add_argument("-u", "--timerescale", default=3.6e3, type=float)
-    
-    ioparser.add_argument("-B", "--SplitBackForthTrajectories", default = False, action = "store_true")
-    ioparser.add_argument("-H", "--NonHiccupLoading",           default = False, action = "store_true")
-    ioparser.add_argument("-D", "--IgnoreAdditionalDroplets",   default = False, action = "store_true")
-    
-    ioparser.add_argument("-v","--verbose",                     default = False, action = "store_true")
-    
-    return parser
-
-
 class DropletData(object):
     def __init__(self, **kwargs):
 
@@ -209,15 +189,6 @@ class DropletData(object):
     # = helper routines
     # ===============================================================
     
-    #def extractvalue(self,dict1,key1,default):
-        #if key1 in dict1:
-            #if dict1[key1] in self.__restrictedvaluesforparameters:
-                #return default
-            #else:
-                #return dict1[key1]
-        #else:
-            #return default
-
     def concat(self,list1 = None,list2 = None, direction1 = 1, direction2 = 1):
         if (list1 is None) and (list2 is None):
             return None
@@ -418,6 +389,28 @@ class DropletData(object):
             return self.__listoftypes
         else:
             super(DropletData,self).__getattr__(key)
+
+# helper script to add all cmdline parameters
+def AddCommandLineParameters(parser):
+    ioparser = parser.add_argument_group(description = "==== I/O parameters ====")
+    
+    ioparser.add_argument("-i", "--infiles",         nargs="*")
+    ioparser.add_argument("-t", "--templatefile",    default=None)
+    ioparser.add_argument("-r", "--restrictionfile", default=None)
+    ioparser.add_argument("-o", "--outbasename",     default=None)
+    
+    ioparser.add_argument("-C", "--datacolumns", nargs="*",type=str)
+    ioparser.add_argument("-u", "--timerescale", default=3.6e3, type=float)
+    
+    ioparser.add_argument("-B", "--SplitBackForthTrajectories", default = False, action = "store_true")
+    ioparser.add_argument("-H", "--NonHiccupLoading",           default = False, action = "store_true")
+    ioparser.add_argument("-D", "--IgnoreAdditionalDroplets",   default = False, action = "store_true")
+    
+    ioparser.add_argument("-v","--verbose",                     default = False, action = "store_true")
+    
+    return parser
+
+
 
 
 # working example of loading files and printing them again
