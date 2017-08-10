@@ -248,11 +248,11 @@ class timeseries:
             valuesgauss = self.fit_gaussian(start,final)            
             self.__droplets.add_droplet_fitinfo("gauss",i,valuesgauss)
             
-            valuesstep = self.fit_step(start,final)
-            self.__droplets.add_droplet_fitinfo("step",i,valuesstep)
+            #valuesstep = self.fit_step(start,final)
+            #self.__droplets.add_droplet_fitinfo("step",i,valuesstep)
             
-            valuessigmoid = self.fit_sigmoid(start,final)
-            self.__droplets.add_droplet_fitinfo("sigmoid",i,valuessigmoid)
+            #valuessigmoid = self.fit_sigmoid(start,final)
+            #self.__droplets.add_droplet_fitinfo("sigmoid",i,valuessigmoid)
 
     def __str__(self):
         if int(self.__droplets) == 0:

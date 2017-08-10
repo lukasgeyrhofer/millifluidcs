@@ -34,7 +34,7 @@ class DropletData(object):
         # further options when loading the data
         self.__splitBackForthTrajectories = kwargs.get("SplitBackForthTrajectories",True)
         self.__snakelikeloading           = kwargs.get("SnakeLikeLoading",True)
-        self.__hiccuploading              = kwargs.get("NonHiccupLoading",False)
+        self.__nonhiccuploading           = kwargs.get("NonHiccupLoading",False)
         self.__ignoreadditionaldroplets   = kwargs.get("IgnoreAdditionalDroplets",False)
                                                        
 

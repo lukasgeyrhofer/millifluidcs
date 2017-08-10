@@ -26,21 +26,20 @@ else:
 
 first = True
 for line in fp.readlines():
-    if line[0] == "#":
-        out.write(line)
-    else:
-        values = line.split(args.delimiter)
-        if first:
-            IDwell        = [x.lower() for x in values].index("well")
-            IDdescription = [x.lower() for x in values].index("description")
-            first = False
+    if len(line) > 1:
+        if line[0] == "#":
+            out.write(line)
         else:
-            values[IDdescription] += "-{}".format(values[IDwell])
-        out.write(args.delimiter.join(values))
+            values = line.split(args.delimiter)
+            if first:
+                IDwell        = [x.lower() for x in values].index("well")
+                IDdescription = [x.lower() for x in values].index("description")
+                first = False
+            else:
+                values[IDdescription] += "-{}".format(values[IDwell])
+            out.write(args.delimiter.join(values))
         
-
-
-
+out.close()
 
 
 
