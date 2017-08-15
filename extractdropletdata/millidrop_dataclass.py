@@ -20,8 +20,8 @@ class DropletData(object):
         # if restrictions are loaded from an external file
         self.__restrictionfile            = kwargs.get("restrictionfile",None)
 
-        # which channels should be loaded, by default do not load anything, every channel has to be specified
-        self.__datacolumns                = kwargs.get("datacolumns",['time','Channel1_mean'])
+        # which channels should be loaded, by default load everything
+        self.__datacolumns                = kwargs.get("datacolumns",None)
 
         # downstream processing, not actively accessed by this data object
         # used in several of the derivative scripts that use this object, only used to store this value
@@ -72,6 +72,10 @@ class DropletData(object):
             except:
                 print("Error while loading file '{:s}'. Continuing ...".format(filename))
                 continue
+            
+            if self.__datacolumns is None:
+                self.__datacolumns = tmpdata.dtype.names
+            
             self.add_trajectory(dropletID, tmpdata)
         
         
@@ -149,6 +153,8 @@ class DropletData(object):
     def add_trajectory(self,dropletID = None, data = None):
         if data is None:
             raise ValueError("need timestamps for experimental data")
+        
+        
 
         for column in self.__datacolumns:
             if not column in data.dtype.names:
