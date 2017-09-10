@@ -14,8 +14,8 @@ def delta(abconc):
 
 
 def dynAB(t,x,params):
-    if np.any(x[:-2] < 1):
-        (x[:-2])[x[:-2] < 1] = 0
+    if np.any(x[:numstrains] < 1):
+        (x[:numstrains])[x[:numstrains] < 1] = 0
     growthrates = args.growthrates
     if x[-1] <= 0:
         growthrates = np.zeros(numstrains)
