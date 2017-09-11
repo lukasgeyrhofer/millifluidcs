@@ -19,15 +19,16 @@ def dynAB(t,x,params):
     if np.any(x[:numstrains] < 1):
         (x[:numstrains])[x[:numstrains] < 1] = 0
     growthrates = args.growthrates
+    production  = args.PGproduction
     if x[-1] <= 0:
         growthrates = np.zeros(numstrains)
-        
+        production  = np.zeros(numstrains)
         
         
     return np.concatenate([                                                                                                                                                                # growth of strains       x[:numstrains]
                 (growthrates - delta(x[numstrains:2*numstrains])) * x[:numstrains],                                                                                                        # ab, inside membrane     x[numstrains:2*numstrains]
                 args.ABdiffusion[0] * x[-3] - (args.ABdiffusion[1] + growthrates + args.ABreduction * x[2*numstrains:3*numstrains]) * x[numstrains:2*numstrains],                          # pg, inside membrane     x[2*numstrains:3*numstrains]
-                args.PGdiffusion[0] * x[-2] - (args.PGdiffusion[1] + growthrates) * x[2*numstrains:3*numstrains] + args.PGproduction,
+                args.PGdiffusion[0] * x[-2] - (args.PGdiffusion[1] + growthrates) * x[2*numstrains:3*numstrains] + production,
                 np.array([                                                                                                                                                                 # ab, outside membrane    x[-3]
                     -args.ABdiffusion[0] * x[-3] * np.sum(x[:numstrains]) + args.ABdiffusion[1] * np.dot(x[:numstrains], x[  numstrains:2*numstrains]) - args.ABreduction * x[-3] * x[-2], # pg, outside membrane    x[-2]
                     -args.PGdiffusion[0] * x[-2] * np.sum(x[:numstrains]) + args.PGdiffusion[1] * np.dot(x[:numstrains], x[2*numstrains:3*numstrains]),                                    # substrate               x[-1]
