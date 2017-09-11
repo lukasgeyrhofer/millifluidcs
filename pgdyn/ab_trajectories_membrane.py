@@ -19,15 +19,20 @@ def dynAB(t,x,params):
     growthrates = args.growthrates
     if x[-1] <= 0:
         growthrates = np.zeros(numstrains)
-    return np.concatenate([ (growthrates - delta(x[numstrains:2*numstrains]))*x[:numstrains],          # growth of strains
-                            args.ABdiffusion[0] * x[-3] - (args.ABdiffusion[1] + growthrates + args.ABreduction * x[2*numstrains:3*numstrains]) * x[numstrains:2*numstrains],
-                            args.PGproduction + args.PGdiffusion[0] * x[-2] - (args.PGdiffusion[1] + growthrates) * x[2*numstrains:3*numstrains],
-                            np.array([
-                                    -args.ABdiffusion[0] * x[-3] * np.sum( x[:numstrains] ) + args.ABdiffusion[1] * np.dot(x[numstrains:2*numstrains],x[:numstrains]),
-                                    -args.PGdiffusion[0] * x[-2] * np.sum( x[:numstrains] ) + args.PGdiffusion[1] * np.dot(x[2*numstrains:3*numstrains],x[:numstrains]) - args.ABreduction * x[-2] * x[-3] ,
-                                    -np.sum(growthrates * x[:numstrains] / args.yieldfactors)
-                                ])
-                            ])
+        
+        
+        
+    return np.concatenate([                                                                                                                                                                # growth of strains
+                (growthrates - delta(x[numstrains:2*numstrains])) * x[:numstrains],                                                                                                        # ab, inside membrane
+                args.ABdiffusion[0] * x[-3] - (args.ABdiffusion[1] + growthrates + args.ABreduction * x[2*numstrains:3*numstrains]) * x[numstrains:2*numstrains],                          # pg, inside membrane
+                args.PGdiffusion[0] * x[-2] - (args.PGdiffusion[1] + growthrates) * x[2*numstrains:3*numstrains] + args.PGproduction,
+                np.array([                                                                                                                                                                 # ab, outside membrane
+                    -args.ABdiffusion[0] * x[-3] * np.sum(x[:numstrains]) + args.ABdiffusion[1] * np.dot(x[:numstrains], x[  numstrains:2*numstrains]) - args.ABreduction * x[-3] * x[-2], # pg, outside membrane
+                    -args.PGdiffusion[0] * x[-2] * np.sum(x[:numstrains]) + args.PGdiffusion[1] * np.dot(x[:numstrains], x[2*numstrains:3*numstrains]),                                    # substrate
+                    -np.sum(growthrates * x[:numstrains]/args.yieldfactors)
+                    ])
+                ])
+
 
 parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser,defaultmixingtime = 24)
@@ -36,10 +41,10 @@ parserAB = parser.add_argument_group(description = "Parameters for interactions 
 parserAB.add_argument("-k","--kappa",type=float,default=1)
 parserAB.add_argument("-l","--logkill",type=float,default=2)
 parserAB.add_argument("-B","--ABconc0",type=float,default=.5)
-parserAB.add_argument("-P","--PGproduction",nargs="*",default=[1,0])
 parserAB.add_argument("-R","--ABreduction",type=float,default=1)
-parserAB.add_argument("-d","--PGdiffusion",type=float,nargs=2,default=[1,1])
 parserAB.add_argument("-D","--ABdiffusion",type=float,nargs=2,default=[1,1])
+parserAB.add_argument("-P","--PGproduction",nargs="*",default=[1,0])
+parserAB.add_argument("-d","--PGdiffusion",type=float,nargs=2,default=[1,1])
 parserAB.add_argument("-K","--monodKC",type=float,default=1e2)
 
 parser.add_argument("-t","--integrationstep",default=1e-3,type=float)
@@ -53,7 +58,6 @@ args = parser.parse_args()
 args.growthrates   = np.array(args.growthrates,  dtype=np.float64)
 args.yieldfactors  = np.array(args.yieldfactors, dtype=np.float64)
 args.PGproduction  = np.array(args.PGproduction, dtype=np.float64)
-args.ABreduction   = np.array(args.ABreduction,  dtype=np.float64)
 
 global numstrains
 numstrains = len(args.growthrates)
