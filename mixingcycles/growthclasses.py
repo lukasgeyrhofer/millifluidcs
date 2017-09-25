@@ -364,7 +364,7 @@ class GrowthDynamics(object):
                 self.__growthmatrix = g[:,:,:]
                 self.__growthmatrixgrid = size
         else:
-            raise ValueError,"Can only extend a full grid"
+            raise ValueError("Can only extend a full grid")
     
     
     def getGrowthMultipleStrains(self,size,nstrains=2):
@@ -467,13 +467,13 @@ class GrowthDynamics(object):
             return np.array([self.strains[i].deathrate for i in range(self.numstrains)])
         elif key == "growthmatrix":
             if self.__growthmatrix is None:
-                raise ValueError,"Growthmatrix not yet computed"
+                raise ValueError("Growthmatrix not yet computed")
             else:
                 return self.__growthmatrix
         elif key == "growthmatrixgrid":
             if self.__growthmatrixgrid is None:
                 if self.__growthmatrix is None:
-                    raise ValueError,"Growthmatrix not yet computed"
+                    raise ValueError("Growthmatrix not yet computed")
                 else:
                     self.__growthmatrixgrid = self.__growthmatrix
             else:
