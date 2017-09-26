@@ -231,8 +231,9 @@ class GrowthDynamics(object):
                     'precision2' :  float(kwargs.get("NR_precision", 1e-14 ))**2,
                     'maxsteps' :    int(  kwargs.get("NR_maxsteps",  1000 ))}
         
-        self.__growthmatrix = None
-        self.__growthmatrixgrid = None
+        self.__growthmatrix      = None
+        self.__growthmatrixgridX = None
+        self.__growthmatrixgridY = None
         
         
         self.__kwargs_for_pickle = kwargs
@@ -306,40 +307,29 @@ class GrowthDynamics(object):
                 i += 1
         return g
 
+
     def ComputeGrowthMatrix(self,size,step=1):
-        self.__growthmatrixgrid = size
-        if step > 1 and isinstance(size,int):
-            # only use step if initial conditions are not explicitely specified in a list already...
-            m = np.arange(start = 0,stop = size,step = step)
-            return self.ComputeGrowthMatrix(np.array([m,m]))
-        elif isinstance(size,int):
-            m = np.arange(size)
-            self.__growthmatrix = np.zeros((size,size,2))
-            for i in m:
-                for j in m:
-                    self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([i,j]))
-        elif isinstance(size,np.ndarray):
-            if isinstance(size[0],np.ndarray):
-                if len(size) >= 2:
-                    m0 = size[0]
-                    m1 = size[1]
-                    self.__growthmatrix = np.zeros((len(m0),len(m1),2))
-                    for i in range(len(m0)):
-                        for j in range(len(m1)):
-                            self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([m0[i],m1[j]]))
-            else:
-                m = size
-                self.__growthmatrix = np.zeros(len(m))
-                for i in range(len(m)):
-                    self.__growthmatrix[i] = self.Growth(initialcells = np.array([m[i]]))[0]
-        elif isinstance(size,(list,tuple)):
-            if (len(size) >= 2) and isinstance(size[0],np.ndarray):
-                m0 = size[0]
-                m1 = size[1]
-                self.__growthmatrix = np.zeros((len(m0),len(m1),2))
-                for i in range(len(m0)):
-                    for j in range(len(m1)):
-                        self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([m0[i],m1[j]]))
+        if isinstance(size,int):
+            self.__growthmatrixgridX = np.arange(start = 0, stop = size, step = step)
+            self.__growthmatrixgridY = np.arange(start = 0, stop = size, step = step)
+        elif isinstance(size,(list,tuple,np.ndarray)):
+            if len(size) >= 2
+                if isinstance(size[0],(list,tuple,np.ndarray)):
+                    self.__growthmatrixgridX = size[0]
+                else:
+                    self.__growthmatrixgridX = np.arange(start = 0,stop = size[0],step = step)
+                if isinstance(size[1],(list,tuple,np.ndarray)):
+                    self.__growthmatrixgridY = size[1]
+                else:
+                    self.__growthmatrixgridY = np.arange(start = 0,steop = size[1],step = step)
+        else:
+            raise ValueError("size argument does not fit")
+        
+        self.__growthmatrix = np.zeros((len(self.__growthmatrixgridX),len(self.__growthmatrixgridY),2))
+        for i in range(len(self.__growthmatrixgridX)):
+            for j in range(len(self.__growthmatrixgridY)):
+                self.__growthmatrix[i,j] = self.Growth(initialcells = np.array(self.__growthmatrixgridX[i],self.__growthmatrixgridY[j]))
+
     
     def getGrowthMatrix(self,size,step=1):
         # backwards compatibility
@@ -349,22 +339,28 @@ class GrowthDynamics(object):
     def hasGrowthMatrix(self):
         return not (self.__growthmatrix is None)
     
-    def ExtendGrowthMatrix(self,size):
-        if isinstance(self.__growthmatrixgrid,int):
-            # only works for full growth matrix, with all entries
-            if self.__growthmatrixgrid < size:
-                g = np.zeros((size,size,2))
-                g[:self.__growthmatrixgrid,:self.__growthmatrixgrid,:] = self.__growthmatrix
-                for i in range(self.__growthmatrixgrid,size):
-                    for j in range(self.__growthmatrixgrid):
-                        g[i,j] = self.Growth(initialcells = np.array([i,j]))
-                        g[j,i] = self.Growth(initialcells = np.array([j,i]))
-                    for j in range(self.__growthmatrixgrid,size):
-                        g[i,j] = self.Growth(initialcells = np.array([i,j]))
-                self.__growthmatrix = g[:,:,:]
-                self.__growthmatrixgrid = size
+    def ExtendGrowthMatrix(self,size,step=1):
+        changedgrid = False
+        if isinstance(size,int):
+            startX = stopX = len(self.__growthmatrixgridX)
+            startY = stopY = len(self.__growthmatrixgridY)
+            if size > self.__growthmatrixgridX[-1]:
+                self.__growthmatrixgridX = np.concatenate((self.__growthmatrixgridX,np.arange(start = self.__growthmatrixgridX[-1]+step,stop = size,step = step)))
+                stopX = len(self.__growthmatrixgridX)
+            if size > self.__growthmatrixgridY[-1]:
+                self.__growthmatrixgridY = np.concatenate((self.__growthmatrixgridY,np.arange(start = self.__growthmatrixgridY[-1]+step,stop = size,step = step)))
+                stopY = len(self.__growthmatrixgridY)
         else:
-            raise ValueError("Can only extend a full grid")
+            raise NotImplementedError
+
+        g = np.zeros((stopX,stopY,2))
+        for i in range(startX,stopX):
+            for j in range(stopY):
+                g[i,j] = self.Growth(initialcells = np.array([self.__growthmatrixgridX[i],self.__growthmatrixgridY[j]]))
+        for i in range(startX):
+            for j in range(startY,stopY):
+                g[i,j] = self.Growth(initialcells = np.array([self.__growthmatrixgridX[i],self.__growthmatrixgridY[j]]))
+        self.__growthmatrix = g[:,:,:]
     
     
     def getGrowthMultipleStrains(self,size,nstrains=2):
@@ -471,13 +467,10 @@ class GrowthDynamics(object):
             else:
                 return self.__growthmatrix
         elif key == "growthmatrixgrid":
-            if self.__growthmatrixgrid is None:
-                if self.__growthmatrix is None:
-                    raise ValueError("Growthmatrix not yet computed")
-                else:
-                    self.__growthmatrixgrid = self.__growthmatrix
+            if (self.__growthmatrixgridX is None) or (self.__growthmatrixgridY is None):
+                raise ValueError("Growthmatrix not yet computed")
             else:
-                return self.__growthmatrixgrid
+                return (self.__growthmatrixgridX,self.__growthmatrixgridY)
         #else:
             #super(GrowthDynamics,self).__getattr__(key,value)
 
@@ -533,12 +526,12 @@ class GrowthDynamics(object):
         return s
     
     def __getstate__(self):
-        return [self.__kwargs_for_pickle,self.__growthmatrix,self.__growthmatrixgrid]
+        return [self.__kwargs_for_pickle,self.__growthmatrix,(self.__growthmatrixgridX,self.__growthmatrixgridY)]
     
     def __setstate__(self,state):
         self.__init__(**state[0])
         self.__growthmatrix = state[1]
-        self.__growthmatrixgrid = state[2]
+        self.__growthmatrixgridX,self.__growthmatrixgridY = state[2]
 
 class StochasticGrowthDynamics(GrowthDynamics):
     def __init__(self,**kwargs):
