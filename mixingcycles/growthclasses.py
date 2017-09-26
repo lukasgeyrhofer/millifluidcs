@@ -314,14 +314,18 @@ class GrowthDynamics(object):
             self.__growthmatrixgridY = np.arange(start = 0, stop = size, step = step)
         elif isinstance(size,(list,tuple,np.ndarray)):
             if len(size) >= 2
-                if isinstance(size[0],(list,tuple,np.ndarray)):
+                if isinstance(size[0],int):
+                    self.__growthmatrixgridX = np.arange(start = 0,stop = size[0],step = step)
+                elif isinstance(size[0],(list,tuple,np.ndarray)):
                     self.__growthmatrixgridX = size[0]
                 else:
-                    self.__growthmatrixgridX = np.arange(start = 0,stop = size[0],step = step)
-                if isinstance(size[1],(list,tuple,np.ndarray)):
+                    raise ValueError("size argument can only be int or (list/tuple of int)")
+                if isinstance(size[1],int):
+                    self.__growthmatrixgridY = np.arange(start = 0,steop = size[1],step = step)
+                elif isinstance(size[1],(list,tuple,np.ndarray)):
                     self.__growthmatrixgridY = size[1]
                 else:
-                    self.__growthmatrixgridY = np.arange(start = 0,steop = size[1],step = step)
+                    raise ValueError("size argument can only be int or (list/tuple of int)")
         else:
             raise ValueError("size argument does not fit")
         
