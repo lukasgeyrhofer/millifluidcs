@@ -35,16 +35,7 @@ except:
 if not g.hasGrowthMatrix():
     raise ValueError,"Loaded pickle instance does not contain growthmatrix"
 
-if isinstance(g.growthmatrixgrid,int):
-    m = np.arange(g.growthmatrixgrid)
-elif isinstance(g.growthmatrixgrid,(tuple,list,np.ndarray)):
-    if len(len(g.grothmatrixgrid)) == 1:
-        m = g.growthmatrix
-    else:
-        raise ValueError
-else:
-    raise ValueError
-
+mx,my = g.growthmatrixgrid
 dlist = np.arange(start = args.dilutionmin,stop = args.dilutionmax + args.dilutionstep,step = args.dilutionstep)
 nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
 
@@ -59,7 +50,8 @@ for dilution in dlist:
         print "# computing single step dynamics for D = {:e}".format(dilution)
     fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
     for x,y in itertools.product(nlist,repeat=2):
-        px,py = gc.PoissonSeedingVectors(m,np.array((x,y)))
+        px = gc.PoissonSeedingVectors(mx,x)
+        py = gc.PoissonSeedingVectors(my,y)
         nx = np.dot(py,np.dot(px,gm1))*dilution
         ny = np.dot(py,np.dot(px,gm2))*dilution
         if (y==0):

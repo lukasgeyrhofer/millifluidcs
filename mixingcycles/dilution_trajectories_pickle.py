@@ -36,17 +36,7 @@ except:
 if not g.hasGrowthMatrix():
     raise ValueError,"Loaded pickle instance does not contain growthmatrix"
 
-if isinstance(g.growthmatrixgrid,int):
-    m = np.arange(g.growthmatrixgrid)
-elif isinstance(g.growthmatrixgrid,(tuple,list,np.ndarray)):
-    if len(g.growthmatrixgrid) == 2:
-        m = g.growthmatrixgrid[0]
-    elif len(len(g.growthmatrixgrid)) == 1:
-        m = g.growthmatrixgrid
-    else:
-        raise ValueError
-else:
-    raise ValueError
+mx,my = g.growthmatrixgrid
 
 dlist = np.arange(start = args.dilutionmin,stop = args.dilutionmax + args.dilutionstep,step = args.dilutionstep)
 nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
@@ -66,7 +56,8 @@ for dilution in dlist:
         y = icy
         print >> fp,x,y
         for i in range(args.trajectorylength):
-            px,py = gc.PoissonSeedingVectors(m,np.array((x,y)))
+            px = gc.PoissonSeedingVectors(mx,x)
+            py = gc.PoissonSeedingVectors(my,y)
             x = np.dot(py,np.dot(px,gm1))*dilution
             y = np.dot(py,np.dot(px,gm2))*dilution
             print >> fp,x,y

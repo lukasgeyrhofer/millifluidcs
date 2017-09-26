@@ -223,18 +223,18 @@ class GrowthDynamics(object):
             self.addStrain(growthrate = a,yieldfactor = y,deathrate = d)
         
         self.env = Environment( dilution    = kwargs.get("dilution",               1.),
-                                mixingtime  = kwargs.get("mixingtime",             12),
+                                mixingtime  = kwargs.get("mixingtime",             24),
                                 substrate   = kwargs.get("substrateconcentration", 1e4),
                                 numdroplets = kwargs.get("numdroplets") )
         
         self.NR  = {'alpha' :       float(kwargs.get("NR_alpha",     1. )),
                     'precision2' :  float(kwargs.get("NR_precision", 1e-14 ))**2,
                     'maxsteps' :    int(  kwargs.get("NR_maxsteps",  1000 ))}
+
         
         self.__growthmatrix      = None
         self.__growthmatrixgridX = None
         self.__growthmatrixgridY = None
-        
         
         self.__kwargs_for_pickle = kwargs
         
@@ -313,26 +313,30 @@ class GrowthDynamics(object):
             self.__growthmatrixgridX = np.arange(start = 0, stop = size, step = step)
             self.__growthmatrixgridY = np.arange(start = 0, stop = size, step = step)
         elif isinstance(size,(list,tuple,np.ndarray)):
-            if len(size) >= 2
-                if isinstance(size[0],int):
-                    self.__growthmatrixgridX = np.arange(start = 0,stop = size[0],step = step)
-                elif isinstance(size[0],(list,tuple,np.ndarray)):
-                    self.__growthmatrixgridX = size[0]
-                else:
-                    raise ValueError("size argument can only be int or (list/tuple of int)")
+            if isinstance(size[0],int):
+                self.__growthmatrixgridX = np.arange(start = 0,stop = size[0],step = step)
+            elif isinstance(size[0],(list,tuple,np.ndarray)):
+                self.__growthmatrixgridX = size[0]
+            else:
+                raise ValueError("size argument can only be int or (list/tuple of int)")
+
+            if len(size) >= 2:
                 if isinstance(size[1],int):
                     self.__growthmatrixgridY = np.arange(start = 0,steop = size[1],step = step)
                 elif isinstance(size[1],(list,tuple,np.ndarray)):
                     self.__growthmatrixgridY = size[1]
                 else:
                     raise ValueError("size argument can only be int or (list/tuple of int)")
+            else:
+                self.__growthmatrixgridY = self.__growthmatrixgridX[:]
+                
         else:
             raise ValueError("size argument does not fit")
-        
+
         self.__growthmatrix = np.zeros((len(self.__growthmatrixgridX),len(self.__growthmatrixgridY),2))
         for i in range(len(self.__growthmatrixgridX)):
             for j in range(len(self.__growthmatrixgridY)):
-                self.__growthmatrix[i,j] = self.Growth(initialcells = np.array(self.__growthmatrixgridX[i],self.__growthmatrixgridY[j]))
+                self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([self.__growthmatrixgridX[i],self.__growthmatrixgridY[j]]))
 
     
     def getGrowthMatrix(self,size,step=1):
