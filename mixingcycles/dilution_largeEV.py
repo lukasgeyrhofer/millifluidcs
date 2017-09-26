@@ -37,12 +37,12 @@ for y in ylist:
     g = gc.GrowthDynamics(**params)
     n = g.getSingleStrainFixedPointsPoissonSeeding(size=args.maxM)
 
-    growth2_atFP1 = (g.getGrowthMatrix(size = np.array([m,np.ones(1)]))[1]).flatten()
-    growth1_atFP2 = (g.getGrowthMatrix(size = np.array([np.ones(1),m]))[0]).flatten()
+    growth2_atFP1 = g.getGrowthMatrix(size = np.array([m,np.ones(1)]))[:,0,1]
+    growth1_atFP2 = g.getGrowthMatrix(size = np.array([np.ones(1),m]))[0,:,0]
     
     p             = gc.PoissonSeedingVectors(m,n)
     stabFP1       = np.dot(p[0],growth2_atFP1)
     stabFP2       = np.dot(p[1],growth1_atFP2)
     
-    print "{:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f}".format(args.growthrateratio,y,stabFP1,stabFP2,n[0],n[1])
+    print("{:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f}".format(args.growthrateratio,y,stabFP1,stabFP2,n[0],n[1]))
 
