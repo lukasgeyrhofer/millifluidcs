@@ -19,10 +19,10 @@ parser.add_argument("-P","--poissonseeding",default=False,action="store_true")
 
 args = parser.parse_args()
 
-g = gc.GrowthDynamics(**vars(args))
-gm1,gm2 = g.getGrowthMatrix(size = args.maxsize)
+g  = gc.GrowthDynamics(**vars(args))
+gm = g.getGrowthMatrix(size = args.maxsize)
+m  = np.arange(args.maxsize)
 
-m = np.arange(args.maxsize)
 if args.poissonseeding:
     outpoints = np.arange(0,args.outputmax,args.outputdx,dtype=float)
 else:
@@ -44,11 +44,11 @@ for x in outpoints:
     for y in outpoints:
         if args.poissonseeding:
             px,py = gc.PoissonSeedingVectors(m,np.array((x,y)))
-            gx = np.dot(py,np.dot(px,gm1))
-            gy = np.dot(py,np.dot(px,gm2))
+            gx = np.dot(py,np.dot(px,gm[:,:,0]))
+            gy = np.dot(py,np.dot(px,gm[:,:,1]))
         else:
-            gx = gm1[x,y]
-            gy = gm2[x,y]
+            gx = gm[x,y,0]
+            gy = gm[x,y,1]
         print >> fp,"{} {} {} {}".format(x,y,gx,gy)
     print >> fp
 
