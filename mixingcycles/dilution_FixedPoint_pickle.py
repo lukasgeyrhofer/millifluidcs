@@ -40,13 +40,15 @@ except:
     raise IOError,"could not open pickle file"
 
 
-gm1 = g.growthmatrix[:,:,0]*args.dilution
-gm2 = g.growthmatrix[:,:,1]*args.dilution
-m   = np.arange(g.growthmatrixgrid)
+gm1   = g.growthmatrix[:,:,0]*args.dilution
+gm2   = g.growthmatrix[:,:,1]*args.dilution
+mx,my = g.growthmatrixgrid
 
 # initial condition are the respective fixed points on the axis
 if args.initialconditions is None:
-    n   = g.getSingleStrainFixedPointsApproximate()
+    g.setDilution(args.dilution)
+    n = g.getSingleStrainFixedPointsApproximate()
+    
 else:
     n   = np.array(args.initialconditions,dtype=float)
     assert len(n) == g.numstrains
@@ -63,22 +65,23 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
         print >> sys.stderr,"{:4d} {:12.8e} {:12.8e}".format(i,n[0],n[1])
     
     # probabilities for seeding new droplets, assumed to be poissonian
-    px,dpx = gc.PoissonSeedingVectors(m,n,cutoff = args.cutoff,diff=True)
+    px,dpx = gc.PoissonSeedingVectors(mx,[n[0]],cutoff = args.cutoff,diff=True)
+    py,dpy = gc.PoissonSeedingVectors(my,[n[1]],cutoff = args.cutoff,diff=True)
     
     # construct iteration function for growth and dilution
     # by weighting growth with the probability of how droplets are seeded
-    growth1 = np.dot(px[1], np.dot(px[0], gm1))
-    growth2 = np.dot(px[1], np.dot(px[0], gm2))
+    growth1 = np.dot(py[0], np.dot(px[0], gm1))
+    growth2 = np.dot(py[0], np.dot(px[0], gm2))
     fn = np.array([growth1,growth2]) - n
     
     if args.newtonraphson:
         # NR iterations 
 
         # get jacobian of dynamics
-        j[0,0] = np.dot( px[1], np.dot(dpx[0], gm1)) - 1.
-        j[0,1] = np.dot(dpx[1], np.dot( px[0], gm1))
-        j[1,0] = np.dot( px[1], np.dot(dpx[0], gm2))
-        j[1,1] = np.dot(dpx[1], np.dot( px[0], gm2)) - 1.
+        j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1)) - 1.
+        j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1))
+        j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2))
+        j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2)) - 1.
         
         # calculate step in NR iteration
         dn = -args.alpha * np.dot(np.linalg.inv(j),fn)
@@ -98,12 +101,13 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
 
 
 # stability of fixed point is checked with jacobian
-px,dpx = gc.PoissonSeedingVectors(m,n,cutoff = args.cutoff,diff=True)
+px,dpx = gc.PoissonSeedingVectors(mx,[n[0]],cutoff = args.cutoff,diff=True)
+py,dpy = gc.PoissonSeedingVectors(my,[n[1]],cutoff = args.cutoff,diff=True)
 
-j[0,0] = np.dot( px[1], np.dot(dpx[0], gm1))
-j[0,1] = np.dot(dpx[1], np.dot( px[0], gm1))
-j[1,0] = np.dot( px[1], np.dot(dpx[0], gm2))
-j[1,1] = np.dot(dpx[1], np.dot( px[0], gm2))
+j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1))
+j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1))
+j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2))
+j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2))
 
 
 w,v = np.linalg.eig(j)
