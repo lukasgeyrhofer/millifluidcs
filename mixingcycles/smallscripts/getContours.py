@@ -25,7 +25,6 @@ except:
 x = np.unique(data[:,args.xcolumn])
 y = np.unique(data[:,args.ycolunm])
 z = data[:,args.zcolumn].reshape((len(x),len(y)))
-
 contours = measure.find_contours(z,args.contourvalue)
 
 for c in contours:
