@@ -25,11 +25,11 @@ def gamma1(mm1,mm2,params):
     if m1 == 0 or m2 == 0:
         return 1
     else:
-        m   = m1/m2
-        if m > 1: #m1 >= m2:
-            gamma = 1. - m2/(sy1+m1) * (1./y) * (np.power(sy1/m1+1.,a)-1)
-        else:
-            gamma = 1. - m2/(sy1+m1) * (1./y) * np.power(m,1+1./a)*np.power(sy1/m1 + np.power(m,1./(1-a)),1./a)
+        #m   = m1/m2
+        #if m > 1: #m1 >= m2:
+            #gamma = 1. - m2/(sy1+m1) * (1./y) * (np.power(sy1/m1+1.,a)-1.)
+        #else:
+        gamma = 1. - m2/(sy1+m1) * (1./y) * (np.power(sy1/m1+np.power(m2/m1,1/(1.-a)),a)-1.)
         
         if inv:
             return 1. - gamma
