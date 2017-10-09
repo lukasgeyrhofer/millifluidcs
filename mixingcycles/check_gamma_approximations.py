@@ -26,10 +26,10 @@ def gamma1(mm1,mm2,params):
         return 1
     else:
         #m   = m1/m2
-        #if m > 1: #m1 >= m2:
-            #gamma = 1. - m2/(sy1+m1) * (1./y) * (np.power(sy1/m1+1.,a)-1.)
-        #else:
-        gamma = 1. - m2/(sy1+m1) * (1./y) * (np.power(sy1/m1+np.power(m2/m1,1/(1.-a)),a)-1.)
+        if m1 > m2: #m1 >= m2:
+            gamma = 1. - m2/(sy1+m1) * (1./y) * (np.power(sy1/m1+1.,a)-1.)
+        else:
+            gamma = 1. - m2/(sy1+m1) * (1./y) * (np.power(sy1/m1+np.power(m2/m1,1/(1.-a)),a)-1.)
         
         if inv:
             return 1. - gamma
@@ -47,7 +47,6 @@ args   = parser.parse_args()
 
 g   = gc.GrowthDynamics(**vars(args))
 gm  = g.getGrowthMatrix(args.maxGMsize)
-
 
 for x in range(args.maxGMsize):
     for y in range(args.maxGMsize):

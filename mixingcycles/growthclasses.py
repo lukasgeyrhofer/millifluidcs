@@ -66,6 +66,8 @@ def AddNRParameters(p):
 
 
 def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
+    if isinstance(n,(float,np.float,np.float64)):
+        n = np.array([n])
     px = np.zeros((len(n),len(m)))
     if diff:
         dpx = np.zeros((len(n),len(m)))

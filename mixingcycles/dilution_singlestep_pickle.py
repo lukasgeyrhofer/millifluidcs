@@ -18,7 +18,7 @@ parser_io.add_argument("-v","--verbose",default=False,action="store_true")
 
 parser_dilution = parser.add_argument_group(description = "Parameters for dilution values")
 parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
-parser_dilution.add_argument("-D","--dilutionmax",type=float,default=1e-5)
+parser_dilution.add_argument("-D","--dilutionmax",type=float,default=None)
 parser_dilution.add_argument("-K","--dilutionstep",type=float,default=1e-6)
 
 parser_flowmap = parser.add_argument_group(description = "Parameters for Flowmap between mixing cycles")
@@ -36,7 +36,10 @@ if not g.hasGrowthMatrix():
     raise ValueError,"Loaded pickle instance does not contain growthmatrix"
 
 mx,my = g.growthmatrixgrid
-dlist = np.arange(start = args.dilutionmin,stop = args.dilutionmax + args.dilutionstep,step = args.dilutionstep)
+if args.dilutionmax is None:
+    dlist = np.array([args.dilutionmin])
+else:
+    dlist = np.arange(start = args.dilutionmin,stop = args.dilutionmax + args.dilutionstep,step = args.dilutionstep)
 nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
 
 gm1 = g.growthmatrix[:,:,0]
@@ -50,13 +53,11 @@ for dilution in dlist:
         print "# computing single step dynamics for D = {:e}".format(dilution)
     fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
     for x,y in itertools.product(nlist,repeat=2):
-        px = gc.PoissonSeedingVectors(mx,x)
-        py = gc.PoissonSeedingVectors(my,y)
+        px = gc.PoissonSeedingVectors(mx,x)[0]
+        py = gc.PoissonSeedingVectors(my,y)[0]
         nx = np.dot(py,np.dot(px,gm1))*dilution
         ny = np.dot(py,np.dot(px,gm2))*dilution
-        if (y==0):
-            print >> fp
-        print >> fp,x,y,nx,ny
+        fp.write('{} {} {} {}'.format(x,y,nx,ny))
             
     fp.close()
             
