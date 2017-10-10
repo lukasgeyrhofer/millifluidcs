@@ -58,7 +58,22 @@ for dilution in dlist:
         ny_onestep[i] = np.dot(py[1],np.dot(py[0],gm[:,:,1]))*dilution
     nullcline_intersection2 = np.interp(0,(ny_onestep - ny)[::-1],ny[::-1])
     realslope2              = (nullcline_intersection2 - fp[1])/args.slopeoffset
+    
+    
+    # gamma approximations
 
+    # not yet working....
+    ###a = g.growthrates[1]/g.growthrates[0]
+    ###y = g.yieldfactors[1]/g.yieldfactors[0]
+    
+    ###fp_ss_approx = dilution/(1-dilution) * g.env.substrate * g.yieldfactors
+    
+    ###sy_m_1 = g.env.substrate * g.yieldfactors / np.array([fp_ss_approx[0],1])
+    ###sy_m_2 = g.env.substrate * g.yieldfactors / np.array([1,fp_ss_approx[1]])
+    
+    ###slope1_approx = - (1-dilution) / (sy_m_1[1] * (np.power(sy_m_1[0] + 1,a)-1) * fp_ss_approx[0])
+    ###slope2_approx = - (sy_m_2[0] * fp_ss_approx[1] * np.power(
+                                      
 
     if args.verbose:
         print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-realslope1,-realslope2,nullcline_intersection1,nullcline_intersection2,,fp[0],fp[1],inv12,inv21,excessgrowth1,excessgrowth2)
