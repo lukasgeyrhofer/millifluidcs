@@ -47,8 +47,7 @@ for dilution in dlist:
         px            = gc.PoissonSeedingVectors(m,[nx[i],args.slopeoffset])
         nx_onestep[i] = np.dot(px[1],np.dot(px[0],gm[:,:,0]))*dilution
     nullcline_intersection1 = np.interp(0,(nx_onestep - nx)[::-1],nx[::-1])
-    realslope1              = args.slopeoffset/(nullcline_intersection1 - fp[0])
-
+    slope1_numerics         = args.slopeoffset/(nullcline_intersection1 - fp[0])
     
     # slope of nullcline 2
     ny         = np.arange(start = 0,stop = fp[1] + 1.,step = args.slopeoffset)
@@ -57,26 +56,29 @@ for dilution in dlist:
         py            = gc.PoissonSeedingVectors(m,[args.slopeoffset,ny[i]])
         ny_onestep[i] = np.dot(py[1],np.dot(py[0],gm[:,:,1]))*dilution
     nullcline_intersection2 = np.interp(0,(ny_onestep - ny)[::-1],ny[::-1])
-    realslope2              = (nullcline_intersection2 - fp[1])/args.slopeoffset
+    slope2_numerics         = (nullcline_intersection2 - fp[1])/args.slopeoffset
     
+
+    # slopes with <G(m)> = G(<m>)
+    g11                    = g.Growth(initialcells = np.array([fp[0],1]))
+    g10                    = g.Growth(initialcells = np.array([fp[0] + 1,0])
+    g21                    = g.Growth(initialcells = np.array([1,fp[1]]))
+    g20                    = g.Growth(initialcells = np.array([0,fp[1]+1]))
+    slope1_pullexpectation = (1-g11[0]-fp[0])/(g10[0] - fp[0])
+    slope2_pullexpectation = (g20[1] - fp[1])/(1-g21[1]-fp[1])
+
     
     # gamma approximations
-
-    # not yet working....
-    ###a = g.growthrates[1]/g.growthrates[0]
-    ###y = g.yieldfactors[1]/g.yieldfactors[0]
-    
-    ###fp_ss_approx = dilution/(1-dilution) * g.env.substrate * g.yieldfactors
-    
-    ###sy_m_1 = g.env.substrate * g.yieldfactors / np.array([fp_ss_approx[0],1])
-    ###sy_m_2 = g.env.substrate * g.yieldfactors / np.array([1,fp_ss_approx[1]])
-    
-    ###slope1_approx = - (1-dilution) / (sy_m_1[1] * (np.power(sy_m_1[0] + 1,a)-1) * fp_ss_approx[0])
-    ###slope2_approx = - (sy_m_2[0] * fp_ss_approx[1] * np.power(
+    a             = g.growthrates[1]/g.growthrates[0]
+    sy            = g.env.substrate * g.yieldfactors
+    y             = g.yieldfactors[1]/g.yieldfactors[0]
+    fp_appr       = dilution/(1-dilution) * sy
+    slope1_approx = - sy[1] * (1-dilution) / ((np.power(sy[0]/fp_appr[0] + 1.,a)-1)*fp_appr[0])
+    slope2_approx = - (1-fp_appr[1]/sy[1] * (np.power(sy[0]+1+(1-np.power(fp_appr,1/(1-a)))/y,a)-1)
                                       
 
     if args.verbose:
-        print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-realslope1,-realslope2,nullcline_intersection1,nullcline_intersection2,,fp[0],fp[1],inv12,inv21,excessgrowth1,excessgrowth2)
+        print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-realslope1,-realslope2,nullcline_intersection1,nullcline_intersection2,,fp[0],fp[1],inv12,inv21,excessgrowth1,excessgrowth2,-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
     else:
-        print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-realslope1,-realslope2)
+        print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-slope1_numerics,-slope2_numerics,-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
     
