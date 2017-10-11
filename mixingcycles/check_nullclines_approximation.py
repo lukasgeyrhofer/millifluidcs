@@ -61,7 +61,7 @@ for dilution in dlist:
 
     # slopes with <G(m)> = G(<m>)
     g11                    = g.Growth(initialcells = np.array([fp[0],1]))
-    g10                    = g.Growth(initialcells = np.array([fp[0] + 1,0])
+    g10                    = g.Growth(initialcells = np.array([fp[0] + 1,0]))
     g21                    = g.Growth(initialcells = np.array([1,fp[1]]))
     g20                    = g.Growth(initialcells = np.array([0,fp[1]+1]))
     slope1_pullexpectation = (1-g11[0]-fp[0])/(g10[0] - fp[0])
