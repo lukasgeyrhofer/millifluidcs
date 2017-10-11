@@ -66,7 +66,6 @@ for dilution in dlist:
     g20                    = g.Growth(initialcells = np.array([0,fp[1]+1]))
     slope1_pullexpectation = (1-g11[0]-fp[0])/(g10[0] - fp[0])
     slope2_pullexpectation = (g20[1] - fp[1])/(1-g21[1]-fp[1])
-
     
     # gamma approximations
     a             = g.growthrates[1]/g.growthrates[0]
@@ -74,11 +73,12 @@ for dilution in dlist:
     y             = g.yieldfactors[1]/g.yieldfactors[0]
     fp_appr       = dilution/(1-dilution) * sy
     slope1_approx = - sy[1] * (1-dilution) / ((np.power(sy[0]/fp_appr[0] + 1.,a)-1)*fp_appr[0])
-    slope2_approx = - (1-fp_appr[1]/sy[1] * (np.power(sy[0]+1+(1-np.power(fp_appr,1/(1-a)))/y,a)-1)
-                                      
+    slope2_approx = - (1-fp_appr[1]/sy[1] * (np.power(sy[0]+1+(1-np.power(fp_appr[1],1/(1-a)))/y,a)-1))*fp_appr[1]
+    
 
     if args.verbose:
-        print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-realslope1,-realslope2,nullcline_intersection1,nullcline_intersection2,,fp[0],fp[1],inv12,inv21,excessgrowth1,excessgrowth2,-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
+        print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-realslope1,-realslope2,nullcline_intersection1,nullcline_intersection2,fp[0],fp[1],inv12,inv21,excessgrowth1,excessgrowth2,-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
     else:
-        print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-slope1_numerics,-slope2_numerics,-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
+        print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} '.format(dilution,-slope1,-slope2,-slope1_numerics,-slope2_numerics),
+        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
     
