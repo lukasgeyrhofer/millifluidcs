@@ -72,7 +72,7 @@ for dilution in dlist:
     sy            = g.env.substrate * g.yieldfactors
     y             = g.yieldfactors[1]/g.yieldfactors[0]
     fp_appr       = dilution/(1-dilution) * sy
-    gamma1_fp_1   = 1 - 1./sy[1] * (np.power(sy[0]/fp_appr[0] +1.,a)-1.)
+    gamma1_fp_1   = 1 - 1./sy[1] * (np.power(sy[0]/fp_appr[0] +1. - (np.power(sy[0]/fp_appr[0]+1,a)-1)/(fp_appr[0] * y),a)-1.)
     gamma2_1_fp   = fp_appr[1]/sy[1] * (np.power(sy[0]+1.+(1.-np.power(fp_appr[1],1./(1.-a)))/y,a)-1.)
     slope1_approx = 1./((gamma1_fp_1 - 1.)*fp_appr[0])
     slope2_approx = (gamma2_1_fp - 1.)* fp_appr[1]
