@@ -64,16 +64,18 @@ for dilution in dlist:
     g10                    = g.Growth(initialcells = np.array([fp[0] + 1,0]))
     g21                    = g.Growth(initialcells = np.array([1,fp[1]]))
     g20                    = g.Growth(initialcells = np.array([0,fp[1]+1]))
-    slope1_pullexpectation = (1-g11[0]-fp[0])/(g10[0] - fp[0])
-    slope2_pullexpectation = (g20[1] - fp[1])/(1-g21[1]-fp[1])
+    slope1_pullexpectation = (1 - g10[0] + fp[0])/(g11[0] - fp[0])
+    slope2_pullexpectation = (g21[1] - fp[1])/(1 - g20[1] + fp[1])
     
     # gamma approximations
     a             = g.growthrates[1]/g.growthrates[0]
     sy            = g.env.substrate * g.yieldfactors
     y             = g.yieldfactors[1]/g.yieldfactors[0]
     fp_appr       = dilution/(1-dilution) * sy
-    slope1_approx = - sy[1] * (1-dilution) / ((np.power(sy[0]/fp_appr[0] + 1.,a)-1)*fp_appr[0])
-    slope2_approx = - (1-fp_appr[1]/sy[1] * (np.power(sy[0]+1+(1-np.power(fp_appr[1],1/(1-a)))/y,a)-1))*fp_appr[1]
+    gamma1_fp_1   = 1 - 1./sy[1] * (np.power(sy[0]/fp_appr[0] +1.,a)-1.)
+    gamma2_1_fp   = fp_appr[1]/sy[1] * (np.power(sy[0]+1.+(1.-np.power(fp_appr[1],1./(1.-a)))/y,a)-1.)
+    slope1_approx = 1./((gamma1_fp_1 - 1.)*fp_appr[0])
+    slope2_approx = (gamma2_1_fp - 1.)* fp_appr[1]
     
 
     if args.verbose:
