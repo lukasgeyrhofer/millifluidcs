@@ -6,6 +6,8 @@ import sys,math
 
 import growthclasses as gc
 
+from scipy.special import lambertw
+
 parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser)
 
@@ -77,10 +79,21 @@ for dilution in dlist:
     slope1_approx = 1./((gamma1_fp_1 - 1.)*fp_appr[0])
     slope2_approx = (gamma2_1_fp - 1.)* fp_appr[1]
     
+    # new approximations from LW-func
+    LWgamma1_fp_1_O1 = 1 - np.power(sy[0]/fp_appr[0] + 1,a)/sy[1]
+    LWgamma1_fp_1_O2 = 1 - np.power(sy[0]/fp_appr[0] + 1,a)/sy[1] * (1 + (.5-a)*np.power(sy[0]/fp_appr[0]+1,a)/sy[1])
+    LWgamma1_fp_1_Oe = np.exp(lambertw(-(1-a)*np.power(sy[0]/fp_appr[0],a)/sy[1])/(1-a))
+    
+    slope1_approxLW1 = 1./((LWgamma1_fp_1_O1-1)*fp_appr[0])
+    slope1_approxLW2 = 1./((LWgamma1_fp_1_O2-1)*fp_appr[0])
+    slope1_approxLWe = 1./((LWgamma1_fp_1_Oe-1)*fp_appr[0])
+    
+    
 
     if args.verbose:
         print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-realslope1,-realslope2,nullcline_intersection1,nullcline_intersection2,fp[0],fp[1],inv12,inv21,excessgrowth1,excessgrowth2,-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
     else:
         print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} '.format(dilution,-slope1,-slope2,-slope1_numerics,-slope2_numerics),
-        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
+        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx),
+        print '{:14.6e} {:14.6e} {:14.6e}'.format(slope1_approxLW1,slope1_approxLW2,slope1_approxLWe)
     
