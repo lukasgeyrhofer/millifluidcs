@@ -82,7 +82,7 @@ for dilution in dlist:
     # new approximations from LW-func
     LWgamma1_fp_1_O1 = 1 - np.power(sy[0]/fp_appr[0] + 1,a)/sy[1]
     LWgamma1_fp_1_O2 = 1 - np.power(sy[0]/fp_appr[0] + 1,a)/sy[1] * (1 + (.5-a)*np.power(sy[0]/fp_appr[0]+1,a)/sy[1])
-    LWgamma1_fp_1_Oe = np.exp(lambertw(-(1-a)*np.power(sy[0]/fp_appr[0],a)/sy[1])/(1-a))
+    LWgamma1_fp_1_Oe = np.exp(lambertw(-(1-a)*np.power(sy[0]/fp_appr[0],a)/sy[1], k = -1)/(1-a))
     
     slope1_approxLW1 = 1./((LWgamma1_fp_1_O1-1)*fp_appr[0])
     slope1_approxLW2 = 1./((LWgamma1_fp_1_O2-1)*fp_appr[0])
@@ -95,5 +95,5 @@ for dilution in dlist:
     else:
         print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} '.format(dilution,-slope1,-slope2,-slope1_numerics,-slope2_numerics),
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx),
-        print '{:14.6e} {:14.6e} {:14.6e}'.format(slope1_approxLW1,slope1_approxLW2,slope1_approxLWe)
+        print '{:14.6e} {:14.6e} {:14.6e}'.format(-slope1_approxLW1,-slope1_approxLW2,-slope1_approxLWe)
     
