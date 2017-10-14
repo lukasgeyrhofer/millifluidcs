@@ -80,11 +80,11 @@ for dilution in dlist:
     slope2_approx = (gamma2_1_fp - 1.)* fp_appr[1]
     
     # new approximations from LW-func
-    LWgamma1_fp_1_O1 = 1 - np.power(sy[0]/fp_appr[0] + 1,a)/sy[1]
-    LWgamma1_fp_1_O2 = 1 - np.power(sy[0]/fp_appr[0] + 1,a)/sy[1] * (1 + (.5-a)*np.power(sy[0]/fp_appr[0]+1,a)/sy[1])
-    tmp_complex      = np.exp(lambertw(-(1-a)*np.power(sy[0]/fp_appr[0],a)/sy[1], k = 0)/(1-a))
-    LWgamma1_fp_1_Oe = np.real(tmp_complex)
-    LWgamma1_fp_1_Oe_i = np.imag(tmp_complex)
+    LWgamma1_fp_1_O1   = 1 - np.power(sy[0]/fp_appr[0] + 1,a)/sy[1]
+    LWgamma1_fp_1_O2   = 1 - np.power(sy[0]/fp_appr[0] + 1,a)/sy[1] * (1 + (.5-a)*np.power(sy[0]/fp_appr[0]+1,a)/sy[1])
+    tmp_complex        = np.exp(lambertw(-(1-a)*np.power(sy[0]/fp_appr[0],a)/sy[1], k = 0)/(1-a))
+    LWgamma1_fp_1_Oe   = float(np.real(tmp_complex))
+    LWgamma1_fp_1_Oe_i = float(np.imag(tmp_complex))
     
     
     
