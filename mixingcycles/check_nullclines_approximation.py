@@ -14,6 +14,7 @@ parser = gc.AddGrowthParameters(parser)
 parser.add_argument("-d","--dilutionmin",  type=float, default = 4e-6)
 parser.add_argument("-D","--dilutionmax",  type=float, default = 1e-4)
 parser.add_argument("-K","--dilutionstep", type=float, default = 2e-6)
+parser.add_argument("-L","--dilutionLOG",              default = False, action = "store_true")
 
 parser.add_argument("-m","--maxM",         type=int,   default = 50)
 parser.add_argument("-s","--slopeoffset",  type=float, default = .1)
@@ -23,9 +24,12 @@ args = parser.parse_args()
 
 g     = gc.GrowthDynamics(**vars(args))
 gm    = g.getGrowthMatrix(args.maxM)
-
 m     = np.arange(args.maxM)
-dlist = np.arange(start = args.dilutionmin,stop = args.dilutionmax, step = args.dilutionstep)
+
+if args.dilutionLOG:
+    dlist = np.power(10,np.arange(start = args.dilutionmin,stop = args.dilutionmax, step = args.dilutionstep))
+else:
+    dlist = np.arange(start = args.dilutionmin,stop = args.dilutionmax, step = args.dilutionstep)
 
 for dilution in dlist:
     g.setDilution(dilution)
@@ -86,8 +90,6 @@ for dilution in dlist:
     LWgamma1_fp_1_Oe   = float(np.real(tmp_complex))
     LWgamma1_fp_1_Oe_i = float(np.imag(tmp_complex))
     
-    
-    
     slope1_approxLW1 = 1./((LWgamma1_fp_1_O1-1)*fp_appr[0])
     slope1_approxLW2 = 1./((LWgamma1_fp_1_O2-1)*fp_appr[0])
     slope1_approxLWe = 1./((LWgamma1_fp_1_Oe-1)*fp_appr[0])
@@ -97,7 +99,8 @@ for dilution in dlist:
     if args.verbose:
         print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-realslope1,-realslope2,nullcline_intersection1,nullcline_intersection2,fp[0],fp[1],inv12,inv21,excessgrowth1,excessgrowth2,-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
     else:
-        print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} '.format(dilution,-slope1,-slope2,-slope1_numerics,-slope2_numerics),
+        print '{:14.6e}'.format(dilution),
+        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1,-slope2,-slope1_numerics,-slope2_numerics),
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx),
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_approxLW1,-slope1_approxLW2,-slope1_approxLWe,LWgamma1_fp_1_Oe_i)
     
