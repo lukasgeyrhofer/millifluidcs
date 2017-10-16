@@ -296,7 +296,7 @@ class DropletData(object):
         except:
             raise IOError("could not open file '{:s}' to save restrictions".format(filename))
         for restriction in self.__datarestrictions:
-            fp.write(restriction[0] + " " + restriction[0] + " " + " ".join([str(x) for x in restriction[2]]))
+            fp.write(restriction[0] + " " + restriction[1] + " " + " ".join([str(x) for x in restriction[2]]))
         if not filename is None:
             fp.close()
 
