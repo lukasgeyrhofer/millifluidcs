@@ -8,6 +8,13 @@ import growthclasses as gc
 
 from scipy.special import lambertw
 
+def lw(x,onlyReal = True):
+    if onlyReal:
+        return float(np.real(lambertw(x)))
+    else:
+        return lambertw(x)
+
+
 parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser)
 
@@ -100,12 +107,12 @@ for dilution in dlist:
     E1   = g.env.substrate * g.yieldfactors[0] / fp_appr[0]
     E2   = g.env.substrate * g.yieldfactors[1] / 1.
     iam1 = 1./(a-1.)
-    gamma2_NA = 1. - iam1 * E1/E2 / lambertw(e2* iam1 * np.exp((1+e2/e1)*iam1))
+    gamma2_NA = 1. - iam1 * E1/E2 / lw(E2* iam1 * np.exp((1+E2/E1)*iam1))
     # invasion of strain 1 at SSFP2
     E1   = g.env.substrate * g.yieldfactors[0] / 1.
     E2   = g.env.substrate * g.yieldfactors[1] / fp_appr[1]
     iam1 = 1./(a-1.)
-    gamma1_NA = iam1 * E1/E2 / lambertw(e2* iam1 * np.exp((1+e2/e1)*iam1))
+    gamma1_NA = iam1 * E1/E2 / lw(E2* iam1 * np.exp((1+E2/E1)*iam1))
     
     
     
