@@ -52,7 +52,7 @@ for dilution in dlist:
     for i in range(len(nx)):
         px            = gc.PoissonSeedingVectors(m,[nx[i],args.slopeoffset])
         nx_onestep[i] = np.dot(px[1],np.dot(px[0],gm[:,:,0]))*dilution
-    nullcline_intersection1 = np.interp(0,(nx_onestep - nx)[::-1],nx[::-1])
+    nullcline_intersection1 = np.interp(0,(nx_onestep - nx)[::-1],nx[::-1]) # list of values needs to be increasing for numpy to work.
     slope1_numerics         = args.slopeoffset/(nullcline_intersection1 - fp[0])
     
     # slope of nullcline 2
@@ -95,6 +95,22 @@ for dilution in dlist:
     slope1_approxLWe = 1./((LWgamma1_fp_1_Oe-1)*fp_appr[0])
     
     
+    # even newer approximations using LW
+    # invasion of strain 2 at SSFP1
+    E1   = g.env.substrate * g.yieldfactors[0] / fp_appr[0]
+    E2   = g.env.substrate * g.yieldfactors[1] / 1.
+    iam1 = 1./(a-1.)
+    gamma2_NA = 1. - iam1 * E1/E2 / lambertw(e2* iam1 * np.exp((1+e2/e1)*iam1))
+    # invasion of strain 1 at SSFP2
+    E1   = g.env.substrate * g.yieldfactors[0] / 1.
+    E2   = g.env.substrate * g.yieldfactors[1] / fp_appr[1]
+    iam1 = 1./(a-1.)
+    gamma1_NA = iam1 * E1/E2 / lambertw(e2* iam1 * np.exp((1+e2/e1)*iam1))
+    
+    
+    
+    
+    
 
     if args.verbose:
         print '{:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(dilution,-slope1,-slope2,-realslope1,-realslope2,nullcline_intersection1,nullcline_intersection2,fp[0],fp[1],inv12,inv21,excessgrowth1,excessgrowth2,-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx)
@@ -102,5 +118,6 @@ for dilution in dlist:
         print '{:14.6e}'.format(dilution),
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1,-slope2,-slope1_numerics,-slope2_numerics),
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx),
-        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_approxLW1,-slope1_approxLW2,-slope1_approxLWe,LWgamma1_fp_1_Oe_i)
+        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_approxLW1,-slope1_approxLW2,-slope1_approxLWe,LWgamma1_fp_1_Oe_i),
+        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(gamma1_NA,gamma2_NA,gamma1_NA * fp_appr[0],gamma2_NA * fp_appr[1])
     
