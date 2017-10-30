@@ -115,7 +115,9 @@ for dilution in dlist:
     gamma1_NA = iam1 * E1/E2 / lw(E2* iam1 * np.exp((1+E2/E1)*iam1))
     
     
-    
+    # exact invasion growth
+    invg_fp1 = np.dot(gm[:,1,1],px[0])*dilution
+    invg_fp2 = np.dot(gm[1,:,0],px[1])*dilution
     
     
 
@@ -126,5 +128,6 @@ for dilution in dlist:
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1,-slope2,-slope1_numerics,-slope2_numerics),
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_pullexpectation,-slope2_pullexpectation,-slope1_approx,-slope2_approx),
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(-slope1_approxLW1,-slope1_approxLW2,-slope1_approxLWe,LWgamma1_fp_1_Oe_i),
-        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(gamma1_NA,gamma2_NA,gamma1_NA * fp_appr[0],gamma2_NA * fp_appr[1])
+        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(gamma1_NA,gamma2_NA,gamma1_NA * fp_appr[0],gamma2_NA * fp_appr[1]),
+        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(g11[1],g21[0],invg_fp1,invg_fp2)
     
