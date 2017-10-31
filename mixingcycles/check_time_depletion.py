@@ -11,7 +11,7 @@ def lw(x,complex = False):
     if complex:
         return r
     else:
-        return r.real
+        return np.array(r.real,dtype=float)
 
 def ten_to(x):
     return np.power(10.,x)
@@ -67,12 +67,24 @@ for a in alist:
         tdepl_near1_approx = (1+E2_near1/E1_near1)/(1.-a) + lw(E2_near1/(a-1)*np.exp((1+E2_near1/E1_near1)/(a-1)))
         tdepl_near2_approx = (1+E2_near2/E1_near2)/(1.-a) + lw(E2_near2/(a-1)*np.exp((1+E2_near2/E1_near2)/(a-1)))
         
+        px = gc.PoissonSeedingVectors(np.arange(args.maxM),fp)
+        GM2_near1 = np.zeros(args.maxM)
+        GM1_near2 = np.zeros(args.maxM)
+        for i in range(args.maxM):
+            GM2_near1[i] = g.Growth(initialcells = np.array([i,1]))[1]
+            GM1_near2[i] = g.Growth(initialcells = np.array([1,i]))[0]
+        G2_near1 = np.dot(GM2_near1,px[0])
+        G1_near2 = np.dot(GM1_near2,px[1])
+        
+        Gn2_near1 = g.Growth(initialcells = np.array([fp[0],1]))[1]
+        Gn1_near2 = g.Growth(initialcells = np.array([1,fp[1]]))[0]
+        
+        G2_near1_approx = np.exp(a * tdepl_near1_approx + np.log(dilution))
+        G1_near2_approx = np.exp(tdepl_near2_approx + np.log(dilution))
+        
         print '{:7.4f} {:7.4f}'.format(a,y),
-        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(tdepl_near1_exact, tdepl_near2_exact, tdepl_near1_approxFP, tdepl_near2_approxFP, tdepl_near1_approx, tdepl_near2_approx)
+        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(tdepl_near1_exact, tdepl_near2_exact, tdepl_near1_approxFP, tdepl_near2_approxFP, tdepl_near1_approx, tdepl_near2_approx),
+        print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(G2_near1, G1_near2, Gn2_near1, Gn1_near2),
+        print '{:14.6e} {:14.6e}'.format(G2_near1_approx, G1_near2_approx)
     print
-        
-        
-        
-        
-        
-        
+    
