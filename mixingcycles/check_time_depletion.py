@@ -53,20 +53,22 @@ for a in alist:
         g.yieldfactors = np.array([1,y])
         
         fp = g.getSingleStrainFixedPointsPoissonSeeding(size = args.maxM)
-        
-        tdepl_near1_exact = g.getTimeToDepletion(initialcells = np.array([fp[0],1]))
-        tdepl_near2_exact = g.getTimeToDepletion(initialcells = np.array([1,fp[1]]))
+
+        # calculate time to depletion
+        tdepl_near1_exact    = g.getTimeToDepletion(initialcells = np.array([fp[0],1]))
+        tdepl_near2_exact    = g.getTimeToDepletion(initialcells = np.array([1,fp[1]]))
         
         tdepl_near1_approxFP = g.getTimeToDepletion(initialcells = np.array([dSY1,1]))
         tdepl_near2_approxFP = g.getTimeToDepletion(initialcells = np.array([1,dSY1*y]))
         
-        E1_near1 = args.substrate/fp[0]
-        E2_near1 = y * args.substrate
-        E1_near2 = args.substrate
-        E2_near2 = y * args.substrate/fp[1]
-        tdepl_near1_approx = (1+E2_near1/E1_near1)/(1.-a) + lw(E2_near1/(a-1)*np.exp((1+E2_near1/E1_near1)/(a-1)))
-        tdepl_near2_approx = (1+E2_near2/E1_near2)/(1.-a) + lw(E2_near2/(a-1)*np.exp((1+E2_near2/E1_near2)/(a-1)))
+        E1_near1             = args.substrate/fp[0]
+        E2_near1             = y * args.substrate
+        E1_near2             = args.substrate
+        E2_near2             = y * args.substrate/fp[1]
+        tdepl_near1_approx   = (1+E2_near1/E1_near1)/(1.-a) + lw(E2_near1/(a-1)*np.exp((1+E2_near1/E1_near1)/(a-1)))
+        tdepl_near2_approx   = (1+E2_near2/E1_near2)/(1.-a) + lw(E2_near2/(a-1)*np.exp((1+E2_near2/E1_near2)/(a-1)))
         
+        # use time to depletion to estimate growth
         px = gc.PoissonSeedingVectors(np.arange(args.maxM),fp)
         GM2_near1 = np.zeros(args.maxM)
         GM1_near2 = np.zeros(args.maxM)
@@ -76,15 +78,24 @@ for a in alist:
         G2_near1 = np.dot(GM2_near1,px[0])
         G1_near2 = np.dot(GM1_near2,px[1])
         
-        Gn2_near1 = g.Growth(initialcells = np.array([fp[0],1]))[1]
-        Gn1_near2 = g.Growth(initialcells = np.array([1,fp[1]]))[0]
+        Gn2_near1             = g.Growth(initialcells = np.array([fp[0],1]))[1]
+        Gn1_near2             = g.Growth(initialcells = np.array([1,fp[1]]))[0]
+        Gn2_near1_othermethod = np.exp(a * tdepl_near1_exact + np.log(args.dilution))
+        Gn1_near2_othermethod = np.exp(    tdepl_near2_exact + np.log(args.dilution))
         
-        G2_near1_approx = np.exp(a * tdepl_near1_approx + np.log(dilution))
-        G1_near2_approx = np.exp(tdepl_near2_approx + np.log(dilution))
+        G2_near1_approx       = np.exp(a * tdepl_near1_approx + np.log(args.dilution))
+        G1_near2_approx       = np.exp(    tdepl_near2_approx + np.log(args.dilution))
         
+        # output
         print '{:7.4f} {:7.4f}'.format(a,y),
+        #                              1 2
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(tdepl_near1_exact, tdepl_near2_exact, tdepl_near1_approxFP, tdepl_near2_approxFP, tdepl_near1_approx, tdepl_near2_approx),
+        #                                                                    3                  4                  5                     6                     6                   8
         print '{:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(G2_near1, G1_near2, Gn2_near1, Gn1_near2),
-        print '{:14.6e} {:14.6e}'.format(G2_near1_approx, G1_near2_approx)
+        #                                                  9         10        11         12
+        print '{:14.6e} {:14.6e}'.format(G2_near1_approx, G1_near2_approx),
+        #                                13               14
+        print '{:14.6e} {:14.6e}'.format(Gn2_near1_othermethod, Gn1_near2_othermethod)
+        #                                15                     16
     print
     
