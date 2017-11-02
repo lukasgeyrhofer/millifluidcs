@@ -46,7 +46,14 @@ else:
         dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax, num = args.dilutionbins)
 
 nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
-m1,m2 = g.growthmatrixgrid
+
+if isinstance(g.growthmatrixgrid,int):
+    # backward compatibility
+    m1 = np.arange(g.growthmatrixgrid)
+    m2 = np.arange(g.growthmatrixgrid)
+else:
+    # current implementation
+    m1,m2 = g.growthmatrixgrid
 
 # growth matrices
 gm1 = g.growthmatrix[:,:,0]
