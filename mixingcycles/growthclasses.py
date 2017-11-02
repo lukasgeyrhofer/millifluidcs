@@ -542,7 +542,13 @@ class GrowthDynamics(object):
     def __setstate__(self,state):
         self.__init__(**state[0])
         self.__growthmatrix = state[1]
-        self.__growthmatrixgridX,self.__growthmatrixgridY = state[2]
+        if isinstance(state[2],int):
+            # backward compatibility
+            self.__growthmatrixgridX = np.arange(state[2])
+            self.__growthmatrixgridY = np.arange(state[2])
+        else:
+            # current implementation
+            self.__growthmatrixgridX,self.__growthmatrixgridY = state[2]
 
 class StochasticGrowthDynamics(GrowthDynamics):
     def __init__(self,**kwargs):
