@@ -74,6 +74,7 @@ for dilution in dlist:
     if args.verbose:
         print "# computing single step dynamics for D = {:e}".format(dilution)
     fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
+    lastx = None
     for x,y in itertools.product(nlist,repeat=2):
         p1 = gc.PoissonSeedingVectors(m1,x)[0]
         p2 = gc.PoissonSeedingVectors(m2,y)[0]
@@ -90,6 +91,9 @@ for dilution in dlist:
         S1 = np.dot(p2,np.dot(p1,dps1)) * dilution
         S2 = np.dot(p2,np.dot(p1,dps2)) * dilution
         
+        if lastx != x:
+            fp.write("\n")
+        lastx = x
         fp.write('{:6.3f} {:6.3f} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n'.format(x,y,G1,G2,R1,R2,r1,r2,S1,S2))
         #                                                                                                           1 2 3  4  5  6  7  8  9  10
             
