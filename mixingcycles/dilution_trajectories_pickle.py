@@ -64,8 +64,8 @@ for dilution in dlist:
         y = icy
         fp.write("{} {}\n".format(x,y))
         for i in range(args.trajectorylength):
-            px = gc.PoissonSeedingVectors(mx,x)
-            py = gc.PoissonSeedingVectors(my,y)
+            px = gc.PoissonSeedingVectors(mx,x)[0]
+            py = gc.PoissonSeedingVectors(my,y)[0]
             x = np.dot(py,np.dot(px,gm1))*dilution
             y = np.dot(py,np.dot(px,gm2))*dilution
             fp.write("{} {}\n".format(x,y))
