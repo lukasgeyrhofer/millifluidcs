@@ -81,11 +81,11 @@ for dilution in dlist:
         G1 = np.dot(p2,np.dot(p1,gm1)) * dilution
         G2 = np.dot(p2,np.dot(p1,gm2)) * dilution
         
-        R1 = np.dot(p2,np.dot(p1,dpp1)) * dilution
-        R2 = np.dot(p2,np.dot(p1,dpp2)) * dilution
+        R1 = np.dot(p2,np.dot(p1,dpp1))
+        R2 = np.dot(p2,np.dot(p1,dpp2))
         
-        r1 = np.dot(p2,np.dot(p1,dp1)) * dilution
-        r2 = np.dot(p2,np.dot(p1,dp2)) * dilution
+        r1 = np.dot(p2,np.dot(p1,dp1))
+        r2 = np.dot(p2,np.dot(p1,dp2))
         
         S1 = np.dot(p2,np.dot(p1,dps1)) * dilution
         S2 = np.dot(p2,np.dot(p1,dps2)) * dilution
