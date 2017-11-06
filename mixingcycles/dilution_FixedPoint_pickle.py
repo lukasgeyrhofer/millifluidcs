@@ -13,7 +13,6 @@ def im(x):
     return float(np.imag(x))
 
 
-
 parser = argparse.ArgumentParser()
 #parser = gc.AddGrowthParameters(parser,dilution=True)
 parser.add_argument("-i","--infile",help = "Pickle-file with stored parameters and growthmatrix")
@@ -31,13 +30,14 @@ parser_general = parser.add_argument_group(description = "=== General and I/O pa
 parser_general.add_argument("-v","--verbose",action="store_true",default=False,help = "output current values every iteration step")
 parser_general.add_argument("-V","--printeigenvectors",default=False,action="store_true",help = "print eigenvectors of linearized iteration map")
 parser_general.add_argument("-I","--initialconditions",default=None,nargs="*",help="Override initial conditions when set")
+parser_general.add_argument("-C","--complexOutput",default=False,action="store_true",help="Print real and imaginary parts of eigenvalues (and eigenvectors) [default: only real]")
 args = parser.parse_args()
 
 
 try:
     g = pickle.load(open(args.infile))
 except:
-    raise IOError,"could not open pickle file"
+    raise IOError("could not open pickle file")
 
 
 gm1   = g.growthmatrix[:,:,0]*args.dilution
@@ -58,11 +58,11 @@ j          = np.zeros((2,2))    # jacobian
 stepcount  = 0                  # number of steps for debugging
 
 if args.verbose:
-    print >> sys.stderr,"# starting iterations ..."
+    sys.stdout.write("# starting iterations ... \n")
 
 while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
     if args.verbose:
-        print >> sys.stderr,"{:4d} {:12.8e} {:12.8e}".format(i,n[0],n[1])
+        sys.stderr.write("{:4d} {:12.8e} {:12.8e}\n".format(stepcount,n[0],n[1]))
     
     # probabilities for seeding new droplets, assumed to be poissonian
     px,dpx = gc.PoissonSeedingVectors(mx,[n[0]],cutoff = args.cutoff,diff=True)
@@ -114,14 +114,16 @@ w,v = np.linalg.eig(j)
 
 # final output
 
-outputstring  = "{:14.6f} {:14.6f} {:14.6e} {:14.6e} {:4d} ".format(g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
-outputstring += "{:14.6f} {:14.6f} ".format(re(w[0]),re(w[1]))
-#outputstring += "{:11.6f} {:11.6f}".format(im(w[0]),im(w[1])),
+outputstring  = "{:14.6f} {:14.6f} {:14.6e} {:14.6e} {:4d}".format(g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
+outputstring += " {:14.6f} {:14.6f}".format(re(w[0]),re(w[1]))
+if args.complexOutput:
+    # have yet to find complex eigenvalues
+    outputstring += " {:14.6f} {:14.6f}".format(im(w[0]),im(w[1]))
 
 if args.printeigenvectors:
-    outputstring += "{:14.6f} {:14.6f} {:14.6f} {:14.6f}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1]))
-    #outputstring += "{:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1]))
-print outputstring
+    outputstring += " {:14.6f} {:14.6f} {:14.6f} {:14.6f}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1]))
+    if args.complexOutput:
+        outputstring += " {:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1]))
+sys.stdout.write(outputstring + "\n")
 
-# have yet to find complex eigenvalues
 
