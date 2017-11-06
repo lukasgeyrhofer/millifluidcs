@@ -95,7 +95,7 @@ while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
     n[n<0] = 0
     
     if not args.maxiterations is None:
-        if i > args.maxiterations:
+        if stepcount > args.maxiterations:
             break
     stepcount += 1
 
