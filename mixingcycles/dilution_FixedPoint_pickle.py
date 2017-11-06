@@ -114,7 +114,7 @@ w,v = np.linalg.eig(j)
 
 # final output
 
-outputstring  = "{:14.6f} {:14.6f} {:14.6e} {:14.6e} {:4d}".format(g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
+outputstring  = "{:14.6e} {:8.6f} {:8.6f} {:14.6e} {:14.6e} {:4d}".format(args.dilution,g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
 outputstring += " {:14.6f} {:14.6f}".format(re(w[0]),re(w[1]))
 if args.complexOutput:
     # have yet to find complex eigenvalues
