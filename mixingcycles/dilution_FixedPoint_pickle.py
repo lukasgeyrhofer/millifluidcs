@@ -14,13 +14,11 @@ def im(x):
 
 
 parser = argparse.ArgumentParser()
-#parser = gc.AddGrowthParameters(parser,dilution=True)
 parser.add_argument("-i","--infile",help = "Pickle-file with stored parameters and growthmatrix")
 parser.add_argument("-d","--dilution",type=float,default=1e-4,help = "dilution rate")
 
 parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ===")
 parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False,help = "Plain iteration of dynamics or try to use NR to estimate fixed point")
-#parser_algorithm.add_argument("-m","--maxM",type=int,default=100,help = "maximum possible number for seeding [default: 100]")
 parser_algorithm.add_argument("-p","--precision",type=float,default=1e-20,help = "relative precision as premature stopping condition, computed as sum( (dn/n)^2 ) [default: 1e-20]")
 parser_algorithm.add_argument("-M","--maxiterations",type=int,default=None, help = "maximum number of iterations [default: None, iterate until precision is reached]")
 parser_algorithm.add_argument("-A","--alpha",type=float,default=1.,help = "convergence parameter for NR [default: 1.0]")
@@ -48,7 +46,6 @@ mx,my = g.growthmatrixgrid
 if args.initialconditions is None:
     g.setDilution(args.dilution)
     n = g.getSingleStrainFixedPointsApproximate()
-    
 else:
     n   = np.array(args.initialconditions,dtype=float)
     assert len(n) == g.numstrains
@@ -115,15 +112,15 @@ w,v = np.linalg.eig(j)
 # final output
 
 outputstring  = "{:14.6e} {:8.6f} {:8.6f} {:14.6e} {:14.6e} {:4d}".format(args.dilution,g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
-outputstring += " {:14.6f} {:14.6f}".format(re(w[0]),re(w[1]))
+outputstring += " {:14.6e} {:14.6e}".format(re(w[0]),re(w[1]))
 if args.complexOutput:
     # have yet to find complex eigenvalues
-    outputstring += " {:14.6f} {:14.6f}".format(im(w[0]),im(w[1]))
+    outputstring += " {:14.6e} {:14.6e}".format(im(w[0]),im(w[1]))
 
 if args.printeigenvectors:
-    outputstring += " {:14.6f} {:14.6f} {:14.6f} {:14.6f}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1]))
+    outputstring += " {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1]))
     if args.complexOutput:
-        outputstring += " {:11.6f} {:11.6f} {:11.6f} {:11.6f}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1]))
+        outputstring += " {:11.6e} {:11.6e} {:11.6e} {:11.6e}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1]))
 sys.stdout.write(outputstring + "\n")
 
 
