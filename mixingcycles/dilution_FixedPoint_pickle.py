@@ -59,7 +59,7 @@ if args.verbose:
 
 while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
     if args.verbose:
-        sys.stderr.write("{:4d} {:12.8e} {:12.8e}\n".format(stepcount,n[0],n[1]))
+        sys.stderr.write("{:4d} {:13.6e} {:13.6e}\n".format(stepcount,n[0],n[1]))
     
     # probabilities for seeding new droplets, assumed to be poissonian
     px,dpx = gc.PoissonSeedingVectors(mx,[n[0]],cutoff = args.cutoff,diff=True)
@@ -111,16 +111,16 @@ w,v = np.linalg.eig(j)
 
 # final output
 
-outputstring  = "{:14.6e} {:8.6f} {:8.6f} {:14.6e} {:14.6e} {:4d}".format(args.dilution,g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
-outputstring += " {:14.6e} {:14.6e}".format(re(w[0]),re(w[1]))
+outputstring  = "{:13.6e} {:8.6f} {:8.6f} {:13.6e} {:13.6e} {:4d}".format(args.dilution,g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
+outputstring += " {:13.6e} {:13.6e}".format(re(w[0]),re(w[1]))
 if args.complexOutput:
     # have yet to find complex eigenvalues
-    outputstring += " {:14.6e} {:14.6e}".format(im(w[0]),im(w[1]))
+    outputstring += " {:13.6e} {:13.6e}".format(im(w[0]),im(w[1]))
 
 if args.printeigenvectors:
-    outputstring += " {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1]))
+    outputstring += " {:13.6e} {:13.6e} {:13.6e} {:13.6e}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1]))
     if args.complexOutput:
-        outputstring += " {:11.6e} {:11.6e} {:11.6e} {:11.6e}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1]))
+        outputstring += " {:13.6e} {:13.6e} {:13.6e} {:13.6e}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1]))
 sys.stdout.write(outputstring + "\n")
 
 
