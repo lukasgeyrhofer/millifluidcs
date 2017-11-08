@@ -3,7 +3,7 @@
 import numpy as np
 import argparse
 import sys,math
-
+sys.path.append(sys.path[0] + '/../')
 import growthclasses as gc
 
 def gamma1(mm1,mm2,params):

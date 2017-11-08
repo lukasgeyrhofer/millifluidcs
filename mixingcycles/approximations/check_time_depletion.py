@@ -3,6 +3,7 @@
 import argparse
 import numpy as np
 import sys,math
+sys.path.append(sys.path[0] + '/../')
 import growthclasses as gc
 from scipy.special import lambertw
 
