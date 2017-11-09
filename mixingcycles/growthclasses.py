@@ -364,20 +364,14 @@ class GrowthDynamics(object):
         else:
             raise NotImplementedError
 
-        print new_growthmatrixgridX
-        print new_growthmatrixgridY
-
         g = np.zeros((len(new_growthmatrixgridX),len(new_growthmatrixgridY),2))
         for i in range(len(new_growthmatrixgridX)):
             x = new_growthmatrixgridX[i]
             for j in range(len(new_growthmatrixgridY)):
                 y = new_growthmatrixgridY[j]
-                print x,y
                 if (x in self.__growthmatrixgridX) and (y in self.__growthmatrixgridX):
-                    print "copy"
                     g[i,j] = self.__growthmatrix[i,j]
                 else:
-                    print "compute"
                     g[i,j] = self.Growth(initialcells = np.array([x,y]))
         self.__growthmatrixgridX = new_growthmatrixgridX[:]
         self.__growthmatrixgridY = new_growthmatrixgridY[:]
