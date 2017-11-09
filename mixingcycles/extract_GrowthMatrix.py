@@ -34,13 +34,12 @@ else:
 if args.verbose:
     print >> sys.stderr,g.ParameterString()
 
-
 if isinstance(g.growthmatrixgrid,int):
     for x in range(g.growthmatrixgrid):
         for y in range(g.growthmatrixgrid):
             print >> out,x,y,g.growthmatrix[x,y,0],g.growthmatrix[x,y,1]
         print >> out
-elif isinstance(g.growthmatrixgrid,np.ndarray):
+elif isinstance(g.growthmatrixgrid,(tuple,list,np.ndarray)):
     gridx = g.growthmatrixgrid[0]
     gridy = g.growthmatrixgrid[1]
     for i in range(len(gridx)):
