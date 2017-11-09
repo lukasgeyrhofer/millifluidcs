@@ -353,24 +353,34 @@ class GrowthDynamics(object):
     def ExtendGrowthMatrix(self,size,step=1):
         changedgrid = False
         if isinstance(size,int):
-            startX = stopX = len(self.__growthmatrixgridX)
-            startY = stopY = len(self.__growthmatrixgridY)
             if size > self.__growthmatrixgridX[-1]:
-                self.__growthmatrixgridX = np.concatenate((self.__growthmatrixgridX,np.arange(start = self.__growthmatrixgridX[-1]+step,stop = size,step = step)))
-                stopX = len(self.__growthmatrixgridX)
+                new_growthmatrixgridX = np.concatenate((self.__growthmatrixgridX,np.arange(start = self.__growthmatrixgridX[-1]+step,stop = size,step = step)))
+            else:
+                new_growthmatrixgridX = self.__growthmatrixgridX
             if size > self.__growthmatrixgridY[-1]:
-                self.__growthmatrixgridY = np.concatenate((self.__growthmatrixgridY,np.arange(start = self.__growthmatrixgridY[-1]+step,stop = size,step = step)))
-                stopY = len(self.__growthmatrixgridY)
+                new_growthmatrixgridY = np.concatenate((self.__growthmatrixgridY,np.arange(start = self.__growthmatrixgridY[-1]+step,stop = size,step = step)))
+            else:
+                new_growthmatrixgridY = self.__growthmatrixgridY
         else:
             raise NotImplementedError
 
-        g = np.zeros((stopX,stopY,2))
-        for i in range(startX,stopX):
-            for j in range(stopY):
-                g[i,j] = self.Growth(initialcells = np.array([self.__growthmatrixgridX[i],self.__growthmatrixgridY[j]]))
-        for i in range(startX):
-            for j in range(startY,stopY):
-                g[i,j] = self.Growth(initialcells = np.array([self.__growthmatrixgridX[i],self.__growthmatrixgridY[j]]))
+        print new_growthmatrixgridX
+        print new_growthmatrixgridY
+
+        g = np.zeros((len(new_growthmatrixgridX),len(new_growthmatrixgridY),2))
+        for i in range(len(new_growthmatrixgridX)):
+            x = new_growthmatrixgridX[i]
+            for j in range(len(new_growthmatrixgridY)):
+                y = new_growthmatrixgridY[j]
+                print x,y
+                if (x in self.__growthmatrixgridX) and (y in self.__growthmatrixgridX):
+                    print "copy"
+                    g[i,j] = self.__growthmatrix[i,j]
+                else:
+                    print "compute"
+                    g[i,j] = self.Growth(initialcells = np.array([x,y]))
+        self.__growthmatrixgridX = new_growthmatrixgridX[:]
+        self.__growthmatrixgridY = new_growthmatrixgridY[:]
         self.__growthmatrix = g[:,:,:]
     
     

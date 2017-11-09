@@ -45,16 +45,16 @@ else:
         raise IOError,"could not open pickle file"
     if args.verbose:print g.ParameterString()
     if g.hasGrowthMatrix():
-        g.ExtendGrowthMatrix(size = args.maxsize)
+        g.ExtendGrowthMatrix(size = args.maxsize,step = args.step)
     else:
         raise IOError,"pickle file does not contain growthmatrix"
     
 try:
     fp = open(args.outfile,"w")
     pickle.dump(g,fp)
+    fp.close()
 except IOError:
-    print >> sys.stderr,"could not open file for pickle dump"
-    exit(1)
+    raise IOError("could not open file for pickle dump")
         
     
 
