@@ -54,7 +54,7 @@ if args.verbose:
 
 for dilution in dlist:
     if args.verbose:
-        sys.stdout.write("# computing single step dynamics for D = {:e}".format(dilution))
+        sys.stdout.write("# computing single step dynamics for D = {:e}\n".format(dilution))
     fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
     lastx = None
     for x,y in itertools.product(nlist,repeat=2):

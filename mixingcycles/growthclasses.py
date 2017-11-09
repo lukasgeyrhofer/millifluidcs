@@ -351,7 +351,6 @@ class GrowthDynamics(object):
         return not (self.__growthmatrix is None)
     
     def ExtendGrowthMatrix(self,size,step=1):
-        changedgrid = False
         if isinstance(size,int):
             if size > self.__growthmatrixgridX[-1]:
                 new_growthmatrixgridX = np.concatenate((self.__growthmatrixgridX,np.arange(start = self.__growthmatrixgridX[-1]+step,stop = size,step = step)))
@@ -373,9 +372,10 @@ class GrowthDynamics(object):
                     g[i,j] = self.__growthmatrix[i,j]
                 else:
                     g[i,j] = self.Growth(initialcells = np.array([x,y]))
+                    
         self.__growthmatrixgridX = new_growthmatrixgridX[:]
         self.__growthmatrixgridY = new_growthmatrixgridY[:]
-        self.__growthmatrix = g[:,:,:]
+        self.__growthmatrix      = g[:,:,:]
     
     
     def getGrowthMultipleStrains(self,size,nstrains=2):
