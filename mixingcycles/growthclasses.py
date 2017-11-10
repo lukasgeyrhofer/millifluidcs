@@ -1015,3 +1015,49 @@ class GrowthDynamicsPyoverdin2(GrowthDynamics):
         r = '\n'
         s  = super(GrowthDynamicsPyoverdin2,self).ParameterString() +r
         return r
+
+
+
+
+class GrowthDynamicsPyoverdin3(GrowthDynamics):
+    def __init__(self,**kwargs):
+        if kwargs.get("mixingtime") is None:
+            kwargs["mixingtime"] = 12.
+
+        super(GrowthDynamicsPyoverdin2,self).__init__(**kwargs)
+        
+        self.PVDparams = {  'PVDproduction' :  np.array(kwargs.get("PVDproduction",np.zeros(self.numstrains)),dtype=np.float64),
+                          'PVDmatchingSiderophores' : np.ones(self.numstrains),
+                          'InternalIronYieldCoefficient' np.ones(self.numstrains)}
+        
+        self.dyn = TimeIntegrator(dynamics = self.dynPVD3, initialconditions = np.zeros(2*self.numstrains + 1),params = None, requiredpositive = True)
+        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        for i in range(self.numstrains):
+            self.dyn.setPopulationExtinctionThreshold(i,1)
+    
+    def dynPVD3(self,t,x,param):
+        y = self.yieldfactors *( 1 + self.PVDparams['InternalIronYieldCoefficient'] * x[self.numstrains:2*self.numstrains] )
+        if x[-1] > 0:
+            a = self.growthrates
+        else:
+            a = np.zeros(self.numstrains)
+        return np.concatenate([
+            a*x[:self.numstrains],
+            self.PVDparams['production_efficiency']/self.growthrates * x[:-self.numstrains-3]) - a * x[self.numstrains:2*self.numstrains],
+            np.array([-np.sum(a * x[:-3]/y)])
+            ])
+
+    def Growth(self,initialcells = None):
+        ic = self.checkInitialCells(initialcells)
+        ic = np.concatenate([ic,np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])])
+        self.dyn.ResetInitialConditions(ic)
+        self.dyn.IntegrateToEndConditions()
+        return self.dyn.populations[:-3]*self.env.dilution
+    
+
+    def ParameterString(self):
+        r = '\n'
+        s  = super(GrowthDynamicsPyoverdin3,self).ParameterString() +r
+        return r
+
+        
