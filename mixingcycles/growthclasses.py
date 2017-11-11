@@ -1026,9 +1026,14 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
 
         super(GrowthDynamicsPyoverdin2,self).__init__(**kwargs)
         
-        self.PVDparams = {  'PVDproduction' :  np.array(kwargs.get("PVDproduction",np.zeros(self.numstrains)),dtype=np.float64),
-                          'PVDmatchingSiderophores' : np.ones(self.numstrains),
-                          'InternalIronYieldCoefficient' np.ones(self.numstrains)}
+        self.PVDparams = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.zeros(self.numstrains),dtype=np.float64),\
+                            'ProductionEfficiency' : np.array(kwargs.get("PVD_Production_Efficiency",np.zeros(self.numstrains),dtype=np.float64),\
+                            'InitialInternalIron' : np.array(kwargs.get("PVD_Initial_Internal_Iron",np.zeros(self.numstrains),dtype=np.float64),\
+                            'MatchingReceptors' : np.array(kwargs.get("PVD_matching_receptors_forPVD",np.zeros(self.numstrains),dtype=np.float64)
+                        }
+        
+        assert len(self.PVDparams['ProductionEfficiency']) == self.numstrains, "PVD production not defined correctly"
+        assert np.sum(self.PVDparams['ProductionEfficiency']) > 0, "PVD is not produced"
         
         self.dyn = TimeIntegrator(dynamics = self.dynPVD3, initialconditions = np.zeros(2*self.numstrains + 1),params = None, requiredpositive = True)
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
@@ -1043,13 +1048,13 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
             a = np.zeros(self.numstrains)
         return np.concatenate([
             a*x[:self.numstrains],
-            self.PVDparams['production_efficiency']/self.growthrates * x[:-self.numstrains-3]) - a * x[self.numstrains:2*self.numstrains],
+            self.PVDparams['MatchingReceptors'] * np.sum( self.PVDparams['ProductionEfficiency']/self.growthrates * x[:-self.numstrains-3]) - a * x[self.numstrains:2*self.numstrains],
             np.array([-np.sum(a * x[:-3]/y)])
             ])
 
     def Growth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])])
+        ic = np.concatenate([ic,np.array([self.env.substrate,self.PVDparams['InitialInternalIron'],self.env.substrate])])
         self.dyn.ResetInitialConditions(ic)
         self.dyn.IntegrateToEndConditions()
         return self.dyn.populations[:-3]*self.env.dilution
