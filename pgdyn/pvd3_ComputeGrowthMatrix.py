@@ -16,3 +16,9 @@ parser_pvd.add_argument("-P","--PVD_Production_Efficiency",type=float,nargs="*",
 parser_pvd.add_argument("-M","--PVD_Matching_Receptors",type=float,nargs="*",default=[1,1])
 parser_pvd.add_argument("-I","--PVD_Initial_Internal_Iron",type=float,nargs="*",default=[0,0])
 
+parser_gm = parser.add_argument_group(description = "==== Growthmatrix calculation ====")
+parser_gm.add_argument("-m","--maxM",default=40,type=int)
+parser_gm.add_argument("-M","--stepM",default=1,type=int)
+
+args = parser.parse_args()
+
