@@ -1029,7 +1029,7 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
         self.PVDparams = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.zeros(self.numstrains),dtype=np.float64),\
                             'ProductionEfficiency' : np.array(kwargs.get("PVD_Production_Efficiency",np.zeros(self.numstrains),dtype=np.float64),\
                             'InitialInternalIron' : np.array(kwargs.get("PVD_Initial_Internal_Iron",np.zeros(self.numstrains),dtype=np.float64),\
-                            'MatchingReceptors' : np.array(kwargs.get("PVD_matching_receptors_forPVD",np.zeros(self.numstrains),dtype=np.float64)
+                            'MatchingReceptors' : np.array(kwargs.get("PVD_Matching_Receptors",np.zeros(self.numstrains),dtype=np.float64)
                         }
         
         assert len(self.PVDparams['ProductionEfficiency']) == self.numstrains, "PVD production not defined correctly"
