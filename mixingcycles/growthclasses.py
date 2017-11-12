@@ -1066,7 +1066,7 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
 
     def Growth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,np.ones(self.numstrains) * self.PVDparams['InitialInternalIron'],np.array([self.env.substrate])])
+        ic = np.concatenate([ic,self.PVDparams['InitialInternalIron'],np.array([self.env.substrate])])
         self.dyn.ResetInitialConditions(ic)
         self.dyn.IntegrateToEndConditions()
         return self.dyn.populations[:-3]*self.env.dilution
