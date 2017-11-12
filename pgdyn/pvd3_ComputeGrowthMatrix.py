@@ -8,7 +8,7 @@ sys.path.append(sys.path[0] + '/../mixingcycles/')
 import growthclasses as gc
 
 parser = argparse.ArgumentParser()
-parser = gc.AddGrowthParameters(parser,dilution=True)
+parser = gc.AddGrowthParameters(parser,defaultmixingtime=24,dilution=False)
 
 parser_pvd = parser.add_argument_group(description = "==== Parameters for interactions with PVD ====")
 parser_pvd.add_argument("-Y","--PVD_Internal_Yield",type=float,nargs="*",default=[1,1])
@@ -36,7 +36,7 @@ if args.outfile is None:
 if args.infile is None:
     g    = gc.GrowthDynamicsPyoverdin3(**vars(args))
     if args.verbose:print g.ParameterString()
-    g.ComputeGrowthMatrix(size = args.maxsize,step = args.step)
+    g.ComputeGrowthMatrix(size = args.maxM,step = args.stepM)
 
 else:
     try:

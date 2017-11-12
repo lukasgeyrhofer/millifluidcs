@@ -1024,12 +1024,12 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
         if kwargs.get("mixingtime") is None:
             kwargs["mixingtime"] = 12.
 
-        super(GrowthDynamicsPyoverdin2,self).__init__(**kwargs)
+        super(GrowthDynamicsPyoverdin3,self).__init__(**kwargs)
         
-        self.PVDparams = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.ones(self.numstrains),dtype=np.float64)),
-                            'Production' :                   np.array(kwargs.get("PVD_Production",np.zeros(self.numstrains),dtype=np.float64)),
-                            'InitialInternalIron' :          np.array(kwargs.get("PVD_Initial_Internal_Iron",np.zeros(self.numstrains),dtype=np.float64)),
-                            'MatchingReceptors' :            np.array(kwargs.get("PVD_Matching_Receptors",np.zeros(self.numstrains),dtype=np.float64)),
+        self.PVDparams = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.ones(self.numstrains)),dtype=np.float64),
+                            'Production' :                   np.array(kwargs.get("PVD_Production",np.zeros(self.numstrains)),dtype=np.float64),
+                            'InitialInternalIron' :          np.array(kwargs.get("PVD_Initial_Internal_Iron",np.zeros(self.numstrains)),dtype=np.float64),
+                            'MatchingReceptors' :            np.array(kwargs.get("PVD_Matching_Receptors",np.zeros(self.numstrains)),dtype=np.float64),
                             'BaseIronInflux':                         kwargs.get("PVD_Base_Iron_Influx",1),
                             'Kpvd' :                                  kwargs.get("PVD_Kpvd",1e-30),
                             'TotalIron' :                             kwargs.get("PVD_Total_Iron",1e3),
@@ -1046,13 +1046,17 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
     
     
     def g(self,iron,pvd):
-        a = (iron + pvd - 1)/(2.*pvd)
-        b = iron/pvd
-        return np.min(0.,a - np.sqrt(a*a - b))
+        r = 0
+        if pvd > 0:
+            a = (iron + pvd - 1)/(2.*pvd)
+            b = iron/pvd
+            if a*a > 0:
+                r = a - np.sqrt(a*a - b)
+        return r
     
     def dynPVD3(self,t,x,param):
         y = self.yieldfactors *( 1 + self.PVDparams['InternalIronYieldCoefficient'] * x[self.numstrains:2*self.numstrains] )
-        totalPVD = np.sum(self.PVDparams['ProductionEfficiency']/self.growthrates * x[:self.numstrains])
+        totalPVD = np.sum(self.PVDparams['Production']/self.growthrates * x[:self.numstrains])
         pvdFe = self.g(self.PVDparams['TotalIron']/self.PVDparams['Kpvd'],totalPVD/self.PVDparams['Kpvd']) * totalPVD
         if x[-1] > 0:
             a = self.growthrates
