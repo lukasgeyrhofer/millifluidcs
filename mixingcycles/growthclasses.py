@@ -1026,35 +1026,47 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
 
         super(GrowthDynamicsPyoverdin2,self).__init__(**kwargs)
         
-        self.PVDparams = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.zeros(self.numstrains),dtype=np.float64),\
-                            'ProductionEfficiency' : np.array(kwargs.get("PVD_Production_Efficiency",np.zeros(self.numstrains),dtype=np.float64),\
-                            'InitialInternalIron' : np.array(kwargs.get("PVD_Initial_Internal_Iron",np.zeros(self.numstrains),dtype=np.float64),\
-                            'MatchingReceptors' : np.array(kwargs.get("PVD_Matching_Receptors",np.zeros(self.numstrains),dtype=np.float64)
+        self.PVDparams = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.ones(self.numstrains),dtype=np.float64),\
+                            'Production' :                   np.array(kwargs.get("PVD_Production",np.zeros(self.numstrains),dtype=np.float64),\
+                            'InitialInternalIron' :          np.array(kwargs.get("PVD_Initial_Internal_Iron",np.zeros(self.numstrains),dtype=np.float64),\
+                            'MatchingReceptors' :            np.array(kwargs.get("PVD_Matching_Receptors",np.zeros(self.numstrains),dtype=np.float64),\
+                            'BaseIronInflux':                         kwargs.get("PVD_Base_Iron_Influx",1),\
+                            'Kpvd' :                                  kwargs.get("PVD_Kpvd",1e-30),\
+                            'TotalIron' :                             kwargs.get("PVD_Total_Iron",1e3),
+                            'Efficiency' :                            kwargs.get("PVD_Efficiency",1e-3) 
                         }
         
-        assert len(self.PVDparams['ProductionEfficiency']) == self.numstrains, "PVD production not defined correctly"
-        assert np.sum(self.PVDparams['ProductionEfficiency']) > 0, "PVD is not produced"
+        assert len(self.PVDparams['Production']) == self.numstrains, "PVD production not defined correctly"
+        assert np.sum(self.PVDparams['Production']) > 0, "PVD is not produced"
         
         self.dyn = TimeIntegrator(dynamics = self.dynPVD3, initialconditions = np.zeros(2*self.numstrains + 1),params = None, requiredpositive = True)
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
     
+    
+    def g(self,iron,pvd):
+        a = (iron + pvd - 1)/(2.*pvd)
+        b = iron/pvd
+        return np.min(0.,a - np.sqrt(a*a - b))
+    
     def dynPVD3(self,t,x,param):
         y = self.yieldfactors *( 1 + self.PVDparams['InternalIronYieldCoefficient'] * x[self.numstrains:2*self.numstrains] )
+        totalPVD = np.sum(self.PVDparams['ProductionEfficiency']/self.growthrates * x[:self.numstrains])
+        pvdFe = self.g(self.PVDparams['TotalIron']/self.PVDparams['Kpvd'],totalPVD/self.PVDparams['Kpvd']) * totalPVD
         if x[-1] > 0:
             a = self.growthrates
         else:
             a = np.zeros(self.numstrains)
         return np.concatenate([
             a*x[:self.numstrains],
-            self.PVDparams['MatchingReceptors'] * np.sum( self.PVDparams['ProductionEfficiency']/self.growthrates * x[:-self.numstrains-3]) - a * x[self.numstrains:2*self.numstrains],
+            -a*x[self.numstrains:2*self.numstrains] + self.PVDparams['Efficiency'] * pvdFe + self.PVDparams['BaseIronInflux'],
             np.array([-np.sum(a * x[:-3]/y)])
             ])
 
     def Growth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,np.array([self.env.substrate,self.PVDparams['InitialInternalIron'],self.env.substrate])])
+        ic = np.concatenate([ic,np.ones(self.numstrains) * self.PVDparams['InitialInternalIron'],np.array([self.env.substrate])])
         self.dyn.ResetInitialConditions(ic)
         self.dyn.IntegrateToEndConditions()
         return self.dyn.populations[:-3]*self.env.dilution
