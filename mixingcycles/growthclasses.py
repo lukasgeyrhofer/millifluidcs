@@ -1026,12 +1026,12 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
 
         super(GrowthDynamicsPyoverdin2,self).__init__(**kwargs)
         
-        self.PVDparams = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.ones(self.numstrains),dtype=np.float64),\
-                            'Production' :                   np.array(kwargs.get("PVD_Production",np.zeros(self.numstrains),dtype=np.float64),\
-                            'InitialInternalIron' :          np.array(kwargs.get("PVD_Initial_Internal_Iron",np.zeros(self.numstrains),dtype=np.float64),\
-                            'MatchingReceptors' :            np.array(kwargs.get("PVD_Matching_Receptors",np.zeros(self.numstrains),dtype=np.float64),\
-                            'BaseIronInflux':                         kwargs.get("PVD_Base_Iron_Influx",1),\
-                            'Kpvd' :                                  kwargs.get("PVD_Kpvd",1e-30),\
+        self.PVDparams = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.ones(self.numstrains),dtype=np.float64)),
+                            'Production' :                   np.array(kwargs.get("PVD_Production",np.zeros(self.numstrains),dtype=np.float64)),
+                            'InitialInternalIron' :          np.array(kwargs.get("PVD_Initial_Internal_Iron",np.zeros(self.numstrains),dtype=np.float64)),
+                            'MatchingReceptors' :            np.array(kwargs.get("PVD_Matching_Receptors",np.zeros(self.numstrains),dtype=np.float64)),
+                            'BaseIronInflux':                         kwargs.get("PVD_Base_Iron_Influx",1),
+                            'Kpvd' :                                  kwargs.get("PVD_Kpvd",1e-30),
                             'TotalIron' :                             kwargs.get("PVD_Total_Iron",1e3),
                             'Efficiency' :                            kwargs.get("PVD_Efficiency",1e-3) 
                         }
