@@ -3,6 +3,8 @@
 import numpy as np
 import argparse
 import sys,math
+import pickle
+import inspect
 
 sys.path.append(sys.path[0] + '/../mixingcycles/')
 import growthclasses as gc
