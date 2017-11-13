@@ -1014,7 +1014,7 @@ class GrowthDynamicsPyoverdin2(GrowthDynamics):
     def ParameterString(self):
         r = '\n'
         s  = super(GrowthDynamicsPyoverdin2,self).ParameterString() +r
-        return r
+        return s
 
 
 
@@ -1050,7 +1050,7 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
         if pvd > 0:
             a = (iron + pvd - 1)/(2.*pvd)
             b = iron/pvd
-            if a*a > 0:
+            if a*a > b:
                 r = a - np.sqrt(a*a - b)
         return r
     
@@ -1079,6 +1079,14 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
     def ParameterString(self):
         r = '\n'
         s  = super(GrowthDynamicsPyoverdin3,self).ParameterString() +r
-        return r
+        s += "*** Pyoverdin parameters ***" +r
+        s += "  Initial internal iron " + self.arraystring(self.PVDparams['InitialInternalIron']) +r
+        s += "  Pyoverdin production  " + self.arraystring(self.PVDparams['Production']) +r
+        s += "  Yield effect          " + self.arraystring(self.PVDparams['InternalIronYieldCoefficient']) + r
+        s += "  Base Iron influx      " + str(self.PVDparams['BaseIronInflux']) +r
+        s += "  Kpvd                  " + str(self.PVDparams['Kpvd']) +r
+        s += "  TotalIron             " + str(self.PVDparams['TotalIron']) +r
+        s += "  Efficiency            " + str(self.PVDparams['Efficiency']) +r
+        return s
 
         
