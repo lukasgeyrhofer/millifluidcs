@@ -70,24 +70,23 @@ gm2   = g.growthmatrix[:,:,1]
 
 shape = (len(nlist),len(nlist))
 
-g1  = np.zeros(shape)
-g2  = np.zeros(shape)
-rr1 = np.zeros(shape)
-r1  = np.zeros(shape)
+g1  = np.zeros(shape,dtype=np.float64)
+g2  = np.zeros(shape,dtype=np.float64)
+rr1 = np.zeros(shape,dtype=np.float64)
+r1  = np.zeros(shape,dtype=np.float64)
 
 for i,x in enumerate(nlist):
     for j,y in enumerate(nlist):
         p1 = gc.PoissonSeedingVectors(m1,[x])
         p2 = gc.PoissonSeedingVectors(m2,[y])
         g1[i,j] = np.dot(p2[0],np.dot(p1[0],gm1))
-        g2[i,j] = np.dot(p2[0],np.dot(p1[0],gm1))
-
+        g2[i,j] = np.dot(p2[0],np.dot(p1[0],gm2))
 
 sn1 = np.array(np.repeat(np.transpose([nlist]),len(nlist),axis=1),dtype=float)
 sn2 = np.repeat(np.array([nlist],dtype = float),len(nlist),axis=0)
 
-rr1[g1+g2>0]  = g1[g1+g2>0]/(g1+g2)[g1+g2>0]
-r1[sn1+sn2>0] = sn1[sn1+sn2>0]/(sn1+sn2)[sn1+sn2>0]
+rr1[g1+g2>0]  = (g1[g1+g2>0])/((g1+g2)[g1+g2>0])
+r1[sn1+sn2>0] = (sn1[sn1+sn2>0])/((sn1+sn2)[sn1+sn2>0])
 
 if args.verbose:
     sys.stdout.write(g.ParameterString())
