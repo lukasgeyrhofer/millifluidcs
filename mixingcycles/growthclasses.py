@@ -1077,7 +1077,7 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
     
 
     def ParameterString(self):
-        r = '\n'
+        r  = '\n'
         s  = super(GrowthDynamicsPyoverdin3,self).ParameterString() +r
         s += "*** Pyoverdin parameters ***" +r
         s += "  Initial internal iron " + self.arraystring(self.PVDparams['InitialInternalIron']) +r

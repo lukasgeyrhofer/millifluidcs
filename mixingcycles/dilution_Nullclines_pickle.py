@@ -53,6 +53,10 @@ except:
 if not g.hasGrowthMatrix():
     raise ValueError,"Loaded pickle instance does not contain growthmatrix"
 
+if args.verbose:
+    sys.stdout.write(g.ParameterString())
+    sys.stdout.write("\n generating matrices\n")
+
 
 if args.dilutionmax is None:
     dlist = np.array([args.dilutionmin])
@@ -89,14 +93,13 @@ rr1[g1+g2>0]  = (g1[g1+g2>0])/((g1+g2)[g1+g2>0])
 r1[sn1+sn2>0] = (sn1[sn1+sn2>0])/((sn1+sn2)[sn1+sn2>0])
 
 if args.verbose:
-    sys.stdout.write(g.ParameterString())
-    sys.stdout.write('\ncomputing nullcline for fraction of strains\n')
+    sys.stdout.write('\n computing nullcline for fraction of strains\n')
 cont_xx = measure.find_contours(rr1 - r1,0)
 write_contours_to_file(cont_xx,args.baseoutfilename + '_X',nlist)
 
 for dilution in dlist:
     if args.verbose:
-        sys.stdout.write('computing nullclines for dilution D = {:.4e}\n'.format(dilution))
+        sys.stdout.write(' computing nullclines for dilution D = {:.4e}\n'.format(dilution))
     cont_n1 = measure.find_contours(g1 * dilution - sn1,0)
     cont_n2 = measure.find_contours(g2 * dilution - sn2,0)
     cont_nn = measure.find_contours((g1 + g2) * dilution - sn1 - sn2,0)
