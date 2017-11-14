@@ -32,6 +32,7 @@ parser_io = parser.add_argument_group(description = "==== I/O ====")
 parser_io.add_argument("-i","--infile",required=True)
 parser_io.add_argument("-o","--baseoutfilename",default="out")
 parser_io.add_argument("-v","--verbose",action="store_true",default=False)
+parser_io.add_argument("-S","--SinglestrainNullclines",action="store_true",default=False)
 
 parser_dilution = parser.add_argument_group(description = "Parameters for dilution values")
 parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
@@ -100,10 +101,11 @@ write_contours_to_file(cont_xx,args.baseoutfilename + '_X',nlist)
 for dilution in dlist:
     if args.verbose:
         sys.stdout.write(' computing nullclines for dilution D = {:.4e}\n'.format(dilution))
-    cont_n1 = measure.find_contours(g1 * dilution - sn1,0)
-    cont_n2 = measure.find_contours(g2 * dilution - sn2,0)
     cont_nn = measure.find_contours((g1 + g2) * dilution - sn1 - sn2,0)
-    write_contours_to_file(cont_n1,args.baseoutfilename + '_1_D{:.3e}'.format(dilution),nlist)
-    write_contours_to_file(cont_n2,args.baseoutfilename + '_2_D{:.3e}'.format(dilution),nlist)
     write_contours_to_file(cont_nn,args.baseoutfilename + '_N_D{:.3e}'.format(dilution),nlist)
+    if args.SinglestrainNullclines:
+        cont_n1 = measure.find_contours(g1 * dilution - sn1,0)
+        cont_n2 = measure.find_contours(g2 * dilution - sn2,0)
+        write_contours_to_file(cont_n1,args.baseoutfilename + '_1_D{:.3e}'.format(dilution),nlist)
+        write_contours_to_file(cont_n2,args.baseoutfilename + '_2_D{:.3e}'.format(dilution),nlist)
 
