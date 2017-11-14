@@ -33,6 +33,7 @@ parser_general = parser.add_argument_group(description = "==== General and I/O p
 parser_general.add_argument("-v","--verbose",action="store_true",default=False,help = "output current values every iteration step")
 parser_general.add_argument("-V","--printeigenvectors",default=False,action="store_true",help = "print eigenvectors of linearized iteration map")
 parser_general.add_argument("-I","--initialconditions",default=None,nargs="*",help="Override initial conditions when set")
+parser_general.add_argument("-S","--stayonfixedpoint",default=False,action="store_true",help="Keep fixed point from previous dilution as initial conditions")
 parser_general.add_argument("-C","--complexOutput",default=False,action="store_true",help="Print real and imaginary parts of eigenvalues (and eigenvectors) [default: only real]")
 args = parser.parse_args()
 
@@ -56,15 +57,20 @@ else:
     else:
         dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
 
-for dilution in dlist:
+for i,dilution in enumerate(dlist):
 
     # initial condition are the respective fixed points on the axis
+    
     if args.initialconditions is None:
         g.setDilution(dilution)
         n = g.getSingleStrainFixedPointsApproximate()
-    else:
+    elif (not args.stayonfixedpoint) or (i == 0):
         n   = np.array(args.initialconditions,dtype=float)
         assert len(n) == g.numstrains
+    else:
+        # n is already defined from previous dilution
+        pass
+    
 
     dn         = n                  # increase in one step
     j          = np.zeros((2,2))    # jacobian
