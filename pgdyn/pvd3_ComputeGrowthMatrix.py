@@ -48,7 +48,7 @@ else:
         raise IOError,"could not open pickle file"
     if args.verbose:print g.ParameterString()
     if g.hasGrowthMatrix():
-        g.ExtendGrowthMatrix(size = args.maxsize,step = args.step)
+        g.ExtendGrowthMatrix(size = args.maxM,step = args.stepM)
     else:
         raise IOError,"pickle file does not contain growthmatrix"
     

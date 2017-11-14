@@ -15,16 +15,21 @@ def im(x):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i","--infile",help = "Pickle-file with stored parameters and growthmatrix")
-parser.add_argument("-d","--dilution",type=float,default=1e-4,help = "dilution rate")
 
-parser_algorithm = parser.add_argument_group(description = "=== Algorithm parameters ===")
+parser_dilution = parser.add_argument_group(description = "==== Parameters for dilution values ====")
+parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
+parser_dilution.add_argument("-D","--dilutionmax",type=float,default=None)
+parser_dilution.add_argument("-K","--dilutionsteps",type=int,default=10)
+parser_dilution.add_argument("-L","--dilutionlogscale",default = False, action = "store_true")
+
+parser_algorithm = parser.add_argument_group(description = "==== Algorithm parameters ====")
 parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False,help = "Plain iteration of dynamics or try to use NR to estimate fixed point")
 parser_algorithm.add_argument("-p","--precision",type=float,default=1e-20,help = "relative precision as premature stopping condition, computed as sum( (dn/n)^2 ) [default: 1e-20]")
 parser_algorithm.add_argument("-M","--maxiterations",type=int,default=None, help = "maximum number of iterations [default: None, iterate until precision is reached]")
 parser_algorithm.add_argument("-A","--alpha",type=float,default=1.,help = "convergence parameter for NR [default: 1.0]")
 parser_algorithm.add_argument("-c","--cutoff",type=float,default=1e-100,help = "cutoff probabilities lower than this value [default: 1e-100]")
 
-parser_general = parser.add_argument_group(description = "=== General and I/O parameters ===")
+parser_general = parser.add_argument_group(description = "==== General and I/O parameters ====")
 parser_general.add_argument("-v","--verbose",action="store_true",default=False,help = "output current values every iteration step")
 parser_general.add_argument("-V","--printeigenvectors",default=False,action="store_true",help = "print eigenvectors of linearized iteration map")
 parser_general.add_argument("-I","--initialconditions",default=None,nargs="*",help="Override initial conditions when set")
@@ -42,85 +47,96 @@ gm1   = g.growthmatrix[:,:,0]*args.dilution
 gm2   = g.growthmatrix[:,:,1]*args.dilution
 mx,my = g.growthmatrixgrid
 
-# initial condition are the respective fixed points on the axis
-if args.initialconditions is None:
-    g.setDilution(args.dilution)
-    n = g.getSingleStrainFixedPointsApproximate()
+
+if args.dilutionmax is None:
+    dlist = np.array([args.dilutionmin])
 else:
-    n   = np.array(args.initialconditions,dtype=float)
-    assert len(n) == g.numstrains
+    if args.dilutionlogscale:
+        dlist = np.power(10,np.linspace(start = np.log10(args.dilutionmin),stop = np.log10(args.dilutionmax), num = args.dilutionsteps))
+    else:
+        dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
 
-dn         = n                  # increase in one step
-j          = np.zeros((2,2))    # jacobian
-stepcount  = 0                  # number of steps for debugging
+for dilution in dlist:
 
-if args.verbose:
-    sys.stdout.write("# starting iterations ... \n")
+    # initial condition are the respective fixed points on the axis
+    if args.initialconditions is None:
+        g.setDilution(dilution)
+        n = g.getSingleStrainFixedPointsApproximate()
+    else:
+        n   = np.array(args.initialconditions,dtype=float)
+        assert len(n) == g.numstrains
 
-while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
+    dn         = n                  # increase in one step
+    j          = np.zeros((2,2))    # jacobian
+    stepcount  = 0                  # number of steps for debugging
+
     if args.verbose:
-        sys.stderr.write("{:4d} {:13.6e} {:13.6e}\n".format(stepcount,n[0],n[1]))
-    
-    # probabilities for seeding new droplets, assumed to be poissonian
+        sys.stdout.write("# starting iterations ... \n")
+
+    while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
+        if args.verbose:
+            sys.stderr.write("{:4d} {:13.6e} {:13.6e}\n".format(stepcount,n[0],n[1]))
+        
+        # probabilities for seeding new droplets, assumed to be poissonian
+        px,dpx = gc.PoissonSeedingVectors(mx,[n[0]],cutoff = args.cutoff,diff=True)
+        py,dpy = gc.PoissonSeedingVectors(my,[n[1]],cutoff = args.cutoff,diff=True)
+        
+        # construct iteration function for growth and dilution
+        # by weighting growth with the probability of how droplets are seeded
+        growth1 = np.dot(py[0], np.dot(px[0], gm1))
+        growth2 = np.dot(py[0], np.dot(px[0], gm2))
+        fn = np.array([growth1,growth2]) - n
+        
+        if args.newtonraphson:
+            # NR iterations 
+
+            # get jacobian of dynamics
+            j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1)) - 1.
+            j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1))
+            j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2))
+            j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2)) - 1.
+            
+            # calculate step in NR iteration
+            dn = -args.alpha * np.dot(np.linalg.inv(j),fn)
+        
+        else:
+            # simple iteration of the function, hoping it converges at some point
+            dn = fn
+        
+        # apply changes
+        n += dn
+        n[n<0] = 0
+        
+        if not args.maxiterations is None:
+            if stepcount > args.maxiterations:
+                break
+        stepcount += 1
+
+
+    # stability of fixed point is checked with jacobian
     px,dpx = gc.PoissonSeedingVectors(mx,[n[0]],cutoff = args.cutoff,diff=True)
     py,dpy = gc.PoissonSeedingVectors(my,[n[1]],cutoff = args.cutoff,diff=True)
-    
-    # construct iteration function for growth and dilution
-    # by weighting growth with the probability of how droplets are seeded
-    growth1 = np.dot(py[0], np.dot(px[0], gm1))
-    growth2 = np.dot(py[0], np.dot(px[0], gm2))
-    fn = np.array([growth1,growth2]) - n
-    
-    if args.newtonraphson:
-        # NR iterations 
 
-        # get jacobian of dynamics
-        j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1)) - 1.
-        j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1))
-        j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2))
-        j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2)) - 1.
-        
-        # calculate step in NR iteration
-        dn = -args.alpha * np.dot(np.linalg.inv(j),fn)
-    
-    else:
-        # simple iteration of the function, hoping it converges at some point
-        dn = fn
-    
-    # apply changes
-    n += dn
-    n[n<0] = 0
-    
-    if not args.maxiterations is None:
-        if stepcount > args.maxiterations:
-            break
-    stepcount += 1
+    j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1))
+    j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1))
+    j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2))
+    j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2))
 
 
-# stability of fixed point is checked with jacobian
-px,dpx = gc.PoissonSeedingVectors(mx,[n[0]],cutoff = args.cutoff,diff=True)
-py,dpy = gc.PoissonSeedingVectors(my,[n[1]],cutoff = args.cutoff,diff=True)
+    w,v = np.linalg.eig(j)
 
-j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1))
-j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1))
-j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2))
-j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2))
+    # final output
 
-
-w,v = np.linalg.eig(j)
-
-# final output
-
-outputstring  = "{:13.6e} {:8.6f} {:8.6f} {:13.6e} {:13.6e} {:4d}".format(args.dilution,g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
-outputstring += " {:13.6e} {:13.6e}".format(re(w[0]),re(w[1]))
-if args.complexOutput:
-    # have yet to find complex eigenvalues
-    outputstring += " {:13.6e} {:13.6e}".format(im(w[0]),im(w[1]))
-
-if args.printeigenvectors:
-    outputstring += " {:13.6e} {:13.6e} {:13.6e} {:13.6e}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1]))
+    outputstring  = "{:13.6e} {:8.6f} {:8.6f} {:13.6e} {:13.6e} {:4d}".format(dilution,g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
+    outputstring += " {:13.6e} {:13.6e}".format(re(w[0]),re(w[1]))
     if args.complexOutput:
-        outputstring += " {:13.6e} {:13.6e} {:13.6e} {:13.6e}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1]))
-sys.stdout.write(outputstring + "\n")
+        # have yet to find complex eigenvalues
+        outputstring += " {:13.6e} {:13.6e}".format(im(w[0]),im(w[1]))
+
+    if args.printeigenvectors:
+        outputstring += " {:13.6e} {:13.6e} {:13.6e} {:13.6e}".format(re(v[0,0]),re(v[1,0]),re(v[0,1]),re(v[1,1]))
+        if args.complexOutput:
+            outputstring += " {:13.6e} {:13.6e} {:13.6e} {:13.6e}".format(im(v[0][0]),im(v[0][1]),im(v[1][0]),im(v[1][1]))
+    sys.stdout.write(outputstring + "\n")
 
 

@@ -1054,18 +1054,22 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
                 r = a - np.sqrt(a*a - b)
         return r
     
+    def IronYield(self,x):
+        return self.yieldfactors * (1 - np.exp(-self.PVDparams['InternalIronYieldCoefficient'] * x))
+    
+    
     def dynPVD3(self,t,x,param):
-        y = self.yieldfactors *( 1 + self.PVDparams['InternalIronYieldCoefficient'] * x[self.numstrains:2*self.numstrains] )
+        y = self.IronYield( x[self.numstrains:2*self.numstrains] )
         totalPVD = np.sum(self.PVDparams['Production']/self.growthrates * x[:self.numstrains])
         pvdFe = self.g(self.PVDparams['TotalIron']/self.PVDparams['Kpvd'],totalPVD/self.PVDparams['Kpvd']) * totalPVD
         if x[-1] > 0:
-            a = self.growthrates
+            a,ay = np.transpose(np.array([[gr,gr/y[i]] if y[i] > 0 else [0.,0.] for i,gr in enumerate(self.growthrates)]))
         else:
-            a = np.zeros(self.numstrains)
+            a,ay = np.zeros((2,self.numstrains))
         return np.concatenate([
             a*x[:self.numstrains],
             -a*x[self.numstrains:2*self.numstrains] + self.PVDparams['Efficiency'] * pvdFe + self.PVDparams['BaseIronInflux'],
-            np.array([-np.sum(a * x[:-3]/y)])
+            np.array([-np.sum(ay * x[:-3])])
             ])
 
     def Growth(self,initialcells = None):
