@@ -44,8 +44,8 @@ except:
     raise IOError("could not open pickle file")
 
 
-gm1   = g.growthmatrix[:,:,0]*args.dilution
-gm2   = g.growthmatrix[:,:,1]*args.dilution
+gm1   = g.growthmatrix[:,:,0]
+gm2   = g.growthmatrix[:,:,1]
 mx,my = g.growthmatrixgrid
 
 
@@ -89,18 +89,18 @@ for i,dilution in enumerate(dlist):
         
         # construct iteration function for growth and dilution
         # by weighting growth with the probability of how droplets are seeded
-        growth1 = np.dot(py[0], np.dot(px[0], gm1))
-        growth2 = np.dot(py[0], np.dot(px[0], gm2))
+        growth1 = np.dot(py[0], np.dot(px[0], gm1 * dilution))
+        growth2 = np.dot(py[0], np.dot(px[0], gm2 * dilution))
         fn = np.array([growth1,growth2]) - n
         
         if args.newtonraphson:
             # NR iterations 
 
             # get jacobian of dynamics
-            j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1)) - 1.
-            j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1))
-            j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2))
-            j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2)) - 1.
+            j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1 * dilution)) - 1.
+            j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1 * dilution))
+            j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2 * dilution))
+            j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2 * dilution)) - 1.
             
             # calculate step in NR iteration
             dn = -args.alpha * np.dot(np.linalg.inv(j),fn)
@@ -123,10 +123,10 @@ for i,dilution in enumerate(dlist):
     px,dpx = gc.PoissonSeedingVectors(mx,[n[0]],cutoff = args.cutoff,diff=True)
     py,dpy = gc.PoissonSeedingVectors(my,[n[1]],cutoff = args.cutoff,diff=True)
 
-    j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1))
-    j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1))
-    j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2))
-    j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2))
+    j[0,0] = np.dot( py[0], np.dot(dpx[0], gm1 * dilution))
+    j[0,1] = np.dot(dpy[0], np.dot( px[0], gm1 * dilution))
+    j[1,0] = np.dot( py[0], np.dot(dpx[0], gm2 * dilution))
+    j[1,1] = np.dot(dpy[0], np.dot( px[0], gm2 * dilution))
 
 
     w,v = np.linalg.eig(j)
