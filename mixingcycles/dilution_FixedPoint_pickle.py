@@ -59,9 +59,9 @@ else:
 
 for i,dilution in enumerate(dlist):
 
-    # initial condition are the respective fixed points on the axis
     
     if args.initialconditions is None:
+        # initial condition are the respective (approximated) fixed points on the axis
         g.setDilution(dilution)
         n = g.getSingleStrainFixedPointsApproximate()
     elif (not args.stayonfixedpoint) or (i == 0):
