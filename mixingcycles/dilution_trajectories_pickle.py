@@ -23,7 +23,9 @@ parser_dilution.add_argument("-K","--dilutionsteps",type=int,default=10)
 parser_dilution.add_argument("-L","--dilutionlogscale",default = False, action = "store_true")
 
 parser_flowmap = parser.add_argument_group(description = "Parameters for flowmap between mixing cycles")
-parser_flowmap.add_argument("-n","--maxIC",type=float,default=40)
+parser_flowmap_startingconditions = parser_flowmap.add_mutually_exclusive_group()
+parser_flowmap_startingconditions.add_argument("-n","--maxIC",type=float,default=40)
+parser_flowmap_startingconditions.add_argument("-N","--initialcoordinatesfile",default=None)
 parser_flowmap.add_argument("-s","--stepIC",type=float,default=2)
 parser_flowmap.add_argument("-l","--trajectorylength",type=int,default=20)
 
@@ -47,7 +49,23 @@ else:
     else:
         dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
 
-nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
+if args.initialcoordinatesfile is None:
+    nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
+    coordinates = itertools.product(nlist,repeat=2)
+else:
+    try:
+        fp_coords = open(args.initialcoordinatesfile)
+    except:
+        raise IOError("could not open file '{}' to load coordinates".format(args.initialcoordinatesfile))
+    coordinates = list()
+    for line in fp_coords.readlines():
+        try:
+            values = np.array(line.split()[:2],dtype=np.float)
+            coordinates.append(values)
+        except:
+            continue
+        fp_coords.close()
+
 
 gm1 = g.growthmatrix[:,:,0]
 gm2 = g.growthmatrix[:,:,1]
@@ -59,7 +77,7 @@ for dilution in dlist:
     if args.verbose:
         sys.stdout.write("# computing trajectories for D = {:e}\n".format(dilution))
     fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
-    for icx,icy in itertools.product(nlist,repeat=2):
+    for icx,icy in coordinates:
         x = icx
         y = icy
         fp.write("{} {}\n".format(x,y))
