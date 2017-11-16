@@ -26,7 +26,7 @@ parser_gm.add_argument("-m","--maxM",default=40,type=int)
 parser_gm.add_argument("-M","--stepM",default=1,type=int)
 
 parser_io = parser.add_argument_group(description = "==== I/O ====")
-parser_io.add_argument("-o","--outfile",default=None)
+parser_io.add_argument("-o","--outfile",default=None,required = True)
 parser_io.add_argument("-i","--infile",default=None)
 parser_io.add_argument("-v","--verbose",default=False,action="store_true")
 
