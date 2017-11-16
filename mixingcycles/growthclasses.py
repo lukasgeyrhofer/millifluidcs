@@ -1061,7 +1061,11 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
     def dynPVD3(self,t,x,param):
         y = self.IronYield( x[self.numstrains:2*self.numstrains] )
         totalPVD = np.sum(self.PVDparams['Production']/self.growthrates * x[:self.numstrains])
-        pvdFe = self.g(self.PVDparams['TotalIron']/self.PVDparams['Kpvd'],totalPVD/self.PVDparams['Kpvd']) * totalPVD
+        totalPopSize = np.sum(x[:self.numstrains])
+        if totalPopSize > 0:
+            pvdFe = self.g(self.PVDparams['TotalIron']/self.PVDparams['Kpvd'],totalPVD/self.PVDparams['Kpvd']) * totalPVD / totalPopSize
+        else:
+            pvdFe = 0.
         if x[-1] > 0:
             a,ay = np.transpose(np.array([[gr,gr/y[i]] if y[i] > 0 else [0.,0.] for i,gr in enumerate(self.growthrates)]))
         else:
