@@ -51,7 +51,7 @@ else:
 
 if args.initialcoordinatesfile is None:
     nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
-    coordinates = itertools.product(nlist,repeat=2)
+    coordinates = list(itertools.product(nlist,repeat=2))
 else:
     try:
         fp_coords = open(args.initialcoordinatesfile)
