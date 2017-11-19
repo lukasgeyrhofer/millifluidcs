@@ -1033,17 +1033,12 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
                             'BaseIronInflux':                         kwargs.get("PVD_Base_Iron_Influx",1),
                             'Kpvd' :                                  kwargs.get("PVD_Kpvd",1e-30),
                             'TotalIron' :                             kwargs.get("PVD_Total_Iron",1e3),
-                            'Efficiency' :                            kwargs.get("PVD_Efficiency",1e-3)
-                            'YieldDependence' :                       kwarfs.get("PVD_Yield_Dependence","linear")
+                            'Efficiency' :                            kwargs.get("PVD_Efficiency",1e-3),
+                            'YieldDependence' :                       kwargs.get("PVD_Yield_Dependence","linear")
                         }
         
         assert len(self.PVDparams['Production']) == self.numstrains, "PVD production not defined correctly"
         assert np.sum(self.PVDparams['Production']) > 0, "PVD is not produced"
-        
-        self.dyn = TimeIntegrator(dynamics = self.dynPVD3, initialconditions = np.zeros(2*self.numstrains + 1),params = None, requiredpositive = True)
-        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
-        for i in range(self.numstrains):
-            self.dyn.setPopulationExtinctionThreshold(i,1)
         
         if self.PVDparams['YieldDependence'] == 'linear':
             self.IronYield = self.IronYieldLinear
@@ -1051,6 +1046,12 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
             self.IronYield = self.IronYieldExp
         else:
             raise NotImplementedError
+
+        self.dyn = TimeIntegrator(dynamics = self.dynPVD3, initialconditions = np.zeros(2*self.numstrains + 1),params = None, requiredpositive = True)
+        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        for i in range(self.numstrains):
+            self.dyn.setPopulationExtinctionThreshold(i,1)
+        
     
     
     def g(self,iron,pvd):
