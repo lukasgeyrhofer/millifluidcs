@@ -1033,7 +1033,8 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
                             'BaseIronInflux':                         kwargs.get("PVD_Base_Iron_Influx",1),
                             'Kpvd' :                                  kwargs.get("PVD_Kpvd",1e-30),
                             'TotalIron' :                             kwargs.get("PVD_Total_Iron",1e3),
-                            'Efficiency' :                            kwargs.get("PVD_Efficiency",1e-3) 
+                            'Efficiency' :                            kwargs.get("PVD_Efficiency",1e-3)
+                            'YieldDependence' :                       kwarfs.get("PVD_Yield_Dependence","linear")
                         }
         
         assert len(self.PVDparams['Production']) == self.numstrains, "PVD production not defined correctly"
@@ -1043,6 +1044,13 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
+        
+        if self.PVDparams['YieldDependence'] == 'linear':
+            self.IronYield = self.IronYieldLinear
+        elif self.PVDparams['YieldDependence'] == 'exp':
+            self.IronYield = self.IronYieldExp
+        else:
+            raise NotImplementedError
     
     
     def g(self,iron,pvd):
@@ -1054,9 +1062,11 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
                 r = a - np.sqrt(a*a - b)
         return r
     
-    def IronYield(self,x):
+    def IronYieldExp(self,x):
         return self.yieldfactors * (1 - np.exp(-self.PVDparams['InternalIronYieldCoefficient'] * x))
     
+    def IronYieldLinear(self,x):
+        return self.yieldfactors + self.PVDparams['InternalIronYieldCoefficient'] * x
     
     def dynPVD3(self,t,x,param):
         y = self.IronYield( x[self.numstrains:2*self.numstrains] )

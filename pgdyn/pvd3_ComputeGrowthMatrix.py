@@ -20,6 +20,7 @@ parser_pvd.add_argument("-E","--PVD_Base_Iron_Influx",type=float,default=1)
 parser_pvd.add_argument("-K","--PVD_Kpvd",type=float,default=1e-30)
 parser_pvd.add_argument("-F","--PVD_Total_Iron",type=float,default=1e4)
 parser_pvd.add_argument("-e","--PVD_Efficiency",type=float,default=1e-1)
+parser_pvd.add_argument("-d","--PVD_Yield_Dependence",choices = ['linear','exp'], default = 'linear')
 
 parser_gm = parser.add_argument_group(description = "==== Growthmatrix calculation ====")
 parser_gm.add_argument("-m","--maxM",default=40,type=int)
