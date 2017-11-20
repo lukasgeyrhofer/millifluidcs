@@ -914,7 +914,63 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
 
 
 
+class GrowthDynamicsAntibiotics2(GrowthDynamics):
+    def __init__(self,**kwargs):
 
+        if kwargs.get("mixingtime") is None:
+            kwargs["mixingtime"] = 12.
+
+        super(GrowthDynamicsAntibiotics2,self).__init__(**kwargs)
+        
+        self.ABparams = {   'kappa' :         kwargs.get("kappa",2),
+                            'gamma' :         kwargs.get("gamma",2),
+                            'ProductionEfficiency' :  np.array(kwargs.get("AB_Production_Efficiency",np.zeros(self.numstrains)),dtype=np.float64),
+                            'ABconc' :        kwargs.get("ABconc",.5)}  # initial concentration antibiotics measured in zMIC
+
+        assert len(self.ABparams['ProductionEfficiency']) == self.numstrains, "PG production not defined correctly"
+        assert sum(self.ABparams['ProductionEfficiency']) > 0, "PG is not produced"
+        
+        self.dyn = TimeIntegrator(dynamics = self.dynAB,initialconditions = np.zeros(self.numstrains + 3),params = None,requiredpositive = True)
+        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        self.dyn.SetEndCondition("reachzero",self.numstrains)
+        for i in range(self.numstrains):
+            self.dyn.setPopulationExtinctionThreshold(i,1)
+    
+    
+    def beta(self,abconc):
+        bk = np.power(abconc,self.ABparams['kappa'])
+        return 1 - (1+self.ABparams['gamma'])*bk/(bk + self.ABparams['gamma'])
+    
+    def growthr(self,substrate,abconc):
+        if substrate > 0:
+            return self.growthrates * self.beta(abconc)
+        else:
+            return np.zeros(self.numstrains)
+    
+    def dynAB(self,t,x,params):
+        a = self.growthr(x[-3],x[-1])
+        return np.concatenate([ a*x[:-3],                                                      # growth of strains
+                                np.array( [ -np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
+                                           np.sum(self.ABparams['ProductionEfficiency']*x[:-3]) * x[-1]])   # reduction of antibiotics by cells
+    
+    def Growth(self,initialcells = None):
+        ic = self.checkInitialCells(initialcells)
+        ic = np.concatenate([ic,np.array([self.env.substrate,self.ABparams['ABconc']])])
+        self.dyn.ResetInitialConditions(ic)
+        self.dyn.IntegrateToEndConditions()
+        return self.dyn.populations[:-3]*self.env.dilution
+                                          
+    
+    def ParameterString(self):
+        r  = '\n'
+        s  = super(GrowthDynamicsAntibiotics2,self).ParameterString() +r
+        s += "*** antibiotic parameters ***" +r
+        s += "  initial concentration    " + str(self.ABparams['ABconc']) +r
+        s += "  gamma                    " + str(self.ABparams['gamma']) +r
+        s += "  kappa                    " + str(self.ABparams['kappa']) +r
+        s += "  Enzyme Prod & Efficiency " + self.arraystring(self.ABparams['ProductionEfficiency']) +r
+        return s
+        
 
 
 class GrowthDynamicsPyoverdin(GrowthDynamics):
