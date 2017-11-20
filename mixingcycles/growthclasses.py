@@ -209,7 +209,7 @@ class GrowthDynamics(object):
             defaultlength = 1
         growthrates  = kwargs.get("growthrates",np.ones(defaultlength))
         yieldfactors = kwargs.get("yieldfactors",np.ones(defaultlength))
-        assert len(growthrates) == len(yieldfactors)
+        assert len(growthrates) == len(yieldfactors),"All strains need growthrate and yield defined"
         defaultlength = len(growthrates)
         
         if hasattr(kwargs,"deathrates"):
@@ -930,7 +930,7 @@ class GrowthDynamicsAntibiotics2(GrowthDynamics):
         assert len(self.ABparams['ProductionEfficiency']) == self.numstrains, "PG production not defined correctly"
         assert sum(self.ABparams['ProductionEfficiency']) > 0, "PG is not produced"
         
-        self.dyn = TimeIntegrator(dynamics = self.dynAB,initialconditions = np.zeros(self.numstrains + 3),params = None,requiredpositive = True)
+        self.dyn = TimeIntegrator(dynamics = self.dynAB,initialconditions = np.zeros(self.numstrains + 2),params = None,requiredpositive = True, step = kwargs.get("TimeIntegratorStep",1e-3))
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         self.dyn.SetEndCondition("reachzero",self.numstrains)
         for i in range(self.numstrains):
@@ -948,10 +948,14 @@ class GrowthDynamicsAntibiotics2(GrowthDynamics):
             return np.zeros(self.numstrains)
     
     def dynAB(self,t,x,params):
-        a = self.growthr(x[-3],x[-1])
-        return np.concatenate([ a*x[:-3],                                                      # growth of strains
-                                np.array( [ -np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
-                                           np.sum(self.ABparams['ProductionEfficiency']*x[:-3]) * x[-1]])   # reduction of antibiotics by cells
+        a = self.growthr(x[-2],x[-1])
+        return np.concatenate([
+                                a*x[:self.numstrains],                                                              # growth of strains
+                                np.array([
+                                    -np.sum(a/self.yieldfactors*x[:self.numstrains]),                               # decay of nutrients
+                                    -np.sum(self.ABparams['ProductionEfficiency']*x[:self.numstrains]) * x[-1]      # reduction of antibiotics by cells
+                                    ])
+                                ])
     
     def Growth(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
