@@ -962,7 +962,7 @@ class GrowthDynamicsAntibiotics2(GrowthDynamics):
         ic = np.concatenate([ic,np.array([self.env.substrate,self.ABparams['ABconc']])])
         self.dyn.ResetInitialConditions(ic)
         self.dyn.IntegrateToEndConditions()
-        return self.dyn.populations[:-3]*self.env.dilution
+        return self.dyn.populations[:self.numstrains]*self.env.dilution
                                           
     
     def ParameterString(self):
