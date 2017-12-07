@@ -38,6 +38,8 @@ else:
         values = line.split()
         if len(values) >= 3:
             all_coordinates.append({'coords': np.array(values[:2],dtype=np.float), 'radius': float(values[2])})
+        elif len(values) >= 2:
+            all_coordinates.append({'coords': np.array(values[:2],dtype=np.float), 'radius': args.radius})
 
 trajectories = list()
 
