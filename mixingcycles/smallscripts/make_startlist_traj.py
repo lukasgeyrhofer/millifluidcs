@@ -5,7 +5,7 @@ import argparse
 import sys,math
 
 parser = argparse.ArgumentParser()
-subparsers = parser.add_subparsers(dest = "shape")
+subparsers = parser.add_subparsers(dest = "shape", help = "Shape either [R]ectangle or [C]ircle")
 
 parser_rect = subparsers.add_parser("R")
 parser_rect.add_argument("-x","--xrange",default=[10,80],type=float,nargs=2)
@@ -16,6 +16,7 @@ parser_rect.add_argument("-Y","--ysteps",default=10,type=int)
 parser_circ = subparsers.add_parser("C")
 parser_circ.add_argument("-r","--radius",default=10,type=float)
 parser_circ.add_argument("-s","--steps",default=12,type=int)
+parser_circ.add_argument("-c","--center",default=[0,0],nargs=2,type=float)
 
 args = parser.parse_args()
 
@@ -32,7 +33,7 @@ elif args.shape == "C":
     assert args.steps >= 2
 
     angles = 2 * math.pi * np.arange(args.steps)/(1. * args.steps)
-    startpos = args.radius * np.transpose([np.sin(angles),np.cos(angles)])
+    startpos = np.transpose([args.radius * np.sin(angles) + args.center[0],args.radius * np.cos(angles) + args.center[1]])
 else:
     raise NotImplementedError
 
