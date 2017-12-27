@@ -1184,7 +1184,7 @@ class GrowthDynamicsPyoverdin4(GrowthDynamics):
         assert np.sum(self.PVDparams['Production']) > 0, "PVD is not produced"
         assert self.PVDparams['YieldIncreaseFactor'] > 0, "Effect on yield not properly defined"
 
-        self.dyn = TimeIntegrator(dynamics = self.dynPVD4, initialconditions = np.zeros(self.numstrains + 1),params = None, requiredpositive = True)
+        self.dyn = TimeIntegrator(dynamics = self.dynPVD4, initialconditions = np.ones(self.numstrains + 1),params = None, requiredpositive = True)
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
@@ -1200,6 +1200,13 @@ class GrowthDynamicsPyoverdin4(GrowthDynamics):
                                     a * x[:self.numstrains],
                                     np.array([-np.sum(a * x[:self.numstrains]/y)])
                               ])
+
+    def Growth(self,initialcells = None):
+        ic = self.checkInitialCells(initialcells)
+        ic = np.concatenate([ic,np.array([self.env.substrate])])
+        self.dyn.ResetInitialConditions(ic)
+        self.dyn.IntegrateToEndConditions()
+        return self.dyn.populations[:self.numstrains]*self.env.dilution
     
                             
     def ParameterString(self):
