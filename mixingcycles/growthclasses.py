@@ -1196,7 +1196,7 @@ class GrowthDynamicsPyoverdin4(GrowthDynamics):
             y = self.yieldfactors * (self.PVDparams['YieldIncreaseFactor'] - (self.PVDparams['YieldIncreaseFactor'] - 1.)*np.exp(-np.dot(self.PVDparams['Production'],x[:self.numstrains])/n))
         else:
             y = self.yieldfactors
-        if x[-1] >= 0:
+        if x[-1] > 0:
             a = self.growthrates
         else:
             a = np.zeros(self.numstrains)
