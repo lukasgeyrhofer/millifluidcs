@@ -83,8 +83,8 @@ for dilution in dlist:
         for x,n in itertools.product(xlist,nlist):
             p1 = gc.PoissonSeedingVectors(mx,n*x)[0]
             p2 = gc.PoissonSeedingVectors(my,n*(1-x))[0]
-            n1 = np.dot(py,np.dot(px,gm1))*dilution
-            n2 = np.dot(py,np.dot(px,gm2))*dilution
+            n1 = np.dot(p2,np.dot(p1,gm1))*dilution
+            n2 = np.dot(p2,np.dot(p1,gm2))*dilution
             nn = n1 + n2
             if nn > 0:  xx = n1/nn
             else:       xx = 0
