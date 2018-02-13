@@ -56,7 +56,7 @@ da2p = 1+da2
 da2m = 1-da2
 
 
-for i,n1 enumerate(m1):
+for i,n1 in enumerate(m1):
     for j,n2 in enumerate(m2):
         if n1+n2 > 0:
 
