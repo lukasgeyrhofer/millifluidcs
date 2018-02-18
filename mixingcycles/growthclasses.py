@@ -638,6 +638,7 @@ class TimeIntegrator(object):
                         self.x[i] = 0
             t += self.__step
         self.__globaltime += time
+        return self.__globaltime
     
     def IntegrateToZero(self,index):
         t = 0
@@ -748,6 +749,7 @@ class GrowthDynamicsTimeIntegrator(GrowthDynamics):
         
         #self.dyn.SetEndCondition("reachzero",self.numstrains)
 
+        self.x = np.zeros(self.numstrains)
         self.otherinitialconditions = np.array([self.env.substrate])
 
         
@@ -771,7 +773,7 @@ class GrowthDynamicsTimeIntegrator(GrowthDynamics):
     def Trajectory(self,timestep,initialconditions):
         # helper routine
         def AddTimeToOutputVector(x,t):
-            return np.array([np.concatenate([np.array([t]),x],dtype=np.float)])
+            return np.array([np.concatenate([np.array([t]),x])],dtype=np.float)
         
         # set initial conditions
         initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
@@ -780,10 +782,10 @@ class GrowthDynamicsTimeIntegrator(GrowthDynamics):
         self.dyn.ResetInitialConditions(initialconditions)
         
         # generate first entry in output data
-        r = self.AddTimeToOutputVector(self.dyn.x,0)
+        r = AddTimeToOutputVector(self.dyn.x,0)
         while not self.dyn.HasEnded():
             t = self.dyn.IntegrationStep(timestep)
-            r = np.concatenate([r,self.AddTimeToOutputVector(self.dyn.x,t)],axis=1)
+            r = np.concatenate([r,AddTimeToOutputVector(self.dyn.x,t)],axis=0)
         
         # return output
         return r
