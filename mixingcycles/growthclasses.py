@@ -990,11 +990,12 @@ class GrowthDynamicsAntibiotics2(GrowthDynamicsTimeIntegrator):
             return np.zeros(self.numstrains)
     
     def dynAB(self,t,x,params):
-        a = self.growthr(x[-2],x[-1])
+        a  = self.growthr(x[-2],x[-1])
+        a0 = self.growthr(x[-2],0)
         return np.concatenate([
                                 a*x[:self.numstrains],                                                              # growth of strains
                                 np.array([
-                                    -np.sum(a/self.yieldfactors*x[:self.numstrains]),                               # decay of nutrients
+                                    -np.sum(a0/self.yieldfactors*x[:self.numstrains]),                               # decay of nutrients
                                     -np.sum(self.ABparams['ProductionEfficiency']*x[:self.numstrains]) * x[-1]      # reduction of antibiotics by cells
                                     ])
                                 ])

@@ -37,11 +37,8 @@ else:           ic = np.array(args.initialN[:ns])
 
 t = g.Trajectory(args.integrationstep * args.outputstep,ic)
 
-print t
-
-
-#for x in t:
-    #print x
+for x in t:
+    print '{:.2f} {:14.6e} {:14.6e} {:14.6e} {:14.6e}'.format(*x)
 
 
 
