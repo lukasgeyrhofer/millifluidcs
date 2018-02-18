@@ -741,9 +741,9 @@ class GrowthDynamicsTimeIntegrator(GrowthDynamics):
     def __init__(self,numstrains = None, **kwargs):
         if kwargs.get("mixingtime") is None:
             kwargs["mixingtime"] = 24.
-        super(GrowthDynamicsTimeIntegrator,self).__init__(self,numstrains = numstrains,**kwargs)
+        super(GrowthDynamicsTimeIntegrator,self).__init__(numstrains = numstrains,**kwargs)
 
-        self.dyn = TimeIntegrator(dynamics = self.f,initialconditions = np.ones(self.numstrain + 1), params = None)
+        self.dyn = TimeIntegrator(dynamics = self.f,initialconditions = np.ones(self.numstrains + 1), params = None)
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         
         #self.dyn.SetEndCondition("reachzero",self.numstrains)
