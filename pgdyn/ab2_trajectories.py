@@ -22,7 +22,7 @@ parserALG = parser.add_argument_group(description = "==== Parameters for algorit
 parserALG.add_argument("-t","--integrationstep",default=1e-3,type=float)
 parserALG.add_argument("-o","--outputstep",default=100,type=int)
 
-parserIC = parser.add_argument_group(description = "Initial conditions")
+parserIC = parser.add_argument_group(description = "==== Initial conditions ====")
 parserIC.add_argument("-N","--initialN",default=[1],type=float,nargs="*")
 
 args = parser.parse_args()
