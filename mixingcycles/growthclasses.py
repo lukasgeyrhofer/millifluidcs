@@ -735,7 +735,61 @@ class TimeIntegrator(object):
             self.__extinctionthresholds[int(index)] = float(value)
     
 
-class GrowthDynamicsPublicGoods(GrowthDynamics):
+
+
+class GrowthDynamicsTimeIntegrator(GrowthDynamics):
+    def __init__(self,numstrains = None, **kwargs):
+        if kwargs.get("mixingtime") is None:
+            kwargs["mixingtime"] = 24.
+        super(GrowthDynamicsTimeIntegrator,self).__init__(self,numstrains = numstrains,**kwargs)
+
+        self.dyn = TimeIntegrator(dynamics = self.f,initialconditions = np.ones(self.numstrain + 1), params = None)
+        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        
+        #self.dyn.SetEndCondition("reachzero",self.numstrains)
+
+        self.otherinitialconditions = np.array([self.env.substrate])
+
+        
+    # simplest dynamics of pure growth and resource use
+    # implemented already in much faster way in parent class
+    def f(self,t,x,params):
+        return np.concatenate([ self.growthrates * x[:self.numstrains],
+                                np.array([ -np.sum(self.growthrates / self.yieldfactors * x[:self.numstrains]) ])
+                              ])
+    
+    # base growth function to use for time integrator dynamics
+    def Growth(self,initialcells = None):
+        ic = self.checkInitialCells(initialcells)
+        ic = np.concatenate([ic,self.otherinitialconditions])
+        self.dyn.ResetInitialConditions(ic)
+        self.dyn.IntegrateToEndConditions()
+        return self.dyn.populations[:self.numstrains]
+
+
+    # should also work for more complicated dynamics implemented in classes inherited from this one
+    def Trajectory(self,timestep,initialconditions):
+        # helper routine
+        def AddTimeToOutputVector(x,t):
+            return np.array([np.concatenate([np.array([t]),x],dtype=np.float)])
+        
+        # set initial conditions
+        initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
+        if len(initialconditions) >= self.numstrains:
+            initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
+        self.dyn.ResetInitialConditions(initialconditions)
+        
+        # generate first entry in output data
+        r = self.AddTimeToOutputVector(self.dyn.x,0)
+        while not self.dyn.HasEnded():
+            t = self.dyn.IntegrationStep(timestep)
+            r = np.concatenate([r,self.AddTimeToOutputVector(self.dyn.x,t)],axis=1)
+        
+        # return output
+        return r
+
+
+class GrowthDynamicsPublicGoods(GrowthDynamicsTimeIntegrator):
     def __init__(self,numstrains = None,**kwargs):
         
         if kwargs.get("mixingtime") is None:
@@ -791,11 +845,12 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
         assert sum(self.__PGProduction) > 0, "no public goods produced"
 
         self.dyn = TimeIntegrator(dynamics = self.PGdyn,initialconditions = np.ones(self.numstrains+2),params = None)
-        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         self.dyn.SetEndCondition("reachzero",self.numstrains)   # vector contains all populations, then substrate, then public good
                                                                 # thus stop, if substrate is depleted
+        self.otherinitialconditions = np.array([self.env.substrate,0])
         
         self.__onlypositivecoefficients = kwargs.get("onlypositivecoefficients",True)
+
         
     
     # dynamics for all strains, then substrate, then public good
@@ -806,14 +861,6 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
         return np.concatenate(  [   a*x[:-2],                                           # growth of strains
                                     np.array([  -np.sum(a/y*x[:-2]),                    # decay of nutrients
                                                 np.sum(self.__PGProduction*x[:-2])]) ]) # pg
-    
-    
-    def Growth(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,np.array([self.env.substrate,0])]) # cellcounts, substrate, pg
-        self.dyn.ResetInitialConditions(ic)
-        self.dyn.IntegrateToEndConditions()
-        return self.dyn.populations[:-2] # return only cell count
     
     # polynomial dependence on public good concentration
     def PolynomialGrowthRates(self,populations):
@@ -850,7 +897,7 @@ class GrowthDynamicsPublicGoods(GrowthDynamics):
 
 
 
-class GrowthDynamicsAntibiotics(GrowthDynamics):
+class GrowthDynamicsAntibiotics(GrowthDynamicsTimeIntegrator):
     def __init__(self,**kwargs):
 
         if kwargs.get("mixingtime") is None:
@@ -869,10 +916,10 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
         assert sum(self.ABparams['PGproduction']) > 0, "PG is not produced"
         
         self.dyn = TimeIntegrator(dynamics = self.dynAB,initialconditions = np.zeros(self.numstrains + 3),params = None,requiredpositive = True)
-        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         self.dyn.SetEndCondition("reachzero",self.numstrains)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
+        self.otherinitialconditions = np.array([self.env.substrate,self.ABparams['PGconc'],self.ABparams['ABconc']])
     
     
     def beta(self,abconc):
@@ -892,13 +939,6 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
                                             np.sum(self.ABparams['PGproduction']*x[:-3]),      # production of public good
                                             -self.ABparams['PGreductionAB']*x[-1]*x[-2] ])])   # reduction of antibiotics by public good
     
-    def Growth(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,np.array([self.env.substrate,self.ABparams['PGconc'],self.ABparams['ABconc']])])
-        self.dyn.ResetInitialConditions(ic)
-        self.dyn.IntegrateToEndConditions()
-        return self.dyn.populations[:-3]*self.env.dilution
-                                          
     
     def ParameterString(self):
         r  = '\n'
@@ -914,7 +954,7 @@ class GrowthDynamicsAntibiotics(GrowthDynamics):
 
 
 
-class GrowthDynamicsAntibiotics2(GrowthDynamics):
+class GrowthDynamicsAntibiotics2(GrowthDynamicsTimeIntegrator):
     def __init__(self,**kwargs):
 
         if kwargs.get("mixingtime") is None:
@@ -935,7 +975,7 @@ class GrowthDynamicsAntibiotics2(GrowthDynamics):
         self.dyn.SetEndCondition("reachzero",self.numstrains)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
-    
+        self.otherinitialconditions = np.array([self.env.substrate,self.ABparams['ABconc']])
     
     def beta(self,abconc):
         bk = np.power(abconc,self.ABparams['kappa'])
@@ -957,14 +997,6 @@ class GrowthDynamicsAntibiotics2(GrowthDynamics):
                                     ])
                                 ])
     
-    def Growth(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,np.array([self.env.substrate,self.ABparams['ABconc']])])
-        self.dyn.ResetInitialConditions(ic)
-        self.dyn.IntegrateToEndConditions()
-        return self.dyn.populations[:self.numstrains]*self.env.dilution
-                                          
-    
     def ParameterString(self):
         r  = '\n'
         s  = super(GrowthDynamicsAntibiotics2,self).ParameterString() +r
@@ -977,7 +1009,7 @@ class GrowthDynamicsAntibiotics2(GrowthDynamics):
         
 
 
-class GrowthDynamicsPyoverdin(GrowthDynamics):
+class GrowthDynamicsPyoverdin(GrowthDynamicsTimeIntegrator):
     def __init__(self,**kwargs):
 
         if kwargs.get("mixingtime") is None:
@@ -994,10 +1026,10 @@ class GrowthDynamicsPyoverdin(GrowthDynamics):
         assert sum(self.PVDparams['PVDproduction']) > 0, "PVD is not produced"
         
         self.dyn = TimeIntegrator(dynamics = self.dynPVD,initialconditions = np.zeros(self.numstrains + 3),params = None,requiredpositive = True)
-        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         self.dyn.SetEndCondition("reachzero",self.numstrains)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
+        self.otherinitialconditions = np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])
 
 
     def dynPVD(self,t,x,params):
@@ -1010,14 +1042,6 @@ class GrowthDynamicsPyoverdin(GrowthDynamics):
                                                         np.sum(self.PVDparams['PVDproduction']*x[:-3]),
                                                         p * x[-2]   ])])
 
-    def Growth(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])])
-        self.dyn.ResetInitialConditions(ic)
-        self.dyn.IntegrateToEndConditions()
-        return self.dyn.populations[:-3]*self.env.dilution
-                                          
-    
     def ParameterString(self):
         r  = '\n'
         s  = super(GrowthDynamicsPyoverdin,self).ParameterString() +r
@@ -1030,7 +1054,7 @@ class GrowthDynamicsPyoverdin(GrowthDynamics):
 
 
 
-class GrowthDynamicsPyoverdin2(GrowthDynamics):
+class GrowthDynamicsPyoverdin2(GrowthDynamicsTimeIntegrator):
     def __init__(self,**kwargs):
 
         if kwargs.get("mixingtime") is None:
@@ -1047,10 +1071,10 @@ class GrowthDynamicsPyoverdin2(GrowthDynamics):
         assert sum(self.PVDparams['PVDproduction']) > 0, "PVD is not produced"
         
         self.dyn = TimeIntegrator(dynamics = self.dynPVD,initialconditions = np.zeros(self.numstrains + 3),params = None,requiredpositive = True)
-        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         self.dyn.SetEndCondition("reachzero",self.numstrains)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
+        self.otherinitialconditions = np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])
 
 
     def dynPVD(self,t,x,params):
@@ -1063,13 +1087,6 @@ class GrowthDynamicsPyoverdin2(GrowthDynamics):
                                                         np.sum(self.PVDparams['PVDproduction']*x[:-3]),
                                                         p * x[-2]   ])])
 
-    def Growth(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])])
-        self.dyn.ResetInitialConditions(ic)
-        self.dyn.IntegrateToEndConditions()
-        return self.dyn.populations[:-3]*self.env.dilution
-                                          
     
     def ParameterString(self):
         r = '\n'
@@ -1079,7 +1096,7 @@ class GrowthDynamicsPyoverdin2(GrowthDynamics):
 
 
 
-class GrowthDynamicsPyoverdin3(GrowthDynamics):
+class GrowthDynamicsPyoverdin3(GrowthDynamicsTimeIntegrator):
     def __init__(self,**kwargs):
         if kwargs.get("mixingtime") is None:
             kwargs["mixingtime"] = 12.
@@ -1111,6 +1128,7 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
+        self.otherinitialconditions = np.concatenate([self.PVDparams['InitialInternalIron'],np.array([self.env.substrate])])
         
     
     
@@ -1146,13 +1164,6 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
             -a*x[self.numstrains:2*self.numstrains] + self.PVDparams['Efficiency'] * pvdFe + self.PVDparams['BaseIronInflux'],
             np.array([-np.sum(ay * x[:-3])])
             ])
-
-    def Growth(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,self.PVDparams['InitialInternalIron'],np.array([self.env.substrate])])
-        self.dyn.ResetInitialConditions(ic)
-        self.dyn.IntegrateToEndConditions()
-        return self.dyn.populations[:-3]*self.env.dilution
     
 
     def ParameterString(self):
@@ -1169,7 +1180,7 @@ class GrowthDynamicsPyoverdin3(GrowthDynamics):
         return s
 
         
-class GrowthDynamicsPyoverdin4(GrowthDynamics):
+class GrowthDynamicsPyoverdin4(GrowthDynamicsTimeIntegrator):
     def __init__(self,**kwargs):
         if kwargs.get("mixingtime") is None:
             kwargs["mixingtime"] = 24.
@@ -1188,6 +1199,7 @@ class GrowthDynamicsPyoverdin4(GrowthDynamics):
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
+        self.otherinitialconditions = np.array([self.env.substrate])
 
         
     def dynPVD4(self,t,x,params):
@@ -1205,13 +1217,6 @@ class GrowthDynamicsPyoverdin4(GrowthDynamics):
                                     np.array([-np.sum(a * x[:self.numstrains]/y)])
                               ])
 
-    def Growth(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,np.array([self.env.substrate])])
-        self.dyn.ResetInitialConditions(ic)
-        self.dyn.IntegrateToEndConditions()
-        return self.dyn.populations[:self.numstrains]*self.env.dilution
-    
                             
     def ParameterString(self):
         r  = '\n'
