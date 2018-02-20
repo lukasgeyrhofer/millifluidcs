@@ -15,7 +15,7 @@ def correction_term(m1,m2,model,modelparameters):
     if m1+m2>0:x=float(m1)/(m1+m2)
     r = 1 + modelparameters['dy'][0] * (x-.5)
     if model == 'AB':
-        if m1 * modelparameters['cmdline'][0] + m2 * modelparameters['cmdline'] < 1:
+        if m1 * modelparameters['cmdline'][0] + m2 * modelparameters['cmdline'][1] < 1:
             r = 0
     elif model == 'PVD':
         r *= modelparameters['cmdline'][0]
@@ -29,8 +29,8 @@ parser = gc.AddGrowthParameters(parser)
 
 parser_lattice = parser.add_argument_group(description = "==== Output lattice ====")
 parser_lattice.add_argument("-N","--maxN",   default=50,  type=float)
-parser_lattice.add_argument("-n","--stepN",  default=.1,  type=float)
-parser_lattice.add_argument("-x","--stepsX", default=101, type=int)
+parser_lattice.add_argument("-n","--stepN",  default=1.0,  type=float)
+parser_lattice.add_argument("-x","--stepsX", default=21, type=int)
 parser_lattice.add_argument("-m","--maxM",   default=100, type=int)
 
 parser_model = parser.add_argument_group(description = "==== Within droplet dynamics ====")
@@ -55,6 +55,9 @@ f2    = np.zeros((args.maxM,args.maxM))
 f3    = np.zeros((args.maxM,args.maxM))
 
 modelparameters = {'cmdline':args.modelparameters,'dy':dy,'da':da}
+
+print da
+exit(1)
 
 for m1,m2 in itertools.product(mlist,repeat=2):
     n = float(m1+m2)
