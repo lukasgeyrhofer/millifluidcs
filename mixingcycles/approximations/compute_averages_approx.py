@@ -28,10 +28,12 @@ parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser)
 
 parser_lattice = parser.add_argument_group(description = "==== Output lattice ====")
-parser_lattice.add_argument("-N","--maxN",   default=50,  type=float)
-parser_lattice.add_argument("-n","--stepN",  default=1.0,  type=float)
-parser_lattice.add_argument("-x","--stepsX", default=21, type=int)
-parser_lattice.add_argument("-m","--maxM",   default=100, type=int)
+parser_lattice.add_argument("-N","--maxN",   default=50,    type=float)
+parser_lattice.add_argument("-K","--minN",   default=1e-2,  type=float)
+parser_lattice.add_argument("-n","--stepsN", default=101,   type=int)
+parser_lattice.add_argument("-L","--logN",   default=False, action = "store_true")
+parser_lattice.add_argument("-x","--stepsX", default=21,    type=int)
+parser_lattice.add_argument("-m","--maxM",   default=100,   type=int)
 
 parser_model = parser.add_argument_group(description = "==== Within droplet dynamics ====")
 parser_model.add_argument("-M","--model",choices=['GY','PVD','AB'],default='GY')
@@ -42,7 +44,10 @@ args = parser.parse_args()
 g = gc.GrowthDynamics(**vars(args))
 
 xlist = np.linspace( start = 0, stop = 1,         num  = args.stepsX)
-nlist = np.arange(   start = 0, stop = args.maxN, step = args.stepN)
+if args.logN:
+    nlist = np.power(10,np.linspace(start = np.log10(args.minN),stop = np.log10(args.maxN),num=args.stepsN))
+else:
+    nlist = np.linspace( start = 0, stop = args.maxN,num = args.stepN)
 mlist = np.arange(   start = 0, stop = args.maxM,dtype=int)
 
 y     = np.mean(g.yieldfactors)
@@ -56,16 +61,13 @@ f3    = np.zeros((args.maxM,args.maxM))
 
 modelparameters = {'cmdline':args.modelparameters,'dy':dy,'da':da}
 
-print da
-exit(1)
-
 for m1,m2 in itertools.product(mlist,repeat=2):
     n = float(m1+m2)
     if n > 0:
         x = m1/n
-        f1[m1,m2] = x * np.power(n,-da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1+da[0])
-        f2[m1,m2] =     np.power(n, da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1-da[0])
-        f3[m1,m2] = x * np.power(n, da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1-da[0])
+        f1[m1,m2] = x * np.power(n, da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1-da[0])
+        f2[m1,m2] =     np.power(n,-da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1+da[0])
+        f3[m1,m2] = x * np.power(n,-da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1+da[0])
     
 
 lastx = -1
@@ -74,7 +76,7 @@ for coord in itertools.product(nlist,xlist):
 
     avg_f1 = np.dot(p[1],np.dot(p[0],f1))
     avg_f2 = np.dot(p[1],np.dot(p[0],f2))
-    avg_f3 = np.dot(p[1],np.dot(p[0],f2))
+    avg_f3 = np.dot(p[1],np.dot(p[0],f3))
     
     if coord[1] < lastx:
         sys.stdout.write("\n")
