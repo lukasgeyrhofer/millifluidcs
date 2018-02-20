@@ -539,7 +539,11 @@ class GrowthDynamics(object):
         if self.env.dilution < 1:
             s += "  dilution    " + str(self.env.dilution) +r
         return s
-    
+
+    def __str__(self):
+        return self.ParameterString()
+
+    # pickle functions for saving and loading object from file
     def __getstate__(self):
         return [self.__kwargs_for_pickle,self.__growthmatrix,(self.__growthmatrixgridX,self.__growthmatrixgridY)]
     
