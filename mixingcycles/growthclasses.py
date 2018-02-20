@@ -17,7 +17,7 @@
   interesting properties of the dynamics.
 
 
-  Lukas Geyrhofer, l.geyrhofer@technion.ac.il, 2016-2017
+  Lukas Geyrhofer, l.geyrhofer@technion.ac.il, 2016-2018
 
 '''
 
