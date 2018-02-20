@@ -82,7 +82,7 @@ for coord in itertools.product(nlist,xlist):
         sys.stdout.write("\n")
     lastx = coord[1]
 
-    sys.stdout.write("{:.3f} {:.6f} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],avg_f1,avg_f2,avg_f3))
+    sys.stdout.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],avg_f1,avg_f2,avg_f3))
 
 
 
