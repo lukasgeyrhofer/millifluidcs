@@ -68,19 +68,19 @@ for dilution in dlist:
     fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
 
     if not args.newcoordinates:
-        lastx = None
+        lastx = -1
         for x,y in itertools.product(nlist,repeat=2):
             px = gc.PoissonSeedingVectors(mx,x)[0]
             py = gc.PoissonSeedingVectors(my,y)[0]
             nx = np.dot(py,np.dot(px,gm1))*dilution
             ny = np.dot(py,np.dot(px,gm2))*dilution
-            if x != lastx:
+            if x < lastx:
                 fp.write("\n")
             lastx = x
             fp.write('{} {} {} {}\n'.format(x,y,nx,ny))
     else:
-        lastx = None
-        for x,n in itertools.product(xlist,nlist):
+        lastx = -1
+        for n,x in itertools.product(nlist,xlist):
             p1 = gc.PoissonSeedingVectors(mx,n*x)[0]
             p2 = gc.PoissonSeedingVectors(my,n*(1-x))[0]
             n1 = np.dot(p2,np.dot(p1,gm1))*dilution
@@ -88,8 +88,9 @@ for dilution in dlist:
             nn = n1 + n2
             if nn > 0:  xx = n1/nn
             else:       xx = 0
-            if x != lastx:
+            if x < lastx:
                 fp.write("\n")
+            lastx = x
             fp.write('{} {} {} {}\n'.format(n,x,nn,xx))
 
     fp.close()
