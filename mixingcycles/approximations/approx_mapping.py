@@ -25,12 +25,12 @@ def coord_to_inoc(c):
     return np.array([c[1]*c[0],(1-c[1])*c[0]])
 
 parser = argparse.ArgumentParser()
-parser = gc.AddGrowthParameters(parser)
+parser = gc.AddGrowthParameters(parser,dilution=True)
 
 parser_lattice = parser.add_argument_group(description = "==== Output lattice ====")
+parser_lattice.add_argument("-n","--minN",   default=1e-2,  type=float)
 parser_lattice.add_argument("-N","--maxN",   default=50,    type=float)
-parser_lattice.add_argument("-K","--minN",   default=1e-2,  type=float)
-parser_lattice.add_argument("-n","--stepsN", default=101,   type=int)
+parser_lattice.add_argument("-k","--stepsN", default=101,   type=int)
 parser_lattice.add_argument("-L","--logN",   default=False, action = "store_true")
 parser_lattice.add_argument("-x","--stepsX", default=21,    type=int)
 parser_lattice.add_argument("-m","--maxM",   default=100,   type=int)
@@ -70,6 +70,8 @@ for m1,m2 in itertools.product(mlist,repeat=2):
         f3[m1,m2] = x * np.power(n,-da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1+da[0])
     
 
+syda = np.power(g.env.substrate * y,da)
+
 lastx = -1
 for coord in itertools.product(nlist,xlist):
     p = gc.PoissonSeedingVectors(mlist,coord_to_inoc(coord))
@@ -78,11 +80,15 @@ for coord in itertools.product(nlist,xlist):
     avg_f2 = np.dot(p[1],np.dot(p[0],f2))
     avg_f3 = np.dot(p[1],np.dot(p[0],f3))
     
+    newx = avg_f1/(avg_f1 + (avg_f2 - avg_f3)/(syda*syda))
+    newn = g.env.dilution * g.env.substrate * y * syda * (avg_f1 + (avg_f2 - avg_f3)/(syda*syda))
+    
+    
     if coord[1] < lastx:
         sys.stdout.write("\n")
     lastx = coord[1]
 
-    sys.stdout.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],avg_f1,avg_f2,avg_f3))
+    sys.stdout.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newx,newn,avg_f1,avg_f2,avg_f3))
 
 
 
