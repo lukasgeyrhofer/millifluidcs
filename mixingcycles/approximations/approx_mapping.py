@@ -43,17 +43,18 @@ args = parser.parse_args()
 
 g = gc.GrowthDynamics(**vars(args))
 
-xlist = np.linspace( start = 0, stop = 1,         num  = args.stepsX)
+xlist = np.linspace(start = 0, stop = 1, num  = args.stepsX)
 if args.logN:
     nlist = np.power(10,np.linspace(start = np.log10(args.minN),stop = np.log10(args.maxN),num=args.stepsN))
 else:
-    nlist = np.linspace( start = 0, stop = args.maxN,num = args.stepN)
-mlist = np.arange(   start = 0, stop = args.maxM,dtype=int)
+    nlist = np.linspace(start = 0, stop = args.maxN, num = args.stepsN)
+mlist = np.arange(start = 0, stop = args.maxM, dtype=int)
 
 y     = np.mean(g.yieldfactors)
 dy    = (g.yieldfactors - y)/y
 a     = np.mean(g.growthrates)
 da    = (g.growthrates - a)/a
+syda  = np.power(g.env.substrate * y,da[0])
 
 f1    = np.zeros((args.maxM,args.maxM))
 f2    = np.zeros((args.maxM,args.maxM))
@@ -69,9 +70,6 @@ for m1,m2 in itertools.product(mlist,repeat=2):
         f2[m1,m2] =     np.power(n,-da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1+da[0])
         f3[m1,m2] = x * np.power(n,-da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1+da[0])
     
-
-syda = np.power(g.env.substrate * y,da)
-
 lastx = -1
 for coord in itertools.product(nlist,xlist):
     p = gc.PoissonSeedingVectors(mlist,coord_to_inoc(coord))
@@ -80,15 +78,18 @@ for coord in itertools.product(nlist,xlist):
     avg_f2 = np.dot(p[1],np.dot(p[0],f2))
     avg_f3 = np.dot(p[1],np.dot(p[0],f3))
     
-    newx = avg_f1/(avg_f1 + (avg_f2 - avg_f3)/(syda*syda))
-    newn = g.env.dilution * g.env.substrate * y * syda * (avg_f1 + (avg_f2 - avg_f3)/(syda*syda))
-    
+    if avg_f1 + (avg_f2 - avg_f3)/(syda*syda) > 0:
+        newx = avg_f1/(avg_f1 + (avg_f2 - avg_f3)/(syda*syda))
+        newn = g.env.dilution * g.env.substrate * y * syda * (avg_f1 + (avg_f2 - avg_f3)/(syda*syda))
+    else:
+        newx = 0
+        newn = 0
     
     if coord[1] < lastx:
         sys.stdout.write("\n")
     lastx = coord[1]
 
-    sys.stdout.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newx,newn,avg_f1,avg_f2,avg_f3))
+    sys.stdout.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn,newx,avg_f1,avg_f2,avg_f3))
 
 
 
