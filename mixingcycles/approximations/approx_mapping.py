@@ -13,7 +13,7 @@ import growthclasses as gc
 def correction_term(m1,m2,model,modelparameters):
     x = 0
     if m1+m2>0:x=float(m1)/(m1+m2)
-    r = 1 + modelparameters['dy'][0] * (x-.5)
+    r = 1 + modelparameters['dy'][0] * (2.*x-1.)
     if model == 'AB':
         if m1 * modelparameters['cmdline'][0] + m2 * modelparameters['cmdline'][1] < 1:
             r = 0
@@ -58,7 +58,6 @@ syda  = np.power(g.env.substrate * y,da[0])
 
 f1    = np.zeros((args.maxM,args.maxM))
 f2    = np.zeros((args.maxM,args.maxM))
-f3    = np.zeros((args.maxM,args.maxM))
 
 modelparameters = {'cmdline':args.modelparameters,'dy':dy,'da':da}
 
@@ -66,9 +65,8 @@ for m1,m2 in itertools.product(mlist,repeat=2):
     n = float(m1+m2)
     if n > 0:
         x = m1/n
-        f1[m1,m2] = x * np.power(n, da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1-da[0])
-        f2[m1,m2] =     np.power(n,-da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1+da[0])
-        f3[m1,m2] = x * np.power(n,-da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1+da[0])
+        f1[m1,m2] = x     * np.power(n,-da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1+da[0])
+        f2[m1,m2] = (1-x) * np.power(n,+da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1-da[0])
     
 lastx = -1
 for coord in itertools.product(nlist,xlist):
@@ -76,11 +74,10 @@ for coord in itertools.product(nlist,xlist):
 
     avg_f1 = np.dot(p[1],np.dot(p[0],f1))
     avg_f2 = np.dot(p[1],np.dot(p[0],f2))
-    avg_f3 = np.dot(p[1],np.dot(p[0],f3))
     
-    if avg_f1 + (avg_f2 - avg_f3)/(syda*syda) > 0:
-        newx = avg_f1/(avg_f1 + (avg_f2 - avg_f3)/(syda*syda))
-        newn = g.env.dilution * g.env.substrate * y * syda * (avg_f1 + (avg_f2 - avg_f3)/(syda*syda))
+    if avg_f1 + avg_f2/(syda*syda) > 0:
+        newx = avg_f1/(avg_f1 + avg_f2/(syda*syda))
+        newn = g.env.dilution * g.env.substrate * y * syda * (avg_f1 + avg_f3/(syda*syda))
     else:
         newx = 0
         newn = 0
@@ -89,7 +86,7 @@ for coord in itertools.product(nlist,xlist):
         sys.stdout.write("\n")
     lastx = coord[1]
 
-    sys.stdout.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn,newx,avg_f1,avg_f2,avg_f3))
+    sys.stdout.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn,newx,avg_f1,avg_f2))
 
 
 
