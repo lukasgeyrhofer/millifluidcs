@@ -77,7 +77,7 @@ for coord in itertools.product(nlist,xlist):
     
     if avg_f1 + avg_f2/(syda*syda) > 0:
         newx = avg_f1/(avg_f1 + avg_f2/(syda*syda))
-        newn = g.env.dilution * g.env.substrate * y * syda * (avg_f1 + avg_f3/(syda*syda))
+        newn = g.env.dilution * g.env.substrate * y * syda * (avg_f1 + avg_f2/(syda*syda))
     else:
         newx = 0
         newn = 0
@@ -86,7 +86,7 @@ for coord in itertools.product(nlist,xlist):
         sys.stdout.write("\n")
     lastx = coord[1]
 
-    sys.stdout.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn,newx,avg_f1,avg_f2))
+    sys.stdout.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn,newx,avg_f1,avg_f2,*coord_to_inoc(coord)))
 
 
 
