@@ -30,6 +30,7 @@ parser = gc.AddGrowthParameters(parser)
 parser_io = parser.add_argument_group(description = "==== I/O ====")
 parser_io.add_argument("-o","--baseoutfilename",default="out")
 parser_io.add_argument("-v","--verbose",action="store_true",default=False)
+parser_io.add_argument("-C","--computationmode",choices=['SS','NC'],default='SS') # 'SS': single step dynamics ,'NC': nullclines
 
 parser_dilution = parser.add_argument_group(description = "==== Parameters for dilution values ====")
 parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-4)
