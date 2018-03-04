@@ -31,7 +31,7 @@ def correction_term(m1,m2,model,modelparameters):
 
 
 def coord_to_inoc(c):
-    return np.array([c[1]*c[0],(1-c[1])*c[0]])
+    return np.array([c[1]*c[0],(1.-c[1])*c[0]])
 
 
 def write_contours_to_file(contours, filename, nlist, xlist = None):
@@ -65,15 +65,15 @@ parser_io.add_argument("-v","--verbose",         action = "store_true", default 
 parser_io.add_argument("-C","--computationmode", choices=['SS','NC'],   default = 'SS') # 'SS': single step dynamics ,'NC': nullclines
 
 parser_dilution = parser.add_argument_group(description = "==== Parameters for dilution values ====")
-parser_dilution.add_argument("-d","--dilutionmin",   type=float, default = 1e-4)
+parser_dilution.add_argument("-d","--dilutionmin",   type=float, default = 1.e-4)
 parser_dilution.add_argument("-D","--dilutionmax",   type=float, default = None)
 parser_dilution.add_argument("-K","--dilutionsteps", type=int,   default = 10)
 parser_dilution.add_argument("-L","--dilutionlogscale",          default = False, action = "store_true")
 
 parser_lattice = parser.add_argument_group(description = "==== Output lattice ====")
 parser_lattice.add_argument("-m","--maxM",   type=int,              default = 100)
-parser_lattice.add_argument("-n","--minN",   type=float,            default = 1e-2)
-parser_lattice.add_argument("-N","--maxN",   type=float,            default = 50)
+parser_lattice.add_argument("-n","--minN",   type=float,            default = 1.e-2)
+parser_lattice.add_argument("-N","--maxN",   type=float,            default = 50.)
 parser_lattice.add_argument("-k","--stepsN", type=int,              default = 101)
 parser_lattice.add_argument("-l","--logN",   action = "store_true", default = False)
 parser_lattice.add_argument("-x","--stepsX", type=int,              default = 21)
@@ -89,7 +89,7 @@ args = parser.parse_args()
 verbose("# generating initial conditions",args.verbose)
 g    = gc.GrowthDynamics(**vars(args))
 
-if args.logN:   nlist = np.power(10,np.linspace(start = np.log10(args.minN),stop = np.log10(args.maxN),num=args.stepsN))
+if args.logN:   nlist = np.exp(np.linspace(start = np.log(args.minN),stop = np.log(args.maxN),num=args.stepsN))
 else:           nlist = np.linspace(start = 0, stop = args.maxN, num = args.stepsN)
 xlist                 = np.linspace(start = 0, stop = 1, num  = args.stepsX)
 mlist                 = np.arange  (start = 0, stop = args.maxM, dtype=int)
@@ -103,7 +103,7 @@ outshape = (len(nlist),len(xlist))
 if args.dilutionmax is None:
     dlist = np.array([args.dilutionmin])
 else:
-    if args.dilutionlogscale:   dlist = np.power(10,np.linspace(start = np.log10(args.dilutionmin),stop = np.log10(args.dilutionmax), num = args.dilutionsteps))
+    if args.dilutionlogscale:   dlist = np.exp(np.linspace(start = np.log(args.dilutionmin),stop = np.log(args.dilutionmax), num = args.dilutionsteps))
     else:                       dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
 
 y     = np.mean(g.yieldfactors)
