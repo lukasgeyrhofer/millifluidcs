@@ -89,7 +89,7 @@ args = parser.parse_args()
 verbose("# generating initial conditions",args.verbose)
 g    = gc.GrowthDynamics(**vars(args))
 
-if args.logN:   nlist = np.exp(np.linspace(start = np.log(args.minN),stop = np.log(args.maxN),num=args.stepsN))
+if args.logN:   nlist = np.exp(np.linspace(start = np.log(args.minN),stop = np.log(args.maxN), num = args.stepsN))
 else:           nlist = np.linspace(start = 0, stop = args.maxN, num = args.stepsN)
 xlist                 = np.linspace(start = 0, stop = 1, num  = args.stepsX)
 mlist                 = np.arange  (start = 0, stop = args.maxM, dtype=int)
@@ -97,14 +97,17 @@ mlist                 = np.arange  (start = 0, stop = args.maxM, dtype=int)
 nmat                  = np.repeat(np.expand_dims(xlist, axis = 0), repeats = len(nlist), axis = 0)
 xmat                  = np.repeat(np.expand_dims(nlist, axis = 1), repeats = len(xlist), axis = 1)
 
-gmshape  = (args.maxM,args.maxM)
-outshape = (len(nlist),len(xlist))
+gmshape               = (args.maxM,args.maxM)
+outshape              = (len(nlist),len(xlist))
+
+f1                    = np.zeros(shape = gmshape)
+f2                    = np.zeros(shape = gmshape)
 
 if args.dilutionmax is None:
     dlist = np.array([args.dilutionmin])
 else:
-    if args.dilutionlogscale:   dlist = np.exp(np.linspace(start = np.log(args.dilutionmin),stop = np.log(args.dilutionmax), num = args.dilutionsteps))
-    else:                       dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
+    if args.dilutionlogscale:   dlist = np.exp(np.linspace(start = np.log(args.dilutionmin), stop = np.log(args.dilutionmax), num = args.dilutionsteps))
+    else:                       dlist = np.linspace(start = args.dilutionmin, stop = args.dilutionmax, num = args.dilutionsteps)
 
 y     = np.mean(g.yieldfactors)
 a     = np.mean(g.growthrates)
@@ -115,8 +118,8 @@ syda  = np.power(g.env.substrate * y,da[0])
 modelparameters = {'cmdline':args.modelparameters,'dy':dy,'da':da}
 
 compute_only_singlestep = (args.computationmode == 'SS')
-print compute_only_singlestep
-exit(1)
+
+
 
 verbose("# generating approximations for growth terms",args.verbose)
 for m1,m2 in itertools.product(mlist,repeat=2):
@@ -135,8 +138,8 @@ for c,dilution in enumerate(dlist):
     if compute_only_singlestep:
         fp = open(args.baseoutfilename + '_D{:.3e}'.format(dilution),"w")
 
-    gmn = np.zeros(shape = outshape)
-    gmx = np.zeros(shape = outshape)
+    newn   = np.zeros(shape = outshape)
+    newx   = np.zeros(shape = outshape)
     avg_f1 = np.zeros(shape = outshape)
     avg_f2 = np.zeros(shape = outshape)
     
@@ -148,12 +151,12 @@ for c,dilution in enumerate(dlist):
             avg_f2[i,j] = np.dot(p[1],np.dot(p[0],f2))
             
             if avg_f1[i,j] + avg_f2[i,j]/(syda*syda) > 0:
-                newn[i,j] = g.env.dilution * g.env.substrate * y * syda * (avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
+                newn[i,j] = dilution * g.env.substrate * y * syda * (avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
                 if c == 0:
                     # only need to compute for first dilution value, this does not change thereafter
                     newx[i,j] = avg_f1[i,j]/(avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
             
-            if compute_only_singlestep: fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn,newx,avg_f1,avg_f2,*coord_to_inoc(coord)))
+            if compute_only_singlestep: fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn[i,j],newx[i,j],avg_f1[i,j],avg_f2[i,j]))
         if compute_only_singlestep:     fp.write("\n")
     if compute_only_singlestep:         fp.close()
 
