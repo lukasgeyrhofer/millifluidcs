@@ -90,12 +90,12 @@ verbose("# generating initial conditions",args.verbose)
 g    = gc.GrowthDynamics(**vars(args))
 
 if args.logN:   nlist = np.exp(np.linspace(start = np.log(args.minN),stop = np.log(args.maxN), num = args.stepsN))
-else:           nlist = np.linspace(start = 0, stop = args.maxN, num = args.stepsN)
+else:           nlist = np.linspace(start = args.minN, stop = args.maxN, num = args.stepsN)
 xlist                 = np.linspace(start = 0, stop = 1, num  = args.stepsX)
 mlist                 = np.arange  (start = 0, stop = args.maxM, dtype=int)
 
-nmat                  = np.repeat(np.expand_dims(xlist, axis = 0), repeats = len(nlist), axis = 0)
-xmat                  = np.repeat(np.expand_dims(nlist, axis = 1), repeats = len(xlist), axis = 1)
+nmat                  = np.repeat(np.expand_dims(nlist, axis = 1), repeats = len(xlist), axis = 1)
+xmat                  = np.repeat(np.expand_dims(xlist, axis = 0), repeats = len(nlist), axis = 0)
 
 gmshape               = (args.maxM,args.maxM)
 outshape              = (len(nlist),len(xlist))
