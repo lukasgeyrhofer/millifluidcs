@@ -156,7 +156,7 @@ for c,dilution in enumerate(dlist):
                     # only need to compute for first dilution value, this does not change thereafter
                     newx[i,j] = avg_f1[i,j]/(avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
             
-            if compute_only_singlestep: fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn[i,j],newx[i,j],avg_f1[i,j],avg_f2[i,j]))
+            if compute_only_singlestep: fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,newn[i,j],newx[i,j],avg_f1[i,j],avg_f2[i,j]))
         if compute_only_singlestep:     fp.write("\n")
     if compute_only_singlestep:         fp.close()
 
