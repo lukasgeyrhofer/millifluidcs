@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import sys,math
 import itertools
+from skimage import measure
 
 sys.path.append(sys.path[0] + '/..')
 import growthclasses as gc
@@ -33,34 +34,53 @@ def coord_to_inoc(c):
     return np.array([c[1]*c[0],(1-c[1])*c[0]])
 
 
+def write_contours_to_file(contours, filename, nlist, xlist = None):
+    fp = open(filename,"w")
+    for c in contours:
+        for i in range(len(c)):
+            ix = int(np.floor(c[i,0]))
+            iy = int(np.floor(c[i,1]))
+            px = c[i,0] - ix
+            py = c[i,1] - iy
+            try:        cx = (1.-px)*nlist[ix] + px*nlist[ix+1]
+            except:     cx = nlist[ix]
+            if xlist is None:
+                try:    cy = (1.-py)*nlist[iy] + py*nlist[iy+1]
+                except: cy = nlist[iy]
+            else:
+                try:    cy = (1.-py)*xlist[iy] + py*xlist[iy+1]
+                except: cy = xlist[iy]
+            fp.write('{:14.6e} {:14.6e}\n'.format(cx,cy))
+        fp.write('\n')
+    fp.close()
+
 
 
 parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser)
 
 parser_io = parser.add_argument_group(description = "==== I/O ====")
-parser_io.add_argument("-o","--baseoutfilename",default="out")
-parser_io.add_argument("-v","--verbose",action="store_true",default=False)
-parser_io.add_argument("-C","--computationmode",choices=['SS','NC'],default='SS') # 'SS': single step dynamics ,'NC': nullclines
+parser_io.add_argument("-o","--baseoutfilename",                        default = "out")
+parser_io.add_argument("-v","--verbose",         action = "store_true", default = False)
+parser_io.add_argument("-C","--computationmode", choices=['SS','NC'],   default = 'SS') # 'SS': single step dynamics ,'NC': nullclines
 
 parser_dilution = parser.add_argument_group(description = "==== Parameters for dilution values ====")
-parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-4)
-parser_dilution.add_argument("-D","--dilutionmax",type=float,default=None)
-parser_dilution.add_argument("-K","--dilutionsteps",type=int,default=10)
-parser_dilution.add_argument("-L","--dilutionlogscale",default = False, action = "store_true")
-
+parser_dilution.add_argument("-d","--dilutionmin",   type=float, default = 1e-4)
+parser_dilution.add_argument("-D","--dilutionmax",   type=float, default = None)
+parser_dilution.add_argument("-K","--dilutionsteps", type=int,   default = 10)
+parser_dilution.add_argument("-L","--dilutionlogscale",          default = False, action = "store_true")
 
 parser_lattice = parser.add_argument_group(description = "==== Output lattice ====")
-parser_lattice.add_argument("-n","--minN",   default=1e-2,  type=float)
-parser_lattice.add_argument("-N","--maxN",   default=50,    type=float)
-parser_lattice.add_argument("-k","--stepsN", default=101,   type=int)
-parser_lattice.add_argument("-l","--logN",   default=False, action = "store_true")
-parser_lattice.add_argument("-x","--stepsX", default=21,    type=int)
-parser_lattice.add_argument("-m","--maxM",   default=100,   type=int)
+parser_lattice.add_argument("-m","--maxM",   type=int,              default = 100)
+parser_lattice.add_argument("-n","--minN",   type=float,            default = 1e-2)
+parser_lattice.add_argument("-N","--maxN",   type=float,            default = 50)
+parser_lattice.add_argument("-k","--stepsN", type=int,              default = 101)
+parser_lattice.add_argument("-l","--logN",   action = "store_true", default = False)
+parser_lattice.add_argument("-x","--stepsX", type=int,              default = 21)
 
 parser_model = parser.add_argument_group(description = "==== Within droplet dynamics ====")
-parser_model.add_argument("-M","--model",choices=['GY','PVD','AB'],default='GY')
-parser_model.add_argument("-p","--modelparameters",nargs="*",type=float,default=[])
+parser_model.add_argument("-M","--model",           choices = ['GY','PVD','AB'], default = 'GY')
+parser_model.add_argument("-p","--modelparameters", nargs = "*", type = float,   default = [])
 
 args = parser.parse_args()
 
@@ -73,6 +93,9 @@ if args.logN:   nlist = np.power(10,np.linspace(start = np.log10(args.minN),stop
 else:           nlist = np.linspace(start = 0, stop = args.maxN, num = args.stepsN)
 xlist                 = np.linspace(start = 0, stop = 1, num  = args.stepsX)
 mlist                 = np.arange  (start = 0, stop = args.maxM, dtype=int)
+
+nmat                  = np.repeat(np.expand_dims(xlist, axis = 0), repeats = len(nlist), axis = 0)
+xmat                  = np.repeat(np.expand_dims(nlist, axis = 1), repeats = len(xlist), axis = 1)
 
 gmshape  = (args.maxM,args.maxM)
 outshape = (len(nlist),len(xlist))
@@ -106,8 +129,9 @@ for m1,m2 in itertools.product(mlist,repeat=2):
 
 
 verbose("# iterating dilutions",args.verbose)
-for dilution in dlist:
+for c,dilution in enumerate(dlist):
     verbose("# D = {:.3e}\n".format(dilution),args.verbose)
+
     if compute_only_singlestep:
         fp = open(args.baseoutfilename + '_D{:.3e}'.format(dilution),"w")
 
@@ -125,8 +149,9 @@ for dilution in dlist:
             
             if avg_f1[i,j] + avg_f2[i,j]/(syda*syda) > 0:
                 newn[i,j] = g.env.dilution * g.env.substrate * y * syda * (avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
-                newx[i,j] = avg_f1[i,j]/(avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
-            
+                if c == 0:
+                    # only need to compute for first dilution value, this does not change thereafter
+                    newx[i,j] = avg_f1[i,j]/(avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
             
             if compute_only_singlestep: fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn,newx,avg_f1,avg_f2,*coord_to_inoc(coord)))
         if compute_only_singlestep:     fp.write("\n")
@@ -134,21 +159,18 @@ for dilution in dlist:
 
 
 
-if not compute_only_singlestep:
-    verbose("# single step computations finished, computing nullclines",args.verbose)
-    # get also nullclines
+    if not compute_only_singlestep:
+        # get also nullclines
+        verbose("# single step computations finished, computing nullclines",args.verbose)
+        
+        if c == 0:
+            # only need to compute for first dilution value, this does not change thereafter
+            cont_x = measure.find_contours(newx - xmat,0)
+            write_contours_to_file(cont_x,args.baseoutfilename + '_X',nlist,xlist)
+        
+        cont_n = measure.find_contours(newn - nmat,0)
+        write_contours_to_file(cont_n,args.baseoutfilename + '_N_D{:.3e}'.format(dilution),nlist,xlist)
+        
     
-    # dummy
-    
-    
-
-
-
-
-
-
-
-
-
 
 
