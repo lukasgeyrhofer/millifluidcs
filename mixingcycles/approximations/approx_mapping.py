@@ -5,9 +5,16 @@ import argparse
 import sys,math
 import itertools
 
-
 sys.path.append(sys.path[0] + '/..')
 import growthclasses as gc
+
+
+
+def verbose(msg,verbose = True):
+    if verbose:
+        if msg[-1] != '\n':
+            msg += '\n'
+        sys.stdout.write(msg)
 
 
 def correction_term(m1,m2,model,modelparameters):
@@ -21,8 +28,12 @@ def correction_term(m1,m2,model,modelparameters):
         r *= modelparameters['cmdline'][0]
     return r
 
+
 def coord_to_inoc(c):
     return np.array([c[1]*c[0],(1-c[1])*c[0]])
+
+
+
 
 parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser)
@@ -53,40 +64,38 @@ parser_model.add_argument("-p","--modelparameters",nargs="*",type=float,default=
 
 args = parser.parse_args()
 
-g = gc.GrowthDynamics(**vars(args))
 
-if args.verbose:
-    sys.stdout.write("# generating initial conditions\n")
 
-xlist = np.linspace(start = 0, stop = 1, num  = args.stepsX)
-if args.logN:
-    nlist = np.power(10,np.linspace(start = np.log10(args.minN),stop = np.log10(args.maxN),num=args.stepsN))
-else:
-    nlist = np.linspace(start = 0, stop = args.maxN, num = args.stepsN)
-mlist = np.arange(start = 0, stop = args.maxM, dtype=int)
+verbose("# generating initial conditions",args.verbose)
+g    = gc.GrowthDynamics(**vars(args))
+
+if args.logN:   nlist = np.power(10,np.linspace(start = np.log10(args.minN),stop = np.log10(args.maxN),num=args.stepsN))
+else:           nlist = np.linspace(start = 0, stop = args.maxN, num = args.stepsN)
+xlist                 = np.linspace(start = 0, stop = 1, num  = args.stepsX)
+mlist                 = np.arange  (start = 0, stop = args.maxM, dtype=int)
+
+gmshape  = (args.maxM,args.maxM)
+outshape = (len(nlist),len(xlist))
 
 if args.dilutionmax is None:
     dlist = np.array([args.dilutionmin])
 else:
-    if args.dilutionlogscale:
-        dlist = np.power(10,np.linspace(start = np.log10(args.dilutionmin),stop = np.log10(args.dilutionmax), num = args.dilutionsteps))
-    else:
-        dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
+    if args.dilutionlogscale:   dlist = np.power(10,np.linspace(start = np.log10(args.dilutionmin),stop = np.log10(args.dilutionmax), num = args.dilutionsteps))
+    else:                       dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
 
 y     = np.mean(g.yieldfactors)
-dy    = (g.yieldfactors - y)/y
 a     = np.mean(g.growthrates)
-da    = (g.growthrates - a)/a
+dy    = (g.yieldfactors - y)/y
+da    = (g.growthrates  - a)/a
 syda  = np.power(g.env.substrate * y,da[0])
-
-f1    = np.zeros((args.maxM,args.maxM))
-f2    = np.zeros((args.maxM,args.maxM))
 
 modelparameters = {'cmdline':args.modelparameters,'dy':dy,'da':da}
 
-if args.verbose:
-    sys.stdout.write("# generating approximations for growth terms\n")
+compute_only_singlestep = (args.computationmode == 'SS')
+print compute_only_singlestep
+exit(1)
 
+verbose("# generating approximations for growth terms",args.verbose)
 for m1,m2 in itertools.product(mlist,repeat=2):
     n = float(m1+m2)
     if n > 0:
@@ -95,33 +104,43 @@ for m1,m2 in itertools.product(mlist,repeat=2):
         f2[m1,m2] = (1-x) * np.power(n,+da[0]) * np.power(correction_term(m1,m2,args.model,modelparameters),1-da[0])
 
 
-if args.verbose:
-    sys.stdout.write("# iterating dilutions\n")
+
+verbose("# iterating dilutions",args.verbose)
 for dilution in dlist:
-    if args.verbose:
-        sys.stdout.write("# D = {:.3e}\n".format(dilution))
-    fp = open(args.baseoutfilename + '_D{:.3e}'.format(dilution),"w")
-    lastx = -1
-    for coord in itertools.product(nlist,xlist):
-        p = gc.PoissonSeedingVectors(mlist,coord_to_inoc(coord))
+    verbose("# D = {:.3e}\n".format(dilution),args.verbose)
+    if compute_only_singlestep:
+        fp = open(args.baseoutfilename + '_D{:.3e}'.format(dilution),"w")
 
-        avg_f1 = np.dot(p[1],np.dot(p[0],f1))
-        avg_f2 = np.dot(p[1],np.dot(p[0],f2))
-        
-        if avg_f1 + avg_f2/(syda*syda) > 0:
-            newx = avg_f1/(avg_f1 + avg_f2/(syda*syda))
-            newn = g.env.dilution * g.env.substrate * y * syda * (avg_f1 + avg_f2/(syda*syda))
-        else:
-            newx = 0
-            newn = 0
-        
-        if coord[1] < lastx:
-            fp.write("\n")
-        lastx = coord[1]
+    gmn = np.zeros(shape = outshape)
+    gmx = np.zeros(shape = outshape)
+    avg_f1 = np.zeros(shape = outshape)
+    avg_f2 = np.zeros(shape = outshape)
+    
+    for i,n in enumerate(nlist):
+        for j,x in enumerate(xlist):
+            p = gc.PoissonSeedingVectors(mlist,coord_to_inoc(np.array([n,x])))
 
-        fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn,newx,avg_f1,avg_f2,*coord_to_inoc(coord)))
-    fp.close()
+            avg_f1[i,j] = np.dot(p[1],np.dot(p[0],f1))
+            avg_f2[i,j] = np.dot(p[1],np.dot(p[0],f2))
+            
+            if avg_f1[i,j] + avg_f2[i,j]/(syda*syda) > 0:
+                newn[i,j] = g.env.dilution * g.env.substrate * y * syda * (avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
+                newx[i,j] = avg_f1[i,j]/(avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
+            
+            
+            if compute_only_singlestep: fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(coord[0],coord[1],newn,newx,avg_f1,avg_f2,*coord_to_inoc(coord)))
+        if compute_only_singlestep:     fp.write("\n")
+    if compute_only_singlestep:         fp.close()
 
+
+
+if not compute_only_singlestep:
+    verbose("# single step computations finished, computing nullclines",args.verbose)
+    # get also nullclines
+    
+    # dummy
+    
+    
 
 
 
