@@ -25,19 +25,18 @@ if openfile:
 else:
     fp = sys.stdout
     
-nlist1  = g.__growthmatrixgridX[g.__growthmatrixgridX < args.maxM]
-nlist2  = g.__growthmatrixgridY[g.__growthmatrixgridY < args.maxM]
-gm1     = g.__growthmatrix[::,0]
-gm2     = g.__growthmatrix[::,1]
-avg_gm1 = np.zeros((len(nlist1),len(nlist2)))
-avg_gm2 = np.zeros((len(nlist1),len(nlist2)))
+nlist1,nlist2 = g.growthmatrixgrid
+gm1           = g.growthmatrix[:,:,0]
+gm2           = g.growthmatrix[:,:,1]
+avg_gm1       = np.zeros((len(nlist1),len(nlist2)))
+avg_gm2       = np.zeros((len(nlist1),len(nlist2)))
 
 lastn2 = -1
 for i,n1 in enumerate(nlist1):
     for j,n2 in enumerate(nlist2):
         
-        p1 = gc.PoissonSeedingVectors(g.__growthmatrixgridX,[n1])
-        p2 = gc.PoissonSeedingVectors(g.__growthmatrixgridY,[n2])
+        p1 = gc.PoissonSeedingVectors(nlist1,[n1])
+        p2 = gc.PoissonSeedingVectors(nlist2,[n2])
         
         avg_gm1[i,j] = np.dot(p2[0],np.dot(p1[0],gm1))
         avg_gm2[i,j] = np.dot(p2[0],np.dot(p1[0],gm2))
