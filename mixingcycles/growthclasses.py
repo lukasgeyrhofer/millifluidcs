@@ -337,9 +337,9 @@ class GrowthDynamics(object):
             raise ValueError("size argument does not fit")
 
         self.__growthmatrix = np.zeros((len(self.__growthmatrixgridX),len(self.__growthmatrixgridY),2))
-        for i in range(len(self.__growthmatrixgridX)):
-            for j in range(len(self.__growthmatrixgridY)):
-                self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([self.__growthmatrixgridX[i],self.__growthmatrixgridY[j]]))
+        for i,n1 in enumerate(self.__growthmatrixgridX):
+            for j,n2 in enumerate(self.__growthmatrixgridY):
+                self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([n1,n2]))
 
     
     def getGrowthMatrix(self,size,step=1):
