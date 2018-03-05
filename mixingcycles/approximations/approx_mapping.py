@@ -139,10 +139,10 @@ for c,dilution in enumerate(dlist):
         fp = open(args.baseoutfilename + '_D{:.3e}'.format(dilution),"w")
 
     # reset matrices
-    newn             = np.zeros(shape = outshape)
-    if c == 0:  newx = np.zeros(shape = outshape)
-    avg_f1           = np.zeros(shape = outshape)
-    avg_f2           = np.zeros(shape = outshape)
+    newn   = np.zeros(shape = outshape)
+    newx   = np.zeros(shape = outshape)
+    avg_f1 = np.zeros(shape = outshape)
+    avg_f2 = np.zeros(shape = outshape)
     
     for i,n in enumerate(nlist):
         for j,x in enumerate(xlist):
@@ -153,9 +153,7 @@ for c,dilution in enumerate(dlist):
             
             if avg_f1[i,j] + avg_f2[i,j]/(syda*syda) > 0:
                 newn[i,j] = dilution * g.env.substrate * y * syda * (avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
-                if c == 0:
-                    # only need to compute for first dilution value, this does not change thereafter
-                    newx[i,j] = avg_f1[i,j]/(avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
+                newx[i,j] = avg_f1[i,j]/(avg_f1[i,j] + avg_f2[i,j]/(syda*syda))
             
             if compute_only_singlestep: fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,newn[i,j],newx[i,j],avg_f1[i,j],avg_f2[i,j]))
         if compute_only_singlestep:     fp.write("\n")
