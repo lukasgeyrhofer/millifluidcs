@@ -32,8 +32,8 @@ avg_gm1       = np.zeros((len(nlist1),len(nlist2)))
 avg_gm2       = np.zeros((len(nlist1),len(nlist2)))
 
 lastn2 = -1
-for i,n1 in enumerate(nlist1):
-    for j,n2 in enumerate(nlist2):
+for i,n1 in enumerate(nlist1[nlist1 < args.maxM]):
+    for j,n2 in enumerate(nlist2[nlist2 < args.maxM]):
         
         p1 = gc.PoissonSeedingVectors(nlist1,[n1])
         p2 = gc.PoissonSeedingVectors(nlist2,[n2])
