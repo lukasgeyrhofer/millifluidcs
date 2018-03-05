@@ -1238,12 +1238,50 @@ class GrowthDynamicsPyoverdin4(GrowthDynamicsTimeIntegrator):
     
     
     
+class GrowthDynamicsApprox(GrowthDynamics):
+    def __init__(self,**kwargs):
+        
+        super(GrowthDynamicsApprox,self).__init__(**kwargs)
+        
+        self.__model = kwargs.get('model','GY')
+        self.__modelparameters = np.array(kwargs.get('modelparameters',[]),dtype = np.float)
+            
+        # rewrite parameters for later use
+        self.__a  = np.mean(self.growthrates)
+        self.__da = (self.growthrates - self.__a)/self.__a
+        self.__y  = np.mean(self.yieldfactors)
+        self.__dy = (self.yieldfactors - self.__y)/self.__y
+        
+        self.__sy = self.env.substrate * self.__y
+        
+    def Growth(self,initialcells = None):
+        ic  = self.checkInitialCells(initialcells) # generate list with same dimensions as number of microbial strains
+        n = np.sum(ic) * 1.
+        if n > 0:
+            x = ic/n
+            return n * x * np.power(self.__sy/n * self.correction_term(ic[0],ic[1]),1 + self.__da)
+        else:
+            return np.zeros(2)
     
-    
-    
-    
-    
-    
+    def correction_term(self,m1,m2):
+        x = 0
+        if m1+m2>0:x=float(m1)/(m1+m2)
+        r = 1 + self.__dy[0] * (2.*x-1.)
+        if self.__model == 'AB':
+            if m1 * self.__modelparameters[0] + m2 * self.__modelparameters[1] < 1:
+                r = 0
+        elif self.__model == 'PVD':
+            r *= self.__modelparameters[0]
+        return r
+
+    def ParameterString(self):
+        r  = '\n'
+        s  = super(GrowthDynamicsApprox,self).ParameterString() +r
+        s += "*** Approximation parameters ***" +r
+        s += "  Model             " + str(self.__model) + r
+        s += "  Model parameters  " + self.arraystring(self.__modelparameters) +r
+        return s
+        
     
     
     
