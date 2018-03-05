@@ -138,10 +138,11 @@ for c,dilution in enumerate(dlist):
     if compute_only_singlestep:
         fp = open(args.baseoutfilename + '_D{:.3e}'.format(dilution),"w")
 
-    newn   = np.zeros(shape = outshape)
-    newx   = np.zeros(shape = outshape)
-    avg_f1 = np.zeros(shape = outshape)
-    avg_f2 = np.zeros(shape = outshape)
+    # reset matrices
+    newn             = np.zeros(shape = outshape)
+    if c == 0:  newx = np.zeros(shape = outshape)
+    avg_f1           = np.zeros(shape = outshape)
+    avg_f2           = np.zeros(shape = outshape)
     
     for i,n in enumerate(nlist):
         for j,x in enumerate(xlist):
