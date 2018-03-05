@@ -11,7 +11,7 @@ import growthclasses as gc
 parser = argparse.ArgumentParser()
 parser.add_argument("-i","--infile",default=None)
 parser.add_argument("-o","--outfile",default=None)
-parser.add_argument("-m","--maxM",default=100)
+parser.add_argument("-m","--maxM",default=100,type=float)
 args = parser.parse_args()
 
 try:
@@ -32,11 +32,12 @@ avg_gm1       = np.zeros((len(nlist1),len(nlist2)))
 avg_gm2       = np.zeros((len(nlist1),len(nlist2)))
 
 lastn2 = -1
+
 for i,n1 in enumerate(nlist1[nlist1 < args.maxM]):
     for j,n2 in enumerate(nlist2[nlist2 < args.maxM]):
         
-        p1 = gc.PoissonSeedingVectors(nlist1,[n1])
-        p2 = gc.PoissonSeedingVectors(nlist2,[n2])
+        p1 = gc.PoissonSeedingVectors(nlist1,np.array([n1]))
+        p2 = gc.PoissonSeedingVectors(nlist2,np.array([n2]))
         
         avg_gm1[i,j] = np.dot(p2[0],np.dot(p1[0],gm1))
         avg_gm2[i,j] = np.dot(p2[0],np.dot(p1[0],gm2))
