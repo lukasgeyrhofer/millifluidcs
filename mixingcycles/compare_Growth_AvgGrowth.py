@@ -21,7 +21,7 @@ except:
 
 openfile = (not args.outfile is None)
 if openfile:
-    fp = open(args.outfile)
+    fp = open(args.outfile,"w")
 else:
     fp = sys.stdout
     
