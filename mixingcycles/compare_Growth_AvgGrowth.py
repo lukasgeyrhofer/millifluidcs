@@ -16,7 +16,7 @@ def get_match(n1,ntotal,nlist):
 parser = argparse.ArgumentParser()
 parser.add_argument("-i","--infile",default=None)
 parser.add_argument("-o","--outfile",default=None)
-parser.add_argument("-m","--maxM",default=100,type=float)
+parser.add_argument("-m","--maxM",default=100,type=int)
 parser.add_argument("-N","--sortPopSize",default=False,action="store_true")
 args = parser.parse_args()
 
@@ -56,7 +56,7 @@ for i,n1 in enumerate(nlist1[nlist1 < args.maxM]):
             fp.write("{:3.0f} {:3.0f} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n1,n2,avg_gm1[i,j],avg_gm2[i,j],gm1[i,j],gm2[i,j]))
 
 if args.sortPopSize:
-    for n in range(nlist1[-1] + nlist2[-1]):
+    for n in range(min(nlist1[-1] + nlist2[-1],args.maxM)):
         for i,n1 in enumerate(nlist1):
 
             n2,j = get_match(n1,n,nlist2)
