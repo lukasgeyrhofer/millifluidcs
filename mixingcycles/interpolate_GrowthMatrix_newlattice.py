@@ -39,25 +39,35 @@ gm1   = g.growthmatrix[:,:,0]
 gm2   = g.growthmatrix[:,:,1]
 
 nmat    = gm1 + gm2
-xmat    = np.zeros(nmat.shape())
+xmat    = np.zeros(np.shape(nmat))
 xmat[nmat > 0] = gm1[nmat>0]/nmat[nmat>0]
 
-nlist = np.linspace(start = 0,stop = args.maxInoculum, step = args.stepInoculum)
-xlist = np.arange(start = 0,stop = 1,step = args.stepFraction)
+nlist = np.arange(start = 0,stop = args.maxInoculum, step = args.stepInoculum)
+xlist = np.linspace(start = 0,stop = 1,num = int(1./args.stepFraction)+1)
 
 newn = np.zeros((len(nlist),len(xlist)))
 newx = np.zeros((len(nlist),len(xlist)))
+valn = np.zeros(4)
+valx = np.zeros(4)
+
 
 for i,n in enumerate(nlist):
     for j,x in enumerate(xlist):
-        m1 = np.floor(n*x,dtype=int)
-        m2 = np.floor(n*(1-x),dtype=int)
+        m1 = int(np.floor(n*x))
+        m2 = int(np.floor(n*(1-x)))
         w1 = n*x - m1
         w2 = n*(1-x) - m2
         if m1 < mx[-1] and m2 < my[-1]:
             edges = np.array([[m1,m2],[m1,m2+1],[m1+1,m2],[m1+1,m2+1]])
-            valn = nm[edges]
-            valx = xm[edges]
+            valn[0] = nmat[m1,   m2]
+            valn[1] = nmat[m1,   m2+1]
+            valn[2] = nmat[m1+1, m2]
+            valn[3] = nmat[m1+1, m2+1]
+
+            valx[0] = xmat[m1,   m2]
+            valx[1] = xmat[m1,   m2+1]
+            valx[2] = xmat[m1+1, m2]
+            valx[3] = xmat[m1+1, m2+1]
 
             newn[i,j] = interp_values(w1,w2,valn)
             newx[i,j] = interp_values(w1,w2,valx)
