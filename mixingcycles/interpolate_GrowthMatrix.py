@@ -52,7 +52,7 @@ val2 = np.zeros(4)
 # define new lattice for interpolated growthmatrices
 if args.newcoordinates:
     mat1    = gm1 + gm2
-    mat2    = np.zeros(np.shape(nmat))
+    mat2    = np.zeros(np.shape(mat1))
     mat2[mat1 > 0] = gm1[mat1>0]/mat1[mat1>0]
 
     coordlist1 = np.arange(start = 0,stop = args.maxInoculum, step = args.stepInoculum)
