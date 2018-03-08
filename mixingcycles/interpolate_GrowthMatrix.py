@@ -79,11 +79,11 @@ for i,c1 in enumerate(coordlist1):
             w1 = (mcoord(c1,c2,args.newcoordinates)[0] - mlist1[m1i])/float(mlist1[m1i+1] - mlist1[m1i])
             w2 = (mcoord(c1,c2,args.newcoordinates)[1] - mlist2[m2i])/float(mlist2[m2i+1] - mlist2[m2i])
 
-            val1 = np.array([nmat[m1i, m2i], nmat[m1i, m2i+1], nmat[m1i+1, m2i], nmat[m1i+1, m2i+1]])
-            val2 = np.array([xmat[m1i, m2i], xmat[m1i, m2i+1], xmat[m1i+1, m2i], xmat[m1i+1, m2i+1]])
+            val1 = np.array([mat1[m1i, m2i], mat1[m1i, m2i+1], mat1[m1i+1, m2i], mat1[m1i+1, m2i+1]])
+            val2 = np.array([mat2[m1i, m2i], mat2[m1i, m2i+1], mat2[m1i+1, m2i], mat2[m1i+1, m2i+1]])
 
-            new1[i,j] = interp_values(w1,w2,valn)
-            new2[i,j] = interp_values(w1,w2,valx)
+            new1[i,j] = interp_values(w1,w2,val1)
+            new2[i,j] = interp_values(w1,w2,val2)
 
 
 # output
