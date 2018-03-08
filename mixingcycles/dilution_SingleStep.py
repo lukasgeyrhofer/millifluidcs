@@ -49,7 +49,7 @@ else:
 
 if args.newcoordinates:
     nlist = np.arange(start = 0,stop = args.maxInoculum,step = args.stepInoculum)
-    xlist = np.arange(start = 0,stop = 1 + .5*args.stepFraction,step = args.stepFraction)
+    xlist = np.linspace(start = 0,stop = 1,num = int(1./args.stepFraction)+1)
     shape = (len(nlist),len(xlist))
 else:
     nlist = np.arange(start = 0,stop = args.maxInoculum,step = args.stepInoculum)

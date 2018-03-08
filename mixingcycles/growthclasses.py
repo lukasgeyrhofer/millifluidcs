@@ -464,9 +464,9 @@ class GrowthDynamics(object):
         
         gamma[invading] = 1 - gamma[noninvading]
         
-        return gamma
-            
-            
+        return gamma            
+
+
     def __getattr__(self,key):
         if key == "numstrains":
             return len(self.strains)
