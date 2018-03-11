@@ -641,7 +641,7 @@ class TimeIntegrator(object):
                     if self.x[i] < self.__extinctionthresholds[i]:
                         self.x[i] = 0
             t += self.__step
-        self.__globaltime += time
+        self.__globaltime += t
         return self.__globaltime
     
     def IntegrateToZero(self,index):
