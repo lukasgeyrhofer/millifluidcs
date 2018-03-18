@@ -104,13 +104,19 @@ def __main__():
         
         for step in range(1,args.steps+1):
             
-            inocdens = growth_dilution(inocdens,dilution)
+            # update seeding probabilities from last cycle
+            inocdens = seeding(inocdens,dilution)
             
+            # store this seeding as image
             outfn = args.outbasename + "_D{:.3e}_{%04d}".format(dilution,step)
             write_image(outfn,inocdens)
 
-
-
+            # growth
+            
+            # dilution
+            if args.mode == "mixing":
+                # sum all inoculum sizes to the average one
+                pass
 
 
 if __name__ == "__main__":
