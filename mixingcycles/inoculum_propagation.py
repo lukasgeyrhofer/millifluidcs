@@ -27,13 +27,15 @@ def write_image(filename,data,parameters = dict()):
     if parameters.get('logscale',False):
         tmp  = np.log(tmp)
         tmp[np.isnan(tmp)] = np.nanmin(tmp)
+        if not parameters.get('logmin',None) is None:
+            tmp[tmp < parameters.get('logmin',None)] = parameters.get('logmin',None)
         tmp -= np.nanmin(tmp)
-        m     = np.nanmax(tmp)
+        m    = np.nanmax(tmp)
         if m > 0: tmp /= m
     elif parameters.get('rescale',False):
         tmp[np.isnan(tmp)] = np.nanmin(tmp)
         tmp -= np.nanmin(tmp)
-        m     = np.nanmax(tmp)
+        m    = np.nanmax(tmp)
         if m > 0: tmp /= m
     
     img = PIL.Image.fromarray((255 * tmp).astype('uint8'))
@@ -119,6 +121,7 @@ def __main__():
     parser_img = parser.add_argument_group(description = "==== Output image parameters ====")
     parser_img.add_argument("-p","--pixelsperpoint",type=int,default=2) # unimplemented
     parser_img.add_argument("-l","--DensityLogscale",default=False,action="store_true")
+    parser_img.add_argument("-P","--DensityLogscaleMin",default=None,type=float)
     parser_img.add_argument("-r","--DensityRescale",default=False,action="store_true")
 
     parser_dilution = parser.add_argument_group(description = "==== Dilution values ====")
@@ -142,7 +145,8 @@ def __main__():
     
     imageparameters = {
             'logscale': args.DensityLogscale,
-            'rescale':  args.DensityRescale
+            'rescale':  args.DensityRescale,
+            'logmin':   args.DensityLogscaleMin
             }
     
 
