@@ -6,6 +6,7 @@ import sys,math
 import cairo
 import scipy.misc as spm
 import PIL
+import pickle
 
 import growthclasses as gc
 
@@ -17,24 +18,24 @@ def inoc_from_coords(x,newcoordinates = False):
         return np.array([x[0],x[1]],dtype=np.float64)
 
 
-def value_to_color(value):
-    
-
-
-def write_image(filename,data,parameters):
+def write_image(filename,data,parameters = dict()):
     #CairoImage = cairo.ImageSurface(cairo.FORMAT_ARGB32,data.shape[1] * parameters['pixelsperpoint'],data.shape[0] * parameters['pixelsperpoint'])
     #context    = cairo.Context(CairoImage)
 
     if parameters.get('logscale',False):
         data  = np.log(data)
-        data -= min(data)
-        data /= max(data)
+        data[np.isnan(data)] = np.nanmin(data)
+        data -= np.nanmin(data)
+        m     = np.nanmax(data)
+        if m > 0: data /= m
     elif parameters.get('rescale',False):
-        data -= min(data)
-        data /= max(data)
-        
-    img = msc.toimage(data,high = 1., low = 0.)
-    img.save(filename,"PNG")
+        data[np.isnan(data)] = np.nanmin(data)
+        data -= np.nanmin(data)
+        m     = np.nanmax(data)
+        if m > 0: data /= m
+    
+    img = PIL.Image.fromarray((255 * data).astype('uint8'))
+    img.save(filename)
     
     
 def verbose(msg,v=True):
@@ -57,57 +58,66 @@ def SGM_seeding(inocdens):
 
 
 def SGM_growth(inocdens,dilution):
+    # check the growth of each inoculum, and add it to the seeding probabilities for the next cycle
     newdens = np.zeros(np.shape(inocdens))
+
     for i,n1 in enumerate(m1):
         for j,n2 in enumerate(m2):
             if inocdens[i,j] > 0:
-                g1 = gm1[i,j] * dilution
-                g2 = gm2[i,j] * dilution
+                growth = np.array([gm1[i,j],gm2[i,j]],dtype=np.float64) * dilution
+                newdens += inocdens[i,j] * inocdens_setsinglevalue(growth)
                 
-                if g1 < m1[-1] and g2 < m2[-1]:
-                    i1 = int(np.floor(g1))
-                    i2 = int(np.floor(g2))
-                    r1 = i1-g1
-                    r2 = i2-g2
-                    newdens[i1  ,i2  ] += inocdens[i,j] * (1-r1) * (1-r2)
-                    newdens[i1+1,i2  ] += inocdens[i,j] *    r1  * (1-r2)
-                    newdens[i1  ,i2+1] += inocdens[i,j] * (1-r1) *    r2
-                    newdens[i1+1,i2+1] += inocdens[i,j] *    r1  *    r2
     return newdens
 
 
 def SGM_mixing(inocdens,mode):
     if mode == "mixing":
-        newdens = np.zeros(np.shape(inocdens))
-        
-        avg1 = np.dot(m1,np.sum(inocdens,axis=1))
-        avg2 = np.dot(m2,np.sum(inocdens,axis=0))
-        
-        if avg1 < m1[-1] and avg2 < m2[-1]:
-            i1 = int(np.floor(avg1))
-            i2 = int(np.floor(avg2))
-            r1 = i1-avg1
-            r2 = i2-avg2
-            
-            newdens[i1  ,i2  ] += (1-r1) * (1-r2)
-            newdens[i1+1,i2  ] +=    r1  * (1-r2)
-            newdens[i1  ,i2+1] += (1-r1) *    r2
-            newdens[i1+1,i2+1] +=    r1  *    r2
-
-        return newdens
-    else:
+        # compute average over all possible inocula, and set the whole inoculum density to this average
+        avg = avg_inocdens(inocdens)
+        return inocdens_setsinglevalue(avg)
+    elif mode == "singlepop":
+        # do not change inoculum distribution and let it evolve freely
         return inocdens
-                    
+    else:
+        return None
+
+
+def inocdens_setsinglevalue(singleinoc,newcoordinates = False):
+    # distribute single value of an averaged inoculum to the 4 most adjacent bins
+    newdens = np.zeros((len(m1),len(m2)))
+    ic = inoc_from_coords(singleinoc,newcoordinates)
+
+    if ic[0] < m1[-1] and ic[1] < m2[-1]:
+        i1 = len(m1[m1 <= ic[0]])-1
+        i2 = len(m2[m2 <= ic[1]])-1
+        r1 = (ic[0] - m1[i1])/(m1[i1+1] - m1[i1])
+        r2 = (ic[1] - m2[i2])/(m2[i2+1] - m2[i2])
+        
+        newdens[i1  ,i2  ] += (1-r1) * (1-r2)
+        newdens[i1+1,i2  ] +=    r1  * (1-r2)
+        newdens[i1  ,i2+1] += (1-r1) *    r2
+        newdens[i1+1,i2+1] +=    r1  *    r2
+
+    return newdens
+
+
+def avg_inocdens(inocdens):
+    avg1 = np.dot(m1,np.sum(inocdens,axis=1))
+    avg2 = np.dot(m2,np.sum(inocdens,axis=0))
+    return np.array([avg1,avg2],dtype=np.float64)
+
 
 def __main__():
     parser = argparse.ArgumentParser()
-    parser_io = parser.add_argument_group(descripton = "==== I/O parameters ====")
+    parser_io = parser.add_argument_group(description = "==== I/O parameters ====")
     parser_io.add_argument("-i","--infile")
     parser_io.add_argument("-o","--outbasename",default="out")
     parser_io.add_argument("-v","--verbose",default=False,action = "store_true")
 
     parser_img = parser.add_argument_group(description = "==== Output image parameters ====")
     parser_img.add_argument("-p","--pixelsperpoint",type=int,default=2)
+    parser_img.add_argument("-l","--DensityLogscale",default=False,action="store_true")
+    parser_img.add_argument("-r","--DensityRescale",default=False,action="store_true")
 
     parser_dilution = parser.add_argument_group(description = "==== Dilution values ====")
     parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
@@ -126,7 +136,13 @@ def __main__():
     parser_mode.add_argument("-M","--steps",default=100,type=int)
     parser_mode.add_argument("-I","--inoculum",default=[10,10],type=float,nargs=2)
 
-    args=parser.parse_args()
+    args = parser.parse_args()
+    
+    imageparameters = {
+            'logscale': args.DensityLogscale,
+            'rescale':  args.DensityRescale
+            }
+                       
 
     try:
         g = pickle.load(open(args.infile))
@@ -136,7 +152,7 @@ def __main__():
     if not g.hasGrowthMatrix():
         raise ValueError,"Loaded pickle instance does not contain growthmatrix"
 
-    verbose(g.ParameterString())
+    verbose(g.ParameterString() + '\n\n',args.verbose)
 
     if args.dilutionmax is None:
         dlist = np.array([args.dilutionmin])
@@ -166,29 +182,32 @@ def __main__():
 
     for dilution in dlist:
         # initialize with exact inoculum with single value (nearest the values provided as cmdline parameter)
-        inocdens = np.zeros((len(m1),len(m2)))
-        inocdens[np.argmin(m1[m1 >= inoc_from_coords(args.inoculum)[0]]),np.argmin(m2[m2 >= inoc_from_coords(args.inoculum)[1]])] = 1
+        inocdens = inocdens_setsinglevalue(args.inoculum,args.newcoordinates)
         
+
         # write this as zeroth image
-        outfn = args.outbasename + "_D{:.3e}_{%04d}".format(dilution,0)
-        write_image(outfn,inocdens)
+        outfn = args.outbasename + "_D{:.3e}_{:04d}.png".format(dilution,0)
+        write_image(outfn,inocdens,imageparameters)
         
         for step in range(1,args.steps+1):
             
-            verbose("D = {:.3e}, step {:4}".format(dilution,step))
             
             # update seeding probabilities from last cycle
             inocdens = SGM_seeding(inocdens)
             
             # store this seeding as image
-            outfn = args.outbasename + "_D{:.3e}_{%04d}".format(dilution,step)
-            write_image(outfn,inocdens)
+            outfn = args.outbasename + "_D{:.3e}_{:04d}.png".format(dilution,step)
+            write_image(outfn,inocdens,imageparameters)
 
             # growth
             inocdens = SGM_growth(inocdens,dilution)
             
             # dilution
             inocdens = SGM_mixing(inocdens,args.mode)
+            
+            avg = avg_inocdens(inocdens)
+            
+            verbose("D = {:.3e}, step {:4}, avg [{:10.3e}, {:10.3e}]".format(dilution,step,avg[0],avg[1]),args.verbose)
         
         
 
