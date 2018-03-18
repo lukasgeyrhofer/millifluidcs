@@ -21,20 +21,22 @@ def inoc_from_coords(x,newcoordinates = False):
 def write_image(filename,data,parameters = dict()):
     #CairoImage = cairo.ImageSurface(cairo.FORMAT_ARGB32,data.shape[1] * parameters['pixelsperpoint'],data.shape[0] * parameters['pixelsperpoint'])
     #context    = cairo.Context(CairoImage)
+    
+    tmp = np.copy(data)
 
     if parameters.get('logscale',False):
-        data  = np.log(data)
-        data[np.isnan(data)] = np.nanmin(data)
-        data -= np.nanmin(data)
-        m     = np.nanmax(data)
-        if m > 0: data /= m
+        tmp  = np.log(tmp)
+        tmp[np.isnan(tmp)] = np.nanmin(tmp)
+        tmp -= np.nanmin(tmp)
+        m     = np.nanmax(tmp)
+        if m > 0: tmp /= m
     elif parameters.get('rescale',False):
-        data[np.isnan(data)] = np.nanmin(data)
-        data -= np.nanmin(data)
-        m     = np.nanmax(data)
-        if m > 0: data /= m
+        tmp[np.isnan(tmp)] = np.nanmin(tmp)
+        tmp -= np.nanmin(tmp)
+        m     = np.nanmax(tmp)
+        if m > 0: tmp /= m
     
-    img = PIL.Image.fromarray((255 * data).astype('uint8'))
+    img = PIL.Image.fromarray((255 * tmp).astype('uint8'))
     img.save(filename)
     
     
@@ -77,7 +79,7 @@ def SGM_mixing(inocdens,mode):
         return inocdens_setsinglevalue(avg)
     elif mode == "singlepop":
         # do not change inoculum distribution and let it evolve freely
-        return inocdens
+        return np.copy(inocdens)
     else:
         return None
 
@@ -115,7 +117,7 @@ def __main__():
     parser_io.add_argument("-v","--verbose",default=False,action = "store_true")
 
     parser_img = parser.add_argument_group(description = "==== Output image parameters ====")
-    parser_img.add_argument("-p","--pixelsperpoint",type=int,default=2)
+    parser_img.add_argument("-p","--pixelsperpoint",type=int,default=2) # unimplemented
     parser_img.add_argument("-l","--DensityLogscale",default=False,action="store_true")
     parser_img.add_argument("-r","--DensityRescale",default=False,action="store_true")
 
@@ -142,7 +144,7 @@ def __main__():
             'logscale': args.DensityLogscale,
             'rescale':  args.DensityRescale
             }
-                       
+    
 
     try:
         g = pickle.load(open(args.infile))
@@ -184,6 +186,9 @@ def __main__():
         # initialize with exact inoculum with single value (nearest the values provided as cmdline parameter)
         inocdens = inocdens_setsinglevalue(args.inoculum,args.newcoordinates)
         
+        avg = avg_inocdens(inocdens)
+        verbose("D = {:.3e}, step {:4}, avg [{:10.3e}, {:10.3e}]".format(dilution,0,avg[0],avg[1]),args.verbose)
+        
 
         # write this as zeroth image
         outfn = args.outbasename + "_D{:.3e}_{:04d}.png".format(dilution,0)
@@ -200,13 +205,12 @@ def __main__():
             write_image(outfn,inocdens,imageparameters)
 
             # growth
-            inocdens = SGM_growth(inocdens,dilution)
+            #inocdens = SGM_growth(inocdens,dilution)
             
             # dilution
             inocdens = SGM_mixing(inocdens,args.mode)
             
             avg = avg_inocdens(inocdens)
-            
             verbose("D = {:.3e}, step {:4}, avg [{:10.3e}, {:10.3e}]".format(dilution,step,avg[0],avg[1]),args.verbose)
         
         
