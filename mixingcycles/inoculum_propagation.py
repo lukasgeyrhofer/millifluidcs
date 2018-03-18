@@ -4,6 +4,8 @@ import numpy as np
 import argparse
 import sys,math
 import cairo
+import scipy.misc as spm
+import PIL
 
 import growthclasses as gc
 
@@ -14,18 +16,88 @@ def inoc_from_coords(x,newcoordinates = False):
     else:
         return np.array([x[0],x[1]],dtype=np.float64)
 
+
+def value_to_color(value):
+    
+
+
 def write_image(filename,data,parameters):
-    CairoImage = cairo.ImageSurface(cairo.FORMAT_ARGB32,data.shape[1] * parameters['pixelsperpoint'],data.shape[0] * parameters['pixelsperpoint'])
-    context    = cairo.Context(CairoImage)
+    #CairoImage = cairo.ImageSurface(cairo.FORMAT_ARGB32,data.shape[1] * parameters['pixelsperpoint'],data.shape[0] * parameters['pixelsperpoint'])
+    #context    = cairo.Context(CairoImage)
+
+    if parameters.get('logscale',False):
+        data  = np.log(data)
+        data -= min(data)
+        data /= max(data)
+    elif parameters.get('rescale',False):
+        data -= min(data)
+        data /= max(data)
+        
+    img = msc.toimage(data,high = 1., low = 0.)
+    img.save(filename,"PNG")
     
     
+def verbose(msg,v=True):
+    if v:
+        if msg[-1] != '\n':
+            msg += '\n'
+        sys.stdout.write(msg)
 
 
+def SGM_seeding(inocdens):
+    newdens = np.zeros(np.shape(inocdens))
+    for i,n1 in enumerate(m1):
+        for j,n2 in enumerate(m2):
+            if inocdens[i,j] > 0:
+                p1 = gc.PoissonSeedingVectors(m1,[n1])[0]
+                p2 = gc.PoissonSeedingVectors(m2,[n2])[0]
+                
+                newdens += inocdens[i,j] * np.outer(p1,p2)
+    return newdens
 
 
+def SGM_growth(inocdens,dilution):
+    newdens = np.zeros(np.shape(inocdens))
+    for i,n1 in enumerate(m1):
+        for j,n2 in enumerate(m2):
+            if inocdens[i,j] > 0:
+                g1 = gm1[i,j] * dilution
+                g2 = gm2[i,j] * dilution
+                
+                if g1 < m1[-1] and g2 < m2[-1]:
+                    i1 = int(np.floor(g1))
+                    i2 = int(np.floor(g2))
+                    r1 = i1-g1
+                    r2 = i2-g2
+                    newdens[i1  ,i2  ] += inocdens[i,j] * (1-r1) * (1-r2)
+                    newdens[i1+1,i2  ] += inocdens[i,j] *    r1  * (1-r2)
+                    newdens[i1  ,i2+1] += inocdens[i,j] * (1-r1) *    r2
+                    newdens[i1+1,i2+1] += inocdens[i,j] *    r1  *    r2
+    return newdens
 
 
+def SGM_mixing(inocdens,mode):
+    if mode == "mixing":
+        newdens = np.zeros(np.shape(inocdens))
+        
+        avg1 = np.dot(m1,np.sum(inocdens,axis=1))
+        avg2 = np.dot(m2,np.sum(inocdens,axis=0))
+        
+        if avg1 < m1[-1] and avg2 < m2[-1]:
+            i1 = int(np.floor(avg1))
+            i2 = int(np.floor(avg2))
+            r1 = i1-avg1
+            r2 = i2-avg2
+            
+            newdens[i1  ,i2  ] += (1-r1) * (1-r2)
+            newdens[i1+1,i2  ] +=    r1  * (1-r2)
+            newdens[i1  ,i2+1] += (1-r1) *    r2
+            newdens[i1+1,i2+1] +=    r1  *    r2
 
+        return newdens
+    else:
+        return inocdens
+                    
 
 def __main__():
     parser = argparse.ArgumentParser()
@@ -64,10 +136,7 @@ def __main__():
     if not g.hasGrowthMatrix():
         raise ValueError,"Loaded pickle instance does not contain growthmatrix"
 
-    if args.verbose:
-        sys.stdout.write(g.ParameterString())
-        sys.stdout.write("\n generating matrices\n")
-
+    verbose(g.ParameterString())
 
     if args.dilutionmax is None:
         dlist = np.array([args.dilutionmin])
@@ -90,6 +159,8 @@ def __main__():
     global gm2
     gm1   = g.growthmatrix[:,:,0]
     gm2   = g.growthmatrix[:,:,1]
+    global m1
+    global m2
     m1,m2 = g.growthmatrixgrid
 
 
@@ -104,19 +175,22 @@ def __main__():
         
         for step in range(1,args.steps+1):
             
+            verbose("D = {:.3e}, step {:4}".format(dilution,step))
+            
             # update seeding probabilities from last cycle
-            inocdens = seeding(inocdens,dilution)
+            inocdens = SGM_seeding(inocdens)
             
             # store this seeding as image
             outfn = args.outbasename + "_D{:.3e}_{%04d}".format(dilution,step)
             write_image(outfn,inocdens)
 
             # growth
+            inocdens = SGM_growth(inocdens,dilution)
             
             # dilution
-            if args.mode == "mixing":
-                # sum all inoculum sizes to the average one
-                pass
+            inocdens = SGM_mixing(inocdens,args.mode)
+        
+        
 
 
 if __name__ == "__main__":
