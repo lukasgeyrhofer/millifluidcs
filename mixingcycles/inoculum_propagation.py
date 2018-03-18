@@ -19,11 +19,14 @@ def inoc_from_coords(x,newcoordinates = False):
 
 
 def write_image(filename,data,parameters = dict()):
-    #CairoImage = cairo.ImageSurface(cairo.FORMAT_ARGB32,data.shape[1] * parameters['pixelsperpoint'],data.shape[0] * parameters['pixelsperpoint'])
-    #context    = cairo.Context(CairoImage)
-    
-    tmp = np.copy(data)
+    # take density (and transform/rescale), then write range of values from 0...1 to grayscale with PIL
 
+    maxinoc = parameters.get('maxinoc',None)
+    if not maxinoc is None:
+        tmp = np.copy(data[:maxinoc,:maxinoc])
+    else:
+        tmp = np.copy(data)
+        
     if parameters.get('logscale',False):
         tmp  = np.log(tmp)
         if not parameters.get('logmin',None) is None:
@@ -123,6 +126,7 @@ def __main__():
     parser_img.add_argument("-l","--DensityLogscale",default=False,action="store_true")
     parser_img.add_argument("-P","--DensityLogscaleMin",default=None,type=float)
     parser_img.add_argument("-r","--DensityRescale",default=False,action="store_true")
+    parser_img.add_argument("-T","--ImageMaxInoculum",default=None,type=int)
 
     parser_dilution = parser.add_argument_group(description = "==== Dilution values ====")
     parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
@@ -146,7 +150,8 @@ def __main__():
     imageparameters = {
             'logscale': args.DensityLogscale,
             'rescale':  args.DensityRescale,
-            'logmin':   args.DensityLogscaleMin
+            'logmin':   args.DensityLogscaleMin,
+            'maxinoc':  args.ImageMaxInoculum
             }
     
 
