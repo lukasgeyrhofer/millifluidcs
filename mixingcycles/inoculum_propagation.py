@@ -26,13 +26,13 @@ def write_image(filename,data,parameters = dict()):
 
     if parameters.get('logscale',False):
         tmp  = np.log(tmp)
-        tmp[np.isnan(tmp)] = np.nanmin(tmp)
         if not parameters.get('logmin',None) is None:
             tmp[tmp < parameters.get('logmin',None)] = parameters.get('logmin',None)
-        tmp -= np.nanmin(tmp)
-        m    = np.nanmax(tmp)
-        if m > 0: tmp /= m
-    elif parameters.get('rescale',False):
+        tmp[np.isnan(tmp)] = np.nanmin(tmp)
+        tmp /= np.nanmin(tmp)
+        tmp = 1 - tmp
+    
+    if parameters.get('rescale',False):
         tmp[np.isnan(tmp)] = np.nanmin(tmp)
         tmp -= np.nanmin(tmp)
         m    = np.nanmax(tmp)
@@ -209,7 +209,7 @@ def __main__():
             write_image(outfn,inocdens,imageparameters)
 
             # growth
-            #inocdens = SGM_growth(inocdens,dilution)
+            inocdens = SGM_growth(inocdens,dilution)
             
             # dilution
             inocdens = SGM_mixing(inocdens,args.mode)
