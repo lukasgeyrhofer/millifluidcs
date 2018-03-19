@@ -21,11 +21,20 @@ def inoc_from_coords(x,newcoordinates = False):
 def write_image(filename,data,parameters = dict()):
     # take density (and transform/rescale), then write range of values from 0...1 to grayscale with PIL
 
-    maxinoc = parameters.get('maxinoc',None)
-    if not maxinoc is None:
-        tmp = np.copy(data[:maxinoc,:maxinoc])
-    else:
-        tmp = np.copy(data)
+    #maxinoc = parameters.get('maxinoc',None)
+    #if not maxinoc is None:
+        #tmp = np.copy(data[:maxinoc,:maxinoc])
+    #else:
+        #tmp = np.copy(data)
+        
+    #latticespacing = 20
+    
+    #lattice = np.array([[(255,255,255,0) if not i%latticespacing == 0 and not j%latticespacing == 0 else (100,0,0,100) for i in range(len(data[:,0]))] for j in range(len(data[0,:]))])
+    #print lattice
+    
+    #lattice_img = PIL.Image.fromarray(lattice)
+        
+    tmp = np.transpose(np.copy(data))[::-1,:]
         
     if parameters.get('logscale',False):
         tmp  = np.log(tmp)
@@ -42,6 +51,9 @@ def write_image(filename,data,parameters = dict()):
         if m > 0: tmp /= m
     
     img = PIL.Image.fromarray((255 * tmp).astype('uint8'))
+    
+    if not parameters.get('lattice',None) is None:
+        img.paste(lattice_img,(0,0))
     img.save(filename)
     
     
@@ -122,11 +134,11 @@ def __main__():
     parser_io.add_argument("-v","--verbose",default=False,action = "store_true")
 
     parser_img = parser.add_argument_group(description = "==== Output image parameters ====")
-    parser_img.add_argument("-p","--pixelsperpoint",type=int,default=2) # unimplemented
     parser_img.add_argument("-l","--DensityLogscale",default=False,action="store_true")
     parser_img.add_argument("-P","--DensityLogscaleMin",default=None,type=float)
     parser_img.add_argument("-r","--DensityRescale",default=False,action="store_true")
     parser_img.add_argument("-T","--ImageMaxInoculum",default=None,type=int)
+    parser_img.add_argument("-p","--LatticeSpacing",default=None,type=int)
 
     parser_dilution = parser.add_argument_group(description = "==== Dilution values ====")
     parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
@@ -151,7 +163,8 @@ def __main__():
             'logscale': args.DensityLogscale,
             'rescale':  args.DensityRescale,
             'logmin':   args.DensityLogscaleMin,
-            'maxinoc':  args.ImageMaxInoculum
+            'maxinoc':  args.ImageMaxInoculum,
+            'lattice':  args.LatticeSpacing
             }
     
 
@@ -189,6 +202,13 @@ def __main__():
     global m1
     global m2
     m1,m2 = g.growthmatrixgrid
+    
+    if not imageparameters.get('lattice',None) is None:
+        lattice = [[(255,255,255,0) if not i%args.LatticeSpacing == 0 and not j%args.LatticeSpacing == 0 else (100,0,0,100) for i in range(len(m1))] for j in range(len(m2))]
+        lattice_img = PIL.Image.fromarray(lattice)
+        
+        lattice_img.show()
+    #exit(1)
 
 
     for dilution in dlist:
