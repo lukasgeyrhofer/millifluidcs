@@ -1251,7 +1251,7 @@ class GrowthDynamicsPyoverdin5(GrowthDynamicsTimeIntegrator):
         assert np.sum(self.PVDparams['Production']) > 0, "PVD is not produced"
         assert self.PVDparams['YieldIncreaseFactor'] > 0, "Effect on yield not properly defined"
 
-        self.dyn = TimeIntegrator(dynamics = self.dynPVD4, initialconditions = np.ones(self.numstrains + 2),params = None, requiredpositive = True)
+        self.dyn = TimeIntegrator(dynamics = self.dynPVD4, initialconditions = np.ones(self.numstrains + 2),params = None, requiredpositive = True,step = kwargs.get("TimeIntegratorStep",1e-3))
         self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         for i in range(self.numstrains):
             self.dyn.setPopulationExtinctionThreshold(i,1)
