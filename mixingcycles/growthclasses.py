@@ -1236,6 +1236,55 @@ class GrowthDynamicsPyoverdin4(GrowthDynamicsTimeIntegrator):
         
     
     
+class GrowthDynamicsPyoverdin5(GrowthDynamicsTimeIntegrator):
+    def __init__(self,**kwargs):
+        if kwargs.get("mixingtime") is None:
+            kwargs["mixingtime"] = 24.
+
+        super(GrowthDynamicsPyoverdin5,self).__init__(**kwargs)
+        
+        self.PVDparams = {  'YieldIncreaseFactor' : kwargs.get("PVD_Yield_Increase_Factor",2),
+                            'Production' :          np.array(kwargs.get("PVD_Production",np.zeros(self.numstrains)),dtype=np.float64)
+                        }
+        
+        assert len(self.PVDparams['Production']) == self.numstrains, "PVD production not defined correctly"
+        assert np.sum(self.PVDparams['Production']) > 0, "PVD is not produced"
+        assert self.PVDparams['YieldIncreaseFactor'] > 0, "Effect on yield not properly defined"
+
+        self.dyn = TimeIntegrator(dynamics = self.dynPVD4, initialconditions = np.ones(self.numstrains + 2),params = None, requiredpositive = True)
+        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        for i in range(self.numstrains):
+            self.dyn.setPopulationExtinctionThreshold(i,1)
+        self.otherinitialconditions = np.array([self.env.substrate,0])
+
+        
+    def dynPVD4(self,t,x,params):
+        n = np.sum(x[:self.numstrains])
+        if n>0:
+            y = self.yieldfactors * (self.PVDparams['YieldIncreaseFactor'] - (self.PVDparams['YieldIncreaseFactor'] - 1.)*np.exp(-x[-1]))
+        else:
+            y = self.yieldfactors
+        if x[-1] > 0:
+            a = self.growthrates
+        else:
+            a = np.zeros(self.numstrains)
+        return np.concatenate([
+                                    a * x[:self.numstrains],
+                                    np.array([-np.sum(a * x[:self.numstrains]/y), np.dot(self.PVDparams['Production'],x[:self.numstrains]) ])
+                              ])
+
+                            
+    def ParameterString(self):
+        r  = '\n'
+        s  = super(GrowthDynamicsPyoverdin5,self).ParameterString() +r
+        s += "*** Pyoverdin parameters ***" +r
+        s += "  Pyoverdin production  " + self.arraystring(self.PVDparams['Production']) +r
+        s += "  Yield effect          " + str(self.PVDparams['YieldIncreaseFactor']) + r
+        return s
+            
+        
+    
+    
     
     
 class GrowthDynamicsApprox(GrowthDynamics):
