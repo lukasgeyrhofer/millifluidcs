@@ -5,7 +5,7 @@ import argparse
 import sys,math
 import pickle
 
-sys.path.append(sys.path[0] + '/../mixingcycles')
+sys.path.append(sys.path[0] + '/../')
 import growthclasses as gc
 
 def array_to_str(x):
