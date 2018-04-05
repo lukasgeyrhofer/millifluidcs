@@ -27,7 +27,7 @@ import numpy as np
 import argparse
 from scipy.stats import poisson
 import itertools
-from scipy.integrate import odeint
+import scipy.integrate as spint
 #import pickle
 
 def RungeKutta4(func,xx,tt,step):
@@ -755,10 +755,14 @@ class GrowthDynamicsODE(GrowthDynamics):
         
         #self.TimeIntegratorOutput = kwargs.get("TimeIntegratorOutput",1)
         self.TimeIntegratorStep = kwargs.get("TimeIntegratorStep",1e-3)
-        self.t = np.arange(start = 0,stop = self.env.mixingtime + self.TimeIntegratorStep, step = self.TimeIntegratorStep)
+        #self.t = np.arange(start = 0,stop = self.env.mixingtime + self.TimeIntegratorStep, step = self.TimeIntegratorStep)
         self.otherinitialconditions = np.array([self.env.substrate],dtype=np.float64)
         
-    def dynamics(self,x,t):
+        self.integrator = spint.ode(self.dynamics)
+        self.integrator.set_integrator('dopri5')
+        
+        
+    def dynamics(self,t,x):
         a = self.growthrates
         if x[-1] <= 0:
             a = np.zeros(self.numstrains)
@@ -767,17 +771,27 @@ class GrowthDynamicsODE(GrowthDynamics):
                     np.array([np.sum(-a * x[:self.numstrains]/self.yieldfactors)])
                 ])
 
-    def Trajectory(self,initialcells,TimeOutput = False):
+    def Trajectory(self,initialcells,IntermediateSteps = True,TimeOutput = False):
+        # check number of cells
         ic = self.checkInitialCells(initialcells[:self.numstrains])
-        #append all other initialconditions
+        # append all other initialconditions and set initial conditions
         ic = np.concatenate([ic,self.otherinitialconditions])
-        traj = odeint(self.dynamics,initialconditions,self.t)
-        if TimeOutput:
-            return np.concatenate([np.transpose([self.t]),traj],axis=1)
-        else:
-            return traj
+        
+        # integrate ODE
+        #if IntermediateSteps: ## currently all is stored.
+        localtraj = []
+        def solout(t,y):
+            if TimeOutput:  localtraj.append(np.concatenate([[t],y]))
+            else:           localtraj.append(y)
+        self.integrator.set_solout(solout)
 
+        self.integrator.set_initial_value(ic,0)
+        self.integrator.integrate(self.env.mixingtime)
+        
+        return np.vstack(localtraj)
+        
     def Growth(self,initialcells):
+        #print initialcells
         traj = self.Trajectory(initialcells)
         return traj[-1,:self.numstrains]
     
@@ -900,7 +914,7 @@ class GrowthDynamicsPublicGoods(GrowthDynamicsODE):
         
     
     # dynamics for all strains, then substrate, then public good
-    def dynamics(self,x,t):
+    def dynamics(self,t,x):
         # public good can influence growth rates and yield
         a = self.GR(x)
         y = self.YF(x)
@@ -970,7 +984,7 @@ class GrowthDynamicsAntibiotics(GrowthDynamicsODE):
         else:
             return np.zeros(self.numstrains)
     
-    def dynamics(self,x,t):
+    def dynamics(self,t,x):
         a = self.growthr(x[-3],x[-1])
         return np.concatenate([ a*x[:-3],                                                      # growth of strains
                                 np.array( [ -np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
@@ -1016,7 +1030,7 @@ class GrowthDynamicsAntibiotics2(GrowthDynamicsODE):
         else:
             return np.zeros(self.numstrains)
     
-    def dynamics(self,x,t):
+    def dynamics(self,t,x):
         a  = self.growthr(x[-2],x[-1])
         a0 = self.growthr(x[-2],0)
         return np.concatenate([
@@ -1054,7 +1068,7 @@ class GrowthDynamicsPyoverdin(GrowthDynamicsODE):
         self.otherinitialconditions = np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])
 
 
-    def dynamics(self,x,t):
+    def dynamics(self,t,x):
         p = self.PVDparams['PVDincreaseS'] if x[-1] <= self.env.substrate * self.PVDparams['PVDmaxFactorS'] else 0
         if x[-3] >= 0:
             a = self.growthrates
@@ -1092,7 +1106,7 @@ class GrowthDynamicsPyoverdin2(GrowthDynamicsODE):
         self.otherinitialconditions = np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])
 
 
-    def dynamics(self,x,t):
+    def dynamics(self,t,x):
         p = self.PVDparams['PVDincreaseS'] if x[-1] <= self.env.substrate * self.PVDparams['PVDmaxFactorS'] else 0
         if x[-3] > 0:
             a = self.growthrates
@@ -1154,7 +1168,7 @@ class GrowthDynamicsPyoverdin3(GrowthDynamicsODE):
     def IronYieldLinear(self,x):
         return self.yieldfactors + self.PVDparams['InternalIronYieldCoefficient'] * x
     
-    def dynamics(self,x,t):
+    def dynamics(self,t,x):
         y = self.IronYield( x[self.numstrains:2*self.numstrains] )
         totalPVD = np.sum(self.PVDparams['Production']/self.growthrates * x[:self.numstrains])
         totalPopSize = np.sum(x[:self.numstrains])
@@ -1203,7 +1217,7 @@ class GrowthDynamicsPyoverdin4(GrowthDynamicsODE):
         self.otherinitialconditions = np.array([self.env.substrate])
 
         
-    def dynamics(self,x,t):
+    def dynamics(self,t,x):
         n = np.sum(x[:self.numstrains])
         if n>0:
             y = self.yieldfactors * (self.PVDparams['YieldIncreaseFactor'] - (self.PVDparams['YieldIncreaseFactor'] - 1.)*np.exp(-np.dot(self.PVDparams['Production'],x[:self.numstrains])/n))
@@ -1245,7 +1259,7 @@ class GrowthDynamicsPyoverdin5(GrowthDynamicsODE):
         self.otherinitialconditions = np.array([self.env.substrate,0])
 
         
-    def dynamics(self,x,t):
+    def dynamics(self,t,x):
         n = np.sum(x[:self.numstrains])
         if n>0:
             y = self.yieldfactors * (self.PVDparams['YieldIncreaseFactor'] - (self.PVDparams['YieldIncreaseFactor'] - 1.)*np.exp(-x[-1]))
