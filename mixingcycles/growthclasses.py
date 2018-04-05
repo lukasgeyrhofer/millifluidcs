@@ -27,6 +27,7 @@ import numpy as np
 import argparse
 from scipy.stats import poisson
 import itertools
+from scipy.integrate import odeint
 #import pickle
 
 def RungeKutta4(func,xx,tt,step):
@@ -618,9 +619,10 @@ class TimeIntegrator(object):
         self.__triggeredEndConditions = list()
         
         self.__extinctionthresholds = dict()
-        if requiredpositive:
-            for i in range(len(self.x)):
-                self.setPopulationExtinctionThreshold(i,0)
+        self.__requiredpositive = requiredpositive
+        #if requiredpositive:
+            #for i in range(len(self.x)):
+                #self.setPopulationExtinctionThreshold(i,0)
         
         
     def RungeKutta4(self,xx,tt):
@@ -629,7 +631,10 @@ class TimeIntegrator(object):
         k2 = self.__step * self.dyn( tt+self.__step/2., xx+k1/2., self.params )
         k3 = self.__step * self.dyn( tt+self.__step/2., xx+k2/2., self.params )
         k4 = self.__step * self.dyn( tt+self.__step   , xx+k3   , self.params )
-        return xx + (k1+2*k2+2*k3+k4)/6.
+        ret = xx + (k1+2*k2+2*k3+k4)/6.
+        if self.__requiredpositive:
+            ret[ret < 0] = 0
+        return ret
 
     def IntegrationStep(self,time):
         self.__triggeredEndConditions = list()
@@ -710,6 +715,7 @@ class TimeIntegrator(object):
                         if self.x[i] < self.__extinctionthresholds[i]:
                             self.x[i] = 0
                 self.__globaltime += self.__step
+            return self.x
         else:
             raise NotImplementedError
 
@@ -740,7 +746,24 @@ class TimeIntegrator(object):
             self.__extinctionthresholds[int(index)] = float(value)
     
 
+class TimeIntegratorNew(object):
+    def __init__(self,dyn = None,**kwargs):
 
+        # set full time array
+        self.maxtime = kwargs.get("mixingtime",12)
+        self.integrationstep = kwargs.get("TimeIntegratorStep",1e-3)
+        self.t = np.arange(start = 0,stop = self.maxtime, step = self.integrationstep)
+
+        self.otherinitialconditions = np.array(kwargs.get("otherinitialconditions",[1e5]),dtype=np.float64)
+        self.dynamics = dyn
+    
+    def Trajectory(self,initialcells):
+        x0 = np.concatenate([np.array(initialcells,dtype=np.float64),self.otherinitialconditions])
+        x  = odeint(self.dyn,x0,t)
+        return x
+
+        
+        
 
 class GrowthDynamicsTimeIntegrator(GrowthDynamics):
     def __init__(self,numstrains = None, **kwargs):
@@ -769,8 +792,9 @@ class GrowthDynamicsTimeIntegrator(GrowthDynamics):
         ic = self.checkInitialCells(initialcells)
         ic = np.concatenate([ic,self.otherinitialconditions])
         self.dyn.ResetInitialConditions(ic)
-        self.dyn.IntegrateToEndConditions()
-        return self.dyn.populations[:self.numstrains]
+        final = self.dyn.IntegrateToEndConditions()
+        print ic,final
+        return final[:self.numstrains]
 
 
     # should also work for more complicated dynamics implemented in classes inherited from this one
