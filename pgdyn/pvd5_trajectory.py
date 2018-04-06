@@ -12,6 +12,10 @@ import growthclasses as gc
 parser = argparse.ArgumentParser()
 parser = gc.AddGrowthParameters(parser,defaultmixingtime=24,dilution=False)
 
+parser_pvd = parser.add_argument_group(description = "==== Parameters for interactions with PVD ====")
+parser_pvd.add_argument("-Y","--PVD_Yield_Increase_Factor",type=float,default=2)
+parser_pvd.add_argument("-P","--PVD_Production",type=float,nargs="*",default=[1e-3,0])
+
 parser_ic = parser.add_argument_group(description = "==== Initital conditions ====")
 parser_ic.add_argument("-N","--initialconditions",type=float,nargs="*",default=[1,1])
  
@@ -23,7 +27,7 @@ parser_io.add_argument("-t","--TimeIntegratorStep",type=float,default=1e-3)
 
 args = parser.parse_args()
 
-g = gc.GrowthDynamicsODE(**vars(args))
+g = gc.GrowthDynamicsPyoverdin5(**vars(args))
 
 traj = g.Trajectory(args.initialconditions,TimeOutput=True)
 

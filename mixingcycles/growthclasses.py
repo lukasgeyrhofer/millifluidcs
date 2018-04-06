@@ -1265,13 +1265,14 @@ class GrowthDynamicsPyoverdin5(GrowthDynamicsODE):
             y = self.yieldfactors * (self.PVDparams['YieldIncreaseFactor'] - (self.PVDparams['YieldIncreaseFactor'] - 1.)*np.exp(-x[-1]))
         else:
             y = self.yieldfactors
-        if x[-1] > 0:
+        if x[-2] > 0:
             a = self.growthrates
         else:
             a = np.zeros(self.numstrains)
         return np.concatenate([
                                     a * x[:self.numstrains],
-                                    np.array([-np.sum(a * x[:self.numstrains]/y), np.dot(self.PVDparams['Production'],x[:self.numstrains]) ])
+                                    np.array([-np.sum(a * x[:self.numstrains]/y),
+                                              np.dot(self.PVDparams['Production'],x[:self.numstrains]) ])
                               ])
 
                             
