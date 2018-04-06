@@ -16,9 +16,9 @@ parser_ab.add_argument("-g","--gamma",type=float,default=2)
 parser_ab.add_argument("-k","--kappa",type=float,default=2)
 parser_ab.add_argument("-p","--AB_Production_Efficiency",nargs="*",default=[1e-3,0])
 
-parserALG = parser.add_argument_group(description = "==== Parameters for algorithm ====")
-parserALG.add_argument("-t","--integrationstep",default=1e-3,type=float)
-parserALG.add_argument("-o","--outputstep",default=100,type=int)
+parser_alg = parser.add_argument_group(description = "==== Parameters for algorithm ====")
+parser_alg.add_argument("-t","--TimeIntegratorStep",default=1e-3,type=float)
+parser_alg.add_argument("-O","--TimeIntegratorOutput",default=10,type=int)
 
 parser_ic = parser.add_argument_group(description = "==== Initial conditions ====")
 parser_ic.add_argument("-N","--initialconditions",default=[1],type=float,nargs="*")
@@ -28,10 +28,10 @@ args = parser.parse_args()
 
 g = gc.GrowthDynamicsAntibiotics2(**vars(args))
 
-traj = g.Trajectory(args.initialconditions,appendtime=True)
+traj = g.Trajectory(args.initialconditions,TimeOutput=True)
 
 for x in traj:
-    print ' '.join(['{:14.6f}'.format(y) for y in x])
+    print ' '.join(['{:14.6e}'.format(y) for y in x])
 
 
 

@@ -749,19 +749,25 @@ class TimeIntegrator(object):
 class GrowthDynamicsODE(GrowthDynamics):
     def __init__(self,numstrains = None, **kwargs):
         super(GrowthDynamicsODE,self).__init__(numstrains = numstrains,**kwargs)
-        
+
+        # mixingtime is crucial for integration
+        # needs to be set by hand, if not provided as cmdline argument
         if self.env.mixingtime is None:
             self.env.mixingtime = 24.
         
-        #self.TimeIntegratorOutput = kwargs.get("TimeIntegratorOutput",1)
-        self.TimeIntegratorStep = kwargs.get("TimeIntegratorStep",1e-3)
-        #self.t = np.arange(start = 0,stop = self.env.mixingtime + self.TimeIntegratorStep, step = self.TimeIntegratorStep)
-        self.otherinitialconditions = np.array([self.env.substrate],dtype=np.float64)
+        self.TimeIntegratorOutput    = kwargs.get("TimeIntegratorOutput",10)
+        self.TimeIntegratorStep      = kwargs.get("TimeIntegratorStep",1e-3)
+        self.EmptySubstrateThreshold = 1e-3 * np.mean(self.yieldfactors)
+        self.otherinitialconditions  = np.array([self.env.substrate],dtype=np.float64)
         
+        # initialize integration from 'Scipy.integrate' = 'spint'
         self.integrator = spint.ode(self.dynamics)
-        self.integrator.set_integrator('dopri5')
+        self.integrator.set_integrator('dopri5') # RK4, adaptive stepsize and other stuff
         
         
+    # this function needs to be overwritten in all child-objects
+    # see 5 lines above, where this is set as the system of differential equations
+    # child-objects only need to define this 'dynamics' to work
     def dynamics(self,t,x):
         a = self.growthrates
         if x[-1] <= 0:
@@ -771,27 +777,31 @@ class GrowthDynamicsODE(GrowthDynamics):
                     np.array([np.sum(-a * x[:self.numstrains]/self.yieldfactors)])
                 ])
 
-    def Trajectory(self,initialcells,IntermediateSteps = True,TimeOutput = False):
-        # check number of cells
-        ic = self.checkInitialCells(initialcells[:self.numstrains])
-        # append all other initialconditions and set initial conditions
-        ic = np.concatenate([ic,self.otherinitialconditions])
-        
-        # integrate ODE
-        #if IntermediateSteps: ## currently all is stored.
+
+    # compute a full trajectory, output the matrix of solutions
+    def Trajectory(self,initialcells,TimeOutput = False):
+        # store output
         localtraj = []
         def solout(t,y):
             if TimeOutput:  localtraj.append(np.concatenate([[t],y]))
             else:           localtraj.append(y)
-        self.integrator.set_solout(solout)
 
+        # check number of cells
+        # and append all other initialconditions and set initial conditions
+        ic = self.checkInitialCells(initialcells[:self.numstrains])
+        ic = np.concatenate([ic,self.otherinitialconditions])
         self.integrator.set_initial_value(ic,0)
-        self.integrator.integrate(self.env.mixingtime)
+        
+        # integrate ODE
+        while self.integrator.t < self.env.mixingtime:
+            for i in range(self.TimeIntegratorOutput):
+                self.integrator.integrate(self.integrator.t + self.TimeIntegratorStep)
+            solout(self.integrator.t,self.integrator.y)
         
         return np.vstack(localtraj)
-        
+    
+    # growth only needs to final state
     def Growth(self,initialcells):
-        #print initialcells
         traj = self.Trajectory(initialcells)
         return traj[-1,:self.numstrains]
     
@@ -1021,11 +1031,16 @@ class GrowthDynamicsAntibiotics2(GrowthDynamicsODE):
         self.otherinitialconditions = np.array([self.env.substrate,self.ABparams['ABconc']])
     
     def beta(self,abconc):
-        bk = np.power(abconc,self.ABparams['kappa'])
-        return 1 - (1+self.ABparams['gamma'])*bk/(bk + self.ABparams['gamma'])
+        if abconc >= 1e-10:
+            bk = np.power(abconc,self.ABparams['kappa'])
+            return (1. - bk)/(1 + bk/self.ABparams['gamma'])
+        else:
+            return 1.
     
     def growthr(self,substrate,abconc):
-        if substrate > 0:
+        # new integration scheme needs a more relaxed version of when substrate is empty
+        # this variable is set as a (constant) fraction of the average yield
+        if substrate > self.EmptySubstrateThreshold:
             return self.growthrates * self.beta(abconc)
         else:
             return np.zeros(self.numstrains)
@@ -1036,7 +1051,7 @@ class GrowthDynamicsAntibiotics2(GrowthDynamicsODE):
         return np.concatenate([
                                 a*x[:self.numstrains],                                                              # growth of strains
                                 np.array([
-                                    -np.sum(a0/self.yieldfactors*x[:self.numstrains]),                               # decay of nutrients
+                                    -np.sum(a0/self.yieldfactors*x[:self.numstrains]),                              # decay of nutrients
                                     -np.sum(self.ABparams['ProductionEfficiency']*x[:self.numstrains]) * x[-1]      # reduction of antibiotics by cells
                                     ])
                                 ])
