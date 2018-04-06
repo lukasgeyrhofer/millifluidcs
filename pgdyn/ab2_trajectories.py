@@ -14,7 +14,7 @@ parser_ab = parser.add_argument_group(description = "==== Dynamics of AB ====")
 parser_ab.add_argument("-B","--ABconc",type=float,default=1.2)
 parser_ab.add_argument("-g","--gamma",type=float,default=2)
 parser_ab.add_argument("-k","--kappa",type=float,default=2)
-parser_ab.add_argument("-p","--AB_Production_Efficiency",nargs="*",default=[1e-3,0])
+parser_ab.add_argument("-P","--AB_Production_Efficiency",nargs="*",default=[1e-3,0])
 
 parser_alg = parser.add_argument_group(description = "==== Parameters for algorithm ====")
 parser_alg.add_argument("-t","--TimeIntegratorStep",default=1e-3,type=float)
