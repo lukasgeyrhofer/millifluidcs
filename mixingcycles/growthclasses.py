@@ -107,10 +107,20 @@ class MicrobialStrain(object):
         self.growthrate  = growthrate
         self.yieldfactor = yieldfactor
         self.deathrate   = deathrate
+        
+        self.__growing   = True
+    
+    def StopGrowth(self):
+        self.__growing = False
+    def AllowGrowth(self):
+        self.__growing = True
     
     def __getattr__(self,key):
         if key == "growthrate":
-            return self.__growthrate
+            if self.__growing:
+                return self.__growthrate
+            else:
+                return 0.
         elif key == "yieldfactor":
             return self.__yieldfactor
         elif key == "deathrate":
@@ -247,6 +257,17 @@ class GrowthDynamics(object):
     
     def delLastStrain(self):
         return self.strains.pop()
+    
+    def AllowGrowth(self):
+        for i in range(len(self.strains)):
+            self.strains[i].AllowGrowth()
+    def StopGrowth(self,strain = None):
+        if not strain is None:
+            for i in range(len(self.strains)):
+                self.strains[i].StopGrowth()
+        else:
+            if strain < len(self.strains):
+                self.strains[i].StopGrowth()
     
     def getTimeToDepletion(self,initialcells):
         # internal function to determine when substrate is used up
@@ -762,7 +783,7 @@ class GrowthDynamicsODE(GrowthDynamics):
         
         # initialize integration from 'Scipy.integrate' = 'spint'
         self.integrator = spint.ode(self.dynamics)
-        self.integrator.set_integrator('dopri5') # RK4, adaptive stepsize and other stuff
+        self.integrator.set_integrator('vode', method = 'bdf', min_step = 1e-6, max_step = 1e-3)
         
         
     # this function needs to be overwritten in all child-objects
@@ -773,31 +794,41 @@ class GrowthDynamicsODE(GrowthDynamics):
         if x[-1] <= 0:
             a = np.zeros(self.numstrains)
         return np.concatenate([
-                    a * x[:self.numstrains],
+                    self.growthrates * x[:self.numstrains],
                     np.array([np.sum(-a * x[:self.numstrains]/self.yieldfactors)])
                 ])
 
 
     # compute a full trajectory, output the matrix of solutions
     def Trajectory(self,initialcells,TimeOutput = False):
+        self.AllowGrowth()
         # store output
         localtraj = []
         def solout(t,y):
             if TimeOutput:  localtraj.append(np.concatenate([[t],y]))
             else:           localtraj.append(y)
+        
+        def extinction(popsize):
+            popsize[popsize < 1] = 0
+            return popsize
 
         # check number of cells
         # and append all other initialconditions and set initial conditions
         ic = self.checkInitialCells(initialcells[:self.numstrains])
         ic = np.concatenate([ic,self.otherinitialconditions])
+        
+        #localintegrator = spint.RK45(fun = self.dynamics, t0 = 0, y0 = ic, t_bound = self.env.mixingtime, max_step = self.TimeIntegratorStep)
+        
         self.integrator.set_initial_value(ic,0)
         
         # integrate ODE
-        while self.integrator.t < self.env.mixingtime:
-            for i in range(self.TimeIntegratorOutput):
-                self.integrator.integrate(self.integrator.t + self.TimeIntegratorStep)
+        while (self.integrator.t < self.env.mixingtime) and self.integrator.successful():
+            self.integrator.integrate(self.integrator.t + self.TimeIntegratorStep)
+            for strain in np.where(self.integrator.y[:self.numstrains] < 1)[0]:
+                self.strains[strain].StopGrowth()
+
             solout(self.integrator.t,self.integrator.y)
-        
+        self.AllowGrowth()
         return np.vstack(localtraj)
     
     # growth only needs to final state
