@@ -104,9 +104,9 @@ class MicrobialStrain(object):
         
     '''
     def __init__(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0.):
-        self.growthrate  = growthrate
-        self.yieldfactor = yieldfactor
-        self.deathrate   = deathrate
+        self.__growthrate  = growthrate
+        self.__yieldfactor = yieldfactor
+        self.__deathrate   = deathrate
         
         self.__growing   = True
     
@@ -262,12 +262,12 @@ class GrowthDynamics(object):
         for i in range(len(self.strains)):
             self.strains[i].AllowGrowth()
     def StopGrowth(self,strain = None):
-        if not strain is None:
+        if strain is None:
             for i in range(len(self.strains)):
                 self.strains[i].StopGrowth()
         else:
             if strain < len(self.strains):
-                self.strains[i].StopGrowth()
+                self.strains[strain].StopGrowth()
     
     def getTimeToDepletion(self,initialcells):
         # internal function to determine when substrate is used up
@@ -801,32 +801,28 @@ class GrowthDynamicsODE(GrowthDynamics):
 
     # compute a full trajectory, output the matrix of solutions
     def Trajectory(self,initialcells,TimeOutput = False):
-        self.AllowGrowth()
+
         # store output
         localtraj = []
         def solout(t,y):
             if TimeOutput:  localtraj.append(np.concatenate([[t],y]))
             else:           localtraj.append(y)
         
-        def extinction(popsize):
-            popsize[popsize < 1] = 0
-            return popsize
-
         # check number of cells
         # and append all other initialconditions and set initial conditions
         ic = self.checkInitialCells(initialcells[:self.numstrains])
         ic = np.concatenate([ic,self.otherinitialconditions])
         
-        #localintegrator = spint.RK45(fun = self.dynamics, t0 = 0, y0 = ic, t_bound = self.env.mixingtime, max_step = self.TimeIntegratorStep)
-        
         self.integrator.set_initial_value(ic,0)
         
+        self.AllowGrowth()
         # integrate ODE
         while (self.integrator.t < self.env.mixingtime) and self.integrator.successful():
             self.integrator.integrate(self.integrator.t + self.TimeIntegratorStep)
             for strain in np.where(self.integrator.y[:self.numstrains] < 1)[0]:
                 self.strains[strain].StopGrowth()
-
+            if self.integrator.y[self.numstrains] < self.EmptySubstrateThreshold:
+                self.StopGrowth()
             solout(self.integrator.t,self.integrator.y)
         self.AllowGrowth()
         return np.vstack(localtraj)
