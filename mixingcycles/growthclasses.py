@@ -783,7 +783,7 @@ class GrowthDynamicsODE(GrowthDynamics):
         
         # initialize integration from 'Scipy.integrate' = 'spint'
         self.integrator = spint.ode(self.dynamics)
-        self.integrator.set_integrator('vode', method = 'bdf', min_step = 1e-6, max_step = 1e-3)
+        self.integrator.set_integrator('vode', method = 'bdf', min_step = 1e-4, max_step = 1e-2)
         
         
     # this function needs to be overwritten in all child-objects
