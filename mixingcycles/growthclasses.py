@@ -796,7 +796,7 @@ class GrowthDynamicsODE(GrowthDynamics):
         self.EmptySubstrateThreshold = 1e-3 * np.mean(self.yieldfactors)
         
         if self.IntegrationMethod.upper() == 'OWNRK4':
-            self.integrator = TimeIntegrator(dyn = self.dynamics)
+            self.integrator = TimeIntegrator(dynamics = self.dynamics)
             self.integrator.SetEndCondition("maxtime",self.env.mixingtime)
             self.Trajectory = self.TrajectoryOwnRK4Integrator
             self.Growth     = self.GrowthOwnRK4Integrator
@@ -808,11 +808,14 @@ class GrowthDynamicsODE(GrowthDynamics):
             self.Trajectory = self.TrajectorySciPyIntegrator
             self.Growth     = self.GrowthSciPyIntegrator
         
+        else:
+            raise NotImplementedError
         
+        self.AllowGrowth()
         
         
     # this function needs to be overwritten in all child-objects
-    # see 5 lines above, where this is set as the system of differential equations
+    # see lines above, where this is set as the system of differential equations
     # child-objects only need to define this 'dynamics' to work
     def dynamics(self,t,x):
         a = self.growthrates
@@ -827,7 +830,7 @@ class GrowthDynamicsODE(GrowthDynamics):
     def GrowthOwnRK4Integrator(self,initialcells = None):
         ic = self.checkInitialCells(initialcells)
         ic = np.concatenate([ic,self.otherinitialconditions])
-        self.dyn.ResetInitialConditions(ic)
+        self.integrator.ResetInitialConditions(ic)
         final = self.dyn.IntegrateToEndConditions()
         return final[:self.numstrains]
 
@@ -845,21 +848,23 @@ class GrowthDynamicsODE(GrowthDynamics):
         initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
         if len(initialconditions) >= self.numstrains:
             initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
-        self.dyn.ResetInitialConditions(initialconditions)
+        self.integrator.ResetInitialConditions(initialconditions)
         
         # generate first entry in output data
         r = list()
-        r.append(AddTimeToOutputVector(self.dyn.x,0,TimeOutput))
-        while not self.dyn.HasEnded():
-            t = self.dyn.IntegrationStep(timestep)
-            r.append(AddTimeToOutputVector(self.dyn.x,t,TimeOutput)
-        
+        r.append(AddTimeToOutputVector(self.integrator.x,0,TimeOutput))
+        i = 0
+        while not self.integrator.HasEnded():
+            t = self.integrator.IntegrationStep(self.TimeIntegratorStep)
+            i+=1
+            if i%self.TimeIntegratorOutput == 0:
+                r.append(AddTimeToOutputVector(self.integrator.x,t,TimeOutput))
         # return output
         return np.vstack(r)
 
 
     # compute a full trajectory, output the matrix of solutions
-    def TrajectoryScipyIntegrator(self,initialcells,TimeOutput = False):
+    def TrajectorySciPyIntegrator(self,initialcells,TimeOutput = False):
 
         # store output
         localtraj = []
@@ -892,60 +897,60 @@ class GrowthDynamicsODE(GrowthDynamics):
         return traj[-1,:self.numstrains]
     
 
-class GrowthDynamicsTimeIntegrator(GrowthDynamics):
-    # deprecated
+#class GrowthDynamicsTimeIntegrator(GrowthDynamics):
+    ## deprecated
     
-    def __init__(self,numstrains = None, **kwargs):
-        if kwargs.get("mixingtime") is None:
-            kwargs["mixingtime"] = 24.
-        super(GrowthDynamicsTimeIntegrator,self).__init__(numstrains = numstrains,**kwargs)
+    #def __init__(self,numstrains = None, **kwargs):
+        #if kwargs.get("mixingtime") is None:
+            #kwargs["mixingtime"] = 24.
+        #super(GrowthDynamicsTimeIntegrator,self).__init__(numstrains = numstrains,**kwargs)
 
-        self.dyn = TimeIntegrator(dynamics = self.f,initialconditions = np.ones(self.numstrains + 1), params = None)
-        self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
+        #self.dyn = TimeIntegrator(dynamics = self.f,initialconditions = np.ones(self.numstrains + 1), params = None)
+        #self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
         
-        #self.dyn.SetEndCondition("reachzero",self.numstrains)
+        ##self.dyn.SetEndCondition("reachzero",self.numstrains)
 
-        self.x = np.zeros(self.numstrains)
-        self.otherinitialconditions = np.array([self.env.substrate])
+        #self.x = np.zeros(self.numstrains)
+        #self.otherinitialconditions = np.array([self.env.substrate])
 
         
-    # simplest dynamics of pure growth and resource use
-    # implemented already in much faster way in parent class
-    def f(self,t,x,params):
-        return np.concatenate([ self.growthrates * x[:self.numstrains],
-                                np.array([ -np.sum(self.growthrates / self.yieldfactors * x[:self.numstrains]) ])
-                              ])
+    ## simplest dynamics of pure growth and resource use
+    ## implemented already in much faster way in parent class
+    #def f(self,t,x,params):
+        #return np.concatenate([ self.growthrates * x[:self.numstrains],
+                                #np.array([ -np.sum(self.growthrates / self.yieldfactors * x[:self.numstrains]) ])
+                              #])
     
-    # base growth function to use for time integrator dynamics
-    def Growth(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,self.otherinitialconditions])
-        self.dyn.ResetInitialConditions(ic)
-        final = self.dyn.IntegrateToEndConditions()
-        print ic,final
-        return final[:self.numstrains]
+    ## base growth function to use for time integrator dynamics
+    #def Growth(self,initialcells = None):
+        #ic = self.checkInitialCells(initialcells)
+        #ic = np.concatenate([ic,self.otherinitialconditions])
+        #self.dyn.ResetInitialConditions(ic)
+        #final = self.dyn.IntegrateToEndConditions()
+        #print ic,final
+        #return final[:self.numstrains]
 
 
-    # should also work for more complicated dynamics implemented in classes inherited from this one
-    def Trajectory(self,timestep,initialconditions):
-        # helper routine
-        def AddTimeToOutputVector(x,t):
-            return np.array([np.concatenate([np.array([t]),x])],dtype=np.float)
+    ## should also work for more complicated dynamics implemented in classes inherited from this one
+    #def Trajectory(self,timestep,initialconditions):
+        ## helper routine
+        #def AddTimeToOutputVector(x,t):
+            #return np.array([np.concatenate([np.array([t]),x])],dtype=np.float)
         
-        # set initial conditions
-        initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
-        if len(initialconditions) >= self.numstrains:
-            initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
-        self.dyn.ResetInitialConditions(initialconditions)
+        ## set initial conditions
+        #initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
+        #if len(initialconditions) >= self.numstrains:
+            #initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
+        #self.dyn.ResetInitialConditions(initialconditions)
         
-        # generate first entry in output data
-        r = AddTimeToOutputVector(self.dyn.x,0)
-        while not self.dyn.HasEnded():
-            t = self.dyn.IntegrationStep(timestep)
-            r = np.concatenate([r,AddTimeToOutputVector(self.dyn.x,t)],axis=0)
+        ## generate first entry in output data
+        #r = AddTimeToOutputVector(self.dyn.x,0)
+        #while not self.dyn.HasEnded():
+            #t = self.dyn.IntegrationStep(timestep)
+            #r = np.concatenate([r,AddTimeToOutputVector(self.dyn.x,t)],axis=0)
         
-        # return output
-        return r
+        ## return output
+        #return r
 
 
 class GrowthDynamicsPublicGoods(GrowthDynamicsODE):
@@ -1159,27 +1164,28 @@ class GrowthDynamicsAntibiotics3(GrowthDynamicsODE):
         super(GrowthDynamicsAntibiotics3,self).__init__(**kwargs)
         self.ABparams = {   'kappa' :           kwargs.get("kappa",2),
                             'gamma' :           kwargs.get("gamma",2),
-                            'BLproduction':     np.array(kwargs.get("BL_Production",np.zeros(self.numstrains)),dtype=np.float64),
-                            'BLefficiency':     kwargs.get("BL_Efficiency",1e-2),
-                            'ABconc' :          kwargs.get("AB_Conc",.5),  # initial concentration antibiotics measured in zMIC
-                            'ABconc_threshold': kwargs.get("AB_Conc_threshold",1e-10),
-                            'ABdiffusivity':    kwargs.get("AB_Diffusivity",1e-3),
-                            'BLdiffusivity':    kwargs.get("BL_Diffusivity",1e-3)
+                            'BL_Production':     np.array(kwargs.get("BL_Production",np.zeros(self.numstrains)),dtype=np.float64),
+                            'BL_Efficiency':     kwargs.get("BL_Efficiency",1e-2),
+                            'AB_Conc' :          kwargs.get("AB_Conc",.5),  # initial concentration antibiotics measured in zMIC
+                            'AB_Conc_threshold': kwargs.get("AB_Conc_threshold",1e-10),
+                            'AB_Diffusivity':    kwargs.get("AB_Diffusivity",1e-3),
+                            'BL_Diffusivity':    kwargs.get("BL_Diffusivity",1e-3),
+                            'VolumeSeparation': kwargs.get("VolumeSeparation",1)
                             }
 
-        assert len(self.ABparams['AB_Production']) == self.numstrains, "PG production not defined correctly"
-        assert sum(self.ABparams['AB_Production']) > 0, "PG is not produced"
+        assert len(self.ABparams['BL_Production']) == self.numstrains, "PG production not defined correctly"
+        assert sum(self.ABparams['BL_Production']) > 0, "PG is not produced"
         
         self.otherinitialconditions =   np.concatenate([
-                                            np.array([self.env.substrate]),     # substrate
-                                            np.zeros(self.numstrains),          # internal enzyme concentrations
-                                            np.zeros(self.numstrains),          # internal antibiotics concentrations
-                                            np.array([0]),                      # external enzyme concentration
-                                            np.array([self.ABparams['ABconc']]) # external antibiotics concentration
+                                            np.array([self.env.substrate]),      # substrate
+                                            np.zeros(self.numstrains),           # internal enzyme concentrations
+                                            np.zeros(self.numstrains),           # internal antibiotics concentrations
+                                            np.array([0]),                       # external enzyme concentration
+                                            np.array([self.ABparams['AB_Conc']]) # external antibiotics concentration
                                         ])
 
     def beta(self,abconc):
-        if abconc >= self.ABparams['AB_Conc_threshold']:
+        if np.any(abconc >= self.ABparams['AB_Conc_threshold']):
             bk = np.power(abconc,self.ABparams['kappa'])
             return (1. - bk)/(1 + bk/self.ABparams['gamma'])
         else:
@@ -1194,28 +1200,29 @@ class GrowthDynamicsAntibiotics3(GrowthDynamicsODE):
             return np.zeros(self.numstrains)
     
     def dynamics(self,t,x):
-        a  = self.growthr(x[-2],x[-1])
-        a0 = self.growthr(x[-2],0)
+        a  = self.growthr(x[self.numstrains],x[2*self.numstrains + 1:3*self.numstrains+1])
+        a0 = self.growthr(x[self.numstrains],0)
         return np.concatenate([
                                     a*x[:self.numstrains],                                                              # growth of strains
                                     np.array([-np.sum(a0/self.yieldfactors*x[:self.numstrains])]),                      # decay of nutrients
-                                    self.ABparams['AB_Production'] * x[:self.numstrains] - self.ABparams['BL_Diffusivity'] * (x[self.numstrains + 1:2 * self.numstrains + 1] - x[-2]),
-                                    -self.ABparams['AB_Efficiency'] * x[self.numstrains + 1:2*self.numstrains + 1] * x[2*self.numstrains + 1:3*self.numstrains + 1] - self.ABparams['BL_Diffusivity'] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1]),
-                                    np.array([self.ABparams['BL_Diffusivity'] * x[:self.numstrains] * (x[self.numstrains + 1:2*self.numstrains + 1] - x[-2])]),
-                                    np.array([self.ABparams['AB_Diffusivity'] * x[:self.numstrains] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1]) - self.ABparams['AB_Efficiency'] * x[-1] * x[-2]])
+                                    self.ABparams['BL_Production'] * x[:self.numstrains] - self.ABparams['BL_Diffusivity'] * (x[self.numstrains + 1:2 * self.numstrains + 1] - x[-2]),
+                                    -self.ABparams['BL_Efficiency'] * x[self.numstrains + 1:2*self.numstrains + 1] * x[2*self.numstrains + 1:3*self.numstrains + 1] - self.ABparams['BL_Diffusivity'] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1]),
+                                    np.array([self.ABparams['BL_Diffusivity'] * np.sum(x[:self.numstrains] * (x[self.numstrains + 1:2*self.numstrains + 1] - x[-2]))]),
+                                    np.array([self.ABparams['AB_Diffusivity'] * np.sum(x[:self.numstrains] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1])) - self.ABparams['BL_Efficiency'] * x[-1] * x[-2]])
                                 ])
 
     def ParameterString(self):
         r  = '\n'
-        s  = super(GrowthDynamicsAntibiotics2,self).ParameterString() +r
+        s  = super(GrowthDynamicsAntibiotics3,self).ParameterString() +r
         s += "*** antibiotic parameters ***" +r
-        s += "  Antibiotics Initial Conc  " + str(self.ABparams['AB_conc']) +r
-        s += "  gamma                     " + str(self.ABparams['gamma']) +r
-        s += "  kappa                     " + str(self.ABparams['kappa']) +r
-        s += "  Enzyme Production         " + self.arraystring(self.ABparams['BL_Production']) +r
-        s += "  Enzyme Efficiency         " + str(self.ABparams['BL_Efficiency']) +r
-        s += "  Enzyme Diffusity rate     " + str(self.ABparams['BL_Diffusivity']) +r
-        s += "  Antibiotic Diffusity rate " + str(self.ABparams['AB_Diffusivity']) +r
+        s += "  Antibiotics Initial Conc    " + str(self.ABparams['AB_Conc']) +r
+        s += "  gamma                       " + str(self.ABparams['gamma']) +r
+        s += "  kappa                       " + str(self.ABparams['kappa']) +r
+        s += "  Enzyme Production           " + self.arraystring(self.ABparams['BL_Production']) +r
+        s += "  Enzyme Efficiency           " + str(self.ABparams['BL_Efficiency']) +r
+        s += "  Enzyme Diffusity rate       " + str(self.ABparams['BL_Diffusivity']) +r
+        s += "  Antibiotic Diffusity rate   " + str(self.ABparams['AB_Diffusivity']) +r
+        s += "  Volume/Timescale Separation " + str(self.ABparams['VolumeSeparation']) +r
         return s
 
 
