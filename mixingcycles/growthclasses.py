@@ -1094,6 +1094,71 @@ class GrowthDynamicsAntibiotics2(GrowthDynamicsODE):
         return s
         
 
+class GrowthDynamicsAntibiotics3(GrowthDynamicsODE):
+    def __init__(self,**kwargs):
+
+        super(GrowthDynamicsAntibiotics3,self).__init__(**kwargs)
+        self.ABparams = {   'kappa' :           kwargs.get("kappa",2),
+                            'gamma' :           kwargs.get("gamma",2),
+                            'BLproduction':     np.array(kwargs.get("BL_Production",np.zeros(self.numstrains)),dtype=np.float64),
+                            'BLefficiency':     kwargs.get("BL_Efficiency",1e-2),
+                            'ABconc' :          kwargs.get("AB_Conc",.5),  # initial concentration antibiotics measured in zMIC
+                            'ABconc_threshold': kwargs.get("AB_Conc_threshold",1e-10),
+                            'ABdiffusivity':    kwargs.get("AB_Diffusivity",1e-3),
+                            'BLdiffusivity':    kwargs.get("BL_Diffusivity",1e-3)
+                            }
+
+        assert len(self.ABparams['AB_Production']) == self.numstrains, "PG production not defined correctly"
+        assert sum(self.ABparams['AB_Production']) > 0, "PG is not produced"
+        
+        self.otherinitialconditions =   np.concatenate([
+                                            np.array([self.env.substrate]),     # substrate
+                                            np.zeros(self.numstrains),          # internal enzyme concentrations
+                                            np.zeros(self.numstrains),          # internal antibiotics concentrations
+                                            np.array([0]),                      # external enzyme concentration
+                                            np.array([self.ABparams['ABconc']]) # external antibiotics concentration
+                                        ])
+
+    def beta(self,abconc):
+        if abconc >= self.ABparams['AB_Conc_threshold']:
+            bk = np.power(abconc,self.ABparams['kappa'])
+            return (1. - bk)/(1 + bk/self.ABparams['gamma'])
+        else:
+            return 1.
+    
+    def growthr(self,substrate,abconc):
+        # new integration scheme needs a more relaxed version of when substrate is empty
+        # this variable is set as a (constant) fraction of the average yield
+        if substrate > self.EmptySubstrateThreshold:
+            return self.growthrates * self.beta(abconc)
+        else:
+            return np.zeros(self.numstrains)
+    
+    def dynamics(self,t,x):
+        a  = self.growthr(x[-2],x[-1])
+        a0 = self.growthr(x[-2],0)
+        return np.concatenate([
+                                    a*x[:self.numstrains],                                                              # growth of strains
+                                    np.array([-np.sum(a0/self.yieldfactors*x[:self.numstrains])]),                      # decay of nutrients
+                                    self.ABparams['AB_Production'] * x[:self.numstrains] - self.ABparams['BL_Diffusivity'] * (x[self.numstrains + 1:2 * self.numstrains + 1] - x[-2]),
+                                    -self.ABparams['AB_Efficiency'] * x[self.numstrains + 1:2*self.numstrains + 1] * x[2*self.numstrains + 1:3*self.numstrains + 1] - self.ABparams['BL_Diffusivity'] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1]),
+                                    np.array([self.ABparams['BL_Diffusivity'] * x[:self.numstrains] * (x[self.numstrains + 1:2*self.numstrains + 1] - x[-2])]),
+                                    np.array([self.ABparams['AB_Diffusivity'] * x[:self.numstrains] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1]) - self.ABparams['AB_Efficiency'] * x[-1] * x[-2]])
+                                ])
+
+    def ParameterString(self):
+        r  = '\n'
+        s  = super(GrowthDynamicsAntibiotics2,self).ParameterString() +r
+        s += "*** antibiotic parameters ***" +r
+        s += "  Antibiotics Initial Conc  " + str(self.ABparams['AB_conc']) +r
+        s += "  gamma                     " + str(self.ABparams['gamma']) +r
+        s += "  kappa                     " + str(self.ABparams['kappa']) +r
+        s += "  Enzyme Production         " + self.arraystring(self.ABparams['BL_Production']) +r
+        s += "  Enzyme Efficiency         " + str(self.ABparams['BL_Efficiency']) +r
+        s += "  Enzyme Diffusity rate     " + str(self.ABparams['BL_Diffusivity']) +r
+        s += "  Antibiotic Diffusity rate " + str(self.ABparams['AB_Diffusivity']) +r
+        return s
+
 
 class GrowthDynamicsPyoverdin(GrowthDynamicsODE):
     def __init__(self,**kwargs):
