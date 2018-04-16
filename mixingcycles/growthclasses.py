@@ -628,12 +628,16 @@ class TimeIntegrator(object):
 
         self.params = kwargs.get('params',None)
         
-        if initialconditions is None:   raise ValueError
-        else:                           self.x   = np.array(initialconditions)
-        if dynamics is None:            raise NotImplementedError
-        else:                           self.dyn = dynamics
+        self.have_start_values = False
+        if not initialconditions is None:
+            self.x   = np.array(initialconditions)
+            self.have_start_values = True
+        if dynamics is None:
+            raise NotImplementedError
+        else:
+            self.dyn = dynamics
         
-        assert len(self.x) == len(self.dyn(0,self.x,self.params)), "Dimensions of initial conditions and dynamics do not match"
+        #assert len(self.x) == len(self.dyn(0,self.x)), "Dimensions of initial conditions and dynamics do not match"
             
         self.__globaltime = globaltime        
         self.__EndConditions = list()
@@ -648,16 +652,19 @@ class TimeIntegrator(object):
         
     def RungeKutta4(self,xx,tt):
         # 4th order Runge-Kutta integration scheme
-        k1 = self.__step * self.dyn( tt               , xx      , self.params )
-        k2 = self.__step * self.dyn( tt+self.__step/2., xx+k1/2., self.params )
-        k3 = self.__step * self.dyn( tt+self.__step/2., xx+k2/2., self.params )
-        k4 = self.__step * self.dyn( tt+self.__step   , xx+k3   , self.params )
+        k1 = self.__step * self.dyn( tt               , xx      )
+        k2 = self.__step * self.dyn( tt+self.__step/2., xx+k1/2.)
+        k3 = self.__step * self.dyn( tt+self.__step/2., xx+k2/2.)
+        k4 = self.__step * self.dyn( tt+self.__step   , xx+k3   )
         ret = xx + (k1+2*k2+2*k3+k4)/6.
         if self.__requiredpositive:
             ret[ret < 0] = 0
         return ret
 
     def IntegrationStep(self,time):
+        if not self.have_start_values:
+            raise ValueError
+        
         self.__triggeredEndConditions = list()
         t = 0
         while t <= time:
@@ -671,6 +678,8 @@ class TimeIntegrator(object):
         return self.__globaltime
     
     def IntegrateToZero(self,index):
+        if not self.have_start_values:
+            raise ValueError
         t = 0
         while self.x[index] > 0:
             self.x = self.RungeKutta4(self.x,self.__globaltime + t)
@@ -684,9 +693,10 @@ class TimeIntegrator(object):
         
     def ResetInitialConditions(self,initialconditions,globaltime = 0):
         self.x = np.array(initialconditions,dtype=np.float64)
-        assert len(self.x) == len(self.dyn(0,self.x,self.params)), "Dimensions of initial conditions and dynamics do not match"
+        assert len(self.x) == len(self.dyn(0,self.x)), "Dimensions of initial conditions and dynamics do not match"
         self.__globaltime = globaltime
         self.__triggeredEndConditions = list()
+        self.have_start_values = True
 
     def SetEndConditionMaxTime(self,maxtime):
         if float(maxtime) >= 0:
@@ -728,6 +738,9 @@ class TimeIntegrator(object):
         return terminateInteration
     
     def IntegrateToEndConditions(self):
+        if not self.have_start_values:
+            raise ValueError
+
         if self.CountEndConditions > 0:
             while not self.HasEnded():
                 self.x = self.RungeKutta4(self.x,self.__globaltime)
@@ -776,14 +789,26 @@ class GrowthDynamicsODE(GrowthDynamics):
         if self.env.mixingtime is None:
             self.env.mixingtime = 24.
         
+        self.IntegrationMethod       = kwargs.get("IntegrationMethod",'OWNRK4')
+        self.otherinitialconditions  = np.array([self.env.substrate],dtype=np.float64)
         self.TimeIntegratorOutput    = kwargs.get("TimeIntegratorOutput",10)
         self.TimeIntegratorStep      = kwargs.get("TimeIntegratorStep",1e-3)
         self.EmptySubstrateThreshold = 1e-3 * np.mean(self.yieldfactors)
-        self.otherinitialconditions  = np.array([self.env.substrate],dtype=np.float64)
         
-        # initialize integration from 'Scipy.integrate' = 'spint'
-        self.integrator = spint.ode(self.dynamics)
-        self.integrator.set_integrator('vode', method = 'bdf', min_step = 1e-4, max_step = 1e-2)
+        if self.IntegrationMethod.upper() == 'OWNRK4':
+            self.integrator = TimeIntegrator(dyn = self.dynamics)
+            self.integrator.SetEndCondition("maxtime",self.env.mixingtime)
+            self.Trajectory = self.TrajectoryOwnRK4Integrator
+            self.Growth     = self.GrowthOwnRK4Integrator
+
+        elif self.IntegrationMethod.upper() == 'SCIPY':
+            # initialize integration from 'Scipy.integrate' = 'spint'
+            self.integrator = spint.ode(self.dynamics)
+            self.integrator.set_integrator('vode', method = 'bdf', min_step = 1e-4, max_step = 1e-2)
+            self.Trajectory = self.TrajectorySciPyIntegrator
+            self.Growth     = self.GrowthSciPyIntegrator
+        
+        
         
         
     # this function needs to be overwritten in all child-objects
@@ -798,9 +823,43 @@ class GrowthDynamicsODE(GrowthDynamics):
                     np.array([np.sum(-a * x[:self.numstrains]/self.yieldfactors)])
                 ])
 
+    # base growth function to use for time integrator dynamics
+    def GrowthOwnRK4Integrator(self,initialcells = None):
+        ic = self.checkInitialCells(initialcells)
+        ic = np.concatenate([ic,self.otherinitialconditions])
+        self.dyn.ResetInitialConditions(ic)
+        final = self.dyn.IntegrateToEndConditions()
+        return final[:self.numstrains]
+
+
+    # should also work for more complicated dynamics implemented in classes inherited from this one
+    def TrajectoryOwnRK4Integrator(self,initialconditions,TimeOutput = False):
+        # helper routine
+        def AddTimeToOutputVector(x,t,TimeOutput):
+            if TimeOutput:
+                return np.concatenate([np.array([t]),x])
+            else:
+                return retur
+        
+        # set initial conditions
+        initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
+        if len(initialconditions) >= self.numstrains:
+            initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
+        self.dyn.ResetInitialConditions(initialconditions)
+        
+        # generate first entry in output data
+        r = list()
+        r.append(AddTimeToOutputVector(self.dyn.x,0,TimeOutput))
+        while not self.dyn.HasEnded():
+            t = self.dyn.IntegrationStep(timestep)
+            r.append(AddTimeToOutputVector(self.dyn.x,t,TimeOutput)
+        
+        # return output
+        return np.vstack(r)
+
 
     # compute a full trajectory, output the matrix of solutions
-    def Trajectory(self,initialcells,TimeOutput = False):
+    def TrajectoryScipyIntegrator(self,initialcells,TimeOutput = False):
 
         # store output
         localtraj = []
@@ -828,7 +887,7 @@ class GrowthDynamicsODE(GrowthDynamics):
         return np.vstack(localtraj)
     
     # growth only needs to final state
-    def Growth(self,initialcells):
+    def GrowthSciPyIntegrator(self,initialcells):
         traj = self.Trajectory(initialcells)
         return traj[-1,:self.numstrains]
     
