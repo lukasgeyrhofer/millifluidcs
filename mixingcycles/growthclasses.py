@@ -831,7 +831,7 @@ class GrowthDynamicsODE(GrowthDynamics):
         ic = self.checkInitialCells(initialcells)
         ic = np.concatenate([ic,self.otherinitialconditions])
         self.integrator.ResetInitialConditions(ic)
-        final = self.dyn.IntegrateToEndConditions()
+        final = self.integrator.IntegrateToEndConditions()
         return final[:self.numstrains]
 
 
