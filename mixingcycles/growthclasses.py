@@ -656,11 +656,7 @@ class TimeIntegrator(object):
         
         self.__extinctionthresholds = dict()
         self.__requiredpositive = requiredpositive
-        if requiredpositive:
-            for i in range(len(self.x)):
-                self.setPopulationExtinctionThreshold(i,0)
-        
-        
+    
     def RungeKutta4(self,xx,tt):
         # 4th order Runge-Kutta integration scheme
         k1 = self.__step * self.dyn( tt               , xx      )
@@ -707,6 +703,9 @@ class TimeIntegrator(object):
         assert len(self.x) == len(self.dyn(0,self.x)), "Dimensions of initial conditions and dynamics do not match"
         self.__globaltime = globaltime
         self.__triggeredEndConditions = list()
+        if self.__requiredpositive:
+            for i in range(len(self.x)):
+                self.setPopulationExtinctionThreshold(i,0)
         self.have_start_values = True
 
     def SetEndConditionMaxTime(self,maxtime):
@@ -775,8 +774,8 @@ class TimeIntegrator(object):
             return self.x
         elif key == "time":
             return self.__globaltime
-        else:
-            super(TimeIntegrator,self).__getattr__(self,key)
+        #else:
+            #super(TimeIntegrator,self).__getattr__(self,key)
     
     def __getitem__(self,key):
         if int(key) < len(self.x):
@@ -808,13 +807,11 @@ class GrowthDynamicsODE(GrowthDynamics):
         
         if self.IntegrationMethod.upper() == 'OWNRK4':
             # use TimeIntegrator class defined above
-            self.integrator = TimeIntegrator(dynamics = self.dynamics)
+            self.integrator = TimeIntegrator(dynamics = self.dynamics,requiredpositive = True)
             self.Growth     = self.GrowthOwnRK4Integrator
             self.Trajectory = self.TrajectoryOwnRK4Integrator
 
             self.integrator.SetEndCondition("maxtime",self.env.mixingtime)
-            for i in range(self.numstrains):
-                self.integrator.setPopulationExtinctionThreshold(i,0)
 
         elif self.IntegrationMethod.upper() == 'SCIPY':
             # initialize integration from 'Scipy.integrate' = 'spint'
