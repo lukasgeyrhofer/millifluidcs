@@ -489,10 +489,16 @@ class GrowthDynamics(object):
         return gamma            
 
 
-    def setGrowthMatrixExtinctionThreshold(self,threshold):
+    def setGrowthMatrixValues(self,threshold,newvalue = 0, operation = 'below'):
         if self.hasGrowthMatrix():
-            self.__growthmatrix[self.__growthmatrix < threshold] = threshold
-
+            if operation.lower() == 'below':
+                self.__growthmatrix[self.__growthmatrix <  threshold] = newvalue
+            elif operation.lower() == 'above':
+                self.__growthmatrix[self.__growthmatrix >  threshold] = newvalue
+            elif operation.lower() == 'equal':
+                self.__growthmatrix[self.__growthmatrix == threshold] = newvalue
+            else:
+                raise NotImplementedError
 
     def __getattr__(self,key):
         if key == "numstrains":

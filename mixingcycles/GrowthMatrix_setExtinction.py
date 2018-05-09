@@ -12,5 +12,5 @@ parser.add_argument("-T","--extinctionThreshold",type=float,default=1)
 args = parser.parse_args()
 
 g = pickle.load(open(args.infile))
-g.setExtinctionThreshold(args.extinctionThreshold)
+g.setGrowthMatrixValues(args.extinctionThreshold,0,'below')
 pickle.dump(g,open(args.outfile,"w"))
