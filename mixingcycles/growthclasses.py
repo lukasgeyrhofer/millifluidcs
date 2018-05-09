@@ -645,9 +645,9 @@ class TimeIntegrator(object):
         
         self.__extinctionthresholds = dict()
         self.__requiredpositive = requiredpositive
-        #if requiredpositive:
-            #for i in range(len(self.x)):
-                #self.setPopulationExtinctionThreshold(i,0)
+        if requiredpositive:
+            for i in range(len(self.x)):
+                self.setPopulationExtinctionThreshold(i,0)
         
         
     def RungeKutta4(self,xx,tt):
@@ -798,6 +798,8 @@ class GrowthDynamicsODE(GrowthDynamics):
         if self.IntegrationMethod.upper() == 'OWNRK4':
             self.integrator = TimeIntegrator(dynamics = self.dynamics)
             self.integrator.SetEndCondition("maxtime",self.env.mixingtime)
+            for i in range(self.numstrains):
+                self.integrator.setPopulationExtinctionThreshold(i,0)
             self.Trajectory = self.TrajectoryOwnRK4Integrator
             self.Growth     = self.GrowthOwnRK4Integrator
 
