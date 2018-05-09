@@ -489,6 +489,11 @@ class GrowthDynamics(object):
         return gamma            
 
 
+    def setGrowthMatrixExtinctionThreshold(self,threshold):
+        if self.hasGrowthMatrix():
+            self.__growthmatrix[self.__growthmatrix < threshold] = threshold
+
+
     def __getattr__(self,key):
         if key == "numstrains":
             return len(self.strains)
@@ -796,17 +801,20 @@ class GrowthDynamicsODE(GrowthDynamics):
         self.EmptySubstrateThreshold = 1e-3 * np.mean(self.yieldfactors)
         
         if self.IntegrationMethod.upper() == 'OWNRK4':
+            # use TimeIntegrator class defined above
             self.integrator = TimeIntegrator(dynamics = self.dynamics)
+            self.Growth     = self.GrowthOwnRK4Integrator
+            self.Trajectory = self.TrajectoryOwnRK4Integrator
+
             self.integrator.SetEndCondition("maxtime",self.env.mixingtime)
             for i in range(self.numstrains):
                 self.integrator.setPopulationExtinctionThreshold(i,0)
-            self.Trajectory = self.TrajectoryOwnRK4Integrator
-            self.Growth     = self.GrowthOwnRK4Integrator
 
         elif self.IntegrationMethod.upper() == 'SCIPY':
             # initialize integration from 'Scipy.integrate' = 'spint'
             self.integrator = spint.ode(self.dynamics)
             self.integrator.set_integrator('vode', method = 'bdf', min_step = 1e-4, max_step = 1e-2)
+
             self.Trajectory = self.TrajectorySciPyIntegrator
             self.Growth     = self.GrowthSciPyIntegrator
         
