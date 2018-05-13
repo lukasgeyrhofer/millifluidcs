@@ -20,8 +20,9 @@ except:
 print "=================================================================="
 print "  growthmatrix file : {}".format(args.infile)
 print "  dynamics type :     {}".format(str(type(g)).split("'")[1])
-print "  GMgrid :            {}".format(g.growthmatrixgrid)
 print "  GMshape :           {}".format(np.shape(g.growthmatrix))
+print "  GMgridX :           \n{}".format(g.growthmatrixgrid[0])
+print "  GMgridY :           \n{}".format(g.growthmatrixgrid[1])
 print "=================================================================="
 print
 
