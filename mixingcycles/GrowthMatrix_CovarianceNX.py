@@ -13,9 +13,6 @@ parser_io = parser.add_argument_group(description = "==== I/O parameters ====")
 parser_io.add_argument("-i","--infile")
 parser_io.add_argument("-o","--outfile",default=None)
 
-parser_alg = parser.add_argument_group(description = "==== Algorithm parameters ====")
-parser_alg.add_argument("-L","--normalize",default=False,action="store_true",help="compute Cov[N,X]/E[N] instead of Cov[N,X]")
-
 parser_lattice = parser.add_argument_group(description = "==== Lattice parameters ====")
 parser_lattice.add_argument("-C","--newcoordinates",default=False,action="store_true",help="Use (n,x) instead of (n1,n2) as coordinates")
 parser_lattice.add_argument("-N","--maxInoculum",type=float,default=40)
@@ -67,7 +64,7 @@ if args.newcoordinates:
     for i,n in enumerate(nlist):
         for j,x in enumerate(xlist):
             p1 = gc.PoissonSeedingVectors(m1,[n*x])[0]
-            p2 = gc.PoissonSeedingVectors(m1,[n*(1-x)])[0]
+            p2 = gc.PoissonSeedingVectors(m2,[n*(1-x)])[0]
             
             Enx[i,j] = np.dot(p2, np.dot(nn * xx, p1))
             En[i,j]  = np.dot(p2, np.dot(nn     , p1))
@@ -77,13 +74,13 @@ if args.newcoordinates:
             covN[i,j] = cov[i,j]
             if En[i,j] > 0: covN[i,j] /= En[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,cov[i,j],covN[i,j],Enx[i,j],Ex[i,j],En[i,j]))
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,covN[i,j],cov[i,j],Enx[i,j],Ex[i,j],En[i,j]))
         fpout.write("\n")
 else:
     for i,n1 in enumerate(nlist):
         for j,n2 in enumerate(nlist):
             p1 = gc.PoissonSeedingVectors(m1,[n1])[0]
-            p2 = gc.PoissonSeedingVectors(m1,[n2])[0]
+            p2 = gc.PoissonSeedingVectors(m2,[n2])[0]
             
             Enx[i,j] = np.dot(p2, np.dot(nn * xx, p1))
             En[i,j]  = np.dot(p2, np.dot(nn     , p1))
@@ -93,7 +90,7 @@ else:
             covN[i,j] = cov[i,j]
             if En[i,j] > 0: covN[i,j] /= En[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,cov[i,j],covN[i,j],Enx[i,j],Ex[i,j],En[i,j]))
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n1,n2,covN[i,j],cov[i,j],Enx[i,j],Ex[i,j],En[i,j]))
         fpout.write("\n")
 
 
