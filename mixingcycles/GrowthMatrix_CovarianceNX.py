@@ -74,9 +74,14 @@ if args.newcoordinates:
             
             Cov[i,j] = (ENX[i,j] - EN[i,j] * EX[i,j])
             CovNorm[i,j] = Cov[i,j]
-            if EN[i,j] > 0: CovNorm[i,j] /= EN[i,j]
+            relN = 0
+            if EN[i,j] > 0:
+                CovNorm[i,j] /= EN[i,j]
+                relN = n/EN[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,CovNorm[i,j],Cov[i,j],ENX[i,j],EX[i,j],EN[i,j],EdX[i,j]))
+            
+            
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,CovNorm[i,j],Cov[i,j],ENX[i,j],EX[i,j],EN[i,j],EdX[i,j],relN))
         fpout.write("\n")
 else:
     for i,n1 in enumerate(nlist):
@@ -95,9 +100,12 @@ else:
             
             Cov[i,j] = (ENX[i,j] - EN[i,j] * EX[i,j])
             CovNorm[i,j] = Cov[i,j]
-            if EN[i,j] > 0: CovNorm[i,j] /= EN[i,j]
+            relN = 0
+            if EN[i,j] > 0:
+                CovNorm[i,j] /= EN[i,j]
+                relN = (n1+n2)/EN[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n1,n2,CovNorm[i,j],Cov[i,j],ENX[i,j],EX[i,j],EN[i,j],EdX[i,j]))
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n1,n2,CovNorm[i,j],Cov[i,j],ENX[i,j],EX[i,j],EN[i,j],EdX[i,j],relN))
         fpout.write("\n")
 
 
