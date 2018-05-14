@@ -49,11 +49,12 @@ nn       = gm1 + gm2
 xx       = np.zeros(np.shape(nn))
 xx[nn>0] = gm1[nn>0]/nn[nn>0]
 
-Enx      = np.zeros(shape)
-Ex       = np.zeros(shape)
-En       = np.zeros(shape)
-cov      = np.zeros(shape)
-covN     = np.zeros(shape)
+ENX      = np.zeros(shape)
+EX       = np.zeros(shape)
+EN       = np.zeros(shape)
+Cov      = np.zeros(shape)
+CovNorm  = np.zeros(shape)
+EdX      = np.zeros(shape)
 
 if args.outfile is None:
     fpout = sys.stdout
@@ -66,15 +67,16 @@ if args.newcoordinates:
             p1 = gc.PoissonSeedingVectors(m1,[n*x])[0]
             p2 = gc.PoissonSeedingVectors(m2,[n*(1-x)])[0]
             
-            Enx[i,j] = np.dot(p2, np.dot(nn * xx, p1))
-            En[i,j]  = np.dot(p2, np.dot(nn     , p1))
-            Ex[i,j]  = np.dot(p2, np.dot(xx     , p1))
+            EdX[i,j] = np.dot(p2, np.dot(xx - x,  p1))
+            ENX[i,j] = np.dot(p2, np.dot(nn * xx, p1))
+            EN[i,j]  = np.dot(p2, np.dot(nn     , p1))
+            EX[i,j]  = np.dot(p2, np.dot(xx     , p1))
             
-            cov[i,j] = (Enx[i,j] - En[i,j] * Ex[i,j])
-            covN[i,j] = cov[i,j]
-            if En[i,j] > 0: covN[i,j] /= En[i,j]
+            Cov[i,j] = (ENX[i,j] - EN[i,j] * EX[i,j])
+            CovNorm[i,j] = Cov[i,j]
+            if EN[i,j] > 0: CovNorm[i,j] /= En[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,covN[i,j],cov[i,j],Enx[i,j],Ex[i,j],En[i,j]))
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,CovNorm[i,j],Cov[i,j],ENX[i,j],EX[i,j],EN[i,j],EdX[i,j]))
         fpout.write("\n")
 else:
     for i,n1 in enumerate(nlist):
@@ -82,15 +84,16 @@ else:
             p1 = gc.PoissonSeedingVectors(m1,[n1])[0]
             p2 = gc.PoissonSeedingVectors(m2,[n2])[0]
             
-            Enx[i,j] = np.dot(p2, np.dot(nn * xx, p1))
-            En[i,j]  = np.dot(p2, np.dot(nn     , p1))
-            Ex[i,j]  = np.dot(p2, np.dot(xx     , p1))
-
-            cov[i,j] = (Enx[i,j] - En[i,j] * Ex[i,j])
-            covN[i,j] = cov[i,j]
-            if En[i,j] > 0: covN[i,j] /= En[i,j]
+            EdX[i,j] = np.dot(p2, np.dot(xx - x,  p1))
+            ENX[i,j] = np.dot(p2, np.dot(nn * xx, p1))
+            EN[i,j]  = np.dot(p2, np.dot(nn     , p1))
+            EX[i,j]  = np.dot(p2, np.dot(xx     , p1))
             
-            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n1,n2,covN[i,j],cov[i,j],Enx[i,j],Ex[i,j],En[i,j]))
+            Cov[i,j] = (ENX[i,j] - EN[i,j] * EX[i,j])
+            CovNorm[i,j] = Cov[i,j]
+            if EN[i,j] > 0: CovNorm[i,j] /= En[i,j]
+            
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n1,n2,CovNorm[i,j],Cov[i,j],ENX[i,j],EX[i,j],EN[i,j],EdX[i,j]))
         fpout.write("\n")
 
 
