@@ -56,6 +56,7 @@ Enx      = np.zeros(shape)
 Ex       = np.zeros(shape)
 En       = np.zeros(shape)
 cov      = np.zeros(shape)
+covN     = np.zeros(shape)
 
 if args.outfile is None:
     fpout = sys.stdout
@@ -73,11 +74,10 @@ if args.newcoordinates:
             Ex[i,j]  = np.dot(p2, np.dot(xx     , p1))
             
             cov[i,j] = (Enx[i,j] - En[i,j] * Ex[i,j])
-            if args.normalize:
-                if En[i,j] > 0:
-                    cov[i,j] /= En[i,j]
+            covN[i,j] = cov[i,j]
+            if En[i,j] > 0: covN[i,j] /= En[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e}\n".format(n,x,cov[i,j]))
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,cov[i,j],covN[i,j],Enx[i,j],Ex[i,j],En[i,j]))
         fpout.write("\n")
 else:
     for i,n1 in enumerate(nlist):
@@ -90,11 +90,10 @@ else:
             Ex[i,j]  = np.dot(p2, np.dot(xx     , p1))
 
             cov[i,j] = (Enx[i,j] - En[i,j] * Ex[i,j])
-            if args.normalize:
-                if En[i,j] > 0:
-                    cov[i,j] /= En[i,j]
+            covN[i,j] = cov[i,j]
+            if En[i,j] > 0: covN[i,j] /= En[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e}\n".format(n1,n2,cov[i,j]))
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,cov[i,j],covN[i,j],Enx[i,j],Ex[i,j],En[i,j]))
         fpout.write("\n")
 
 
