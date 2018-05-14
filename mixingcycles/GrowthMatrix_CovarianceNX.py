@@ -13,6 +13,9 @@ parser_io = parser.add_argument_group(description = "==== I/O parameters ====")
 parser_io.add_argument("-i","--infile")
 parser_io.add_argument("-o","--outfile",default=None)
 
+parser_alg = parser.add_argument_group(description = "==== Algorithm parameters ====")
+parser_alg.add_argument("-L","--normalize",default=False,action="store_true",help="compute Cov[N,X]/E[N] instead of Cov[N,X]")
+
 parser_lattice = parser.add_argument_group(description = "==== Lattice parameters ====")
 parser_lattice.add_argument("-C","--newcoordinates",default=False,action="store_true",help="Use (n,x) instead of (n1,n2) as coordinates")
 parser_lattice.add_argument("-N","--maxInoculum",type=float,default=40)
@@ -69,7 +72,12 @@ if args.newcoordinates:
             En[i,j]  = np.dot(p2, np.dot(nn     , p1))
             Ex[i,j]  = np.dot(p2, np.dot(xx     , p1))
             
-            fpout.write("{:.6e} {:.6e} {:14.6e}\n".format(n,x,Enx[i,j] - En[i,j] * Ex[i,j]))
+            cov[i,j] = (Enx[i,j] - En[i,j] * Ex[i,j])
+            if args.normalize:
+                if En[i,j] > 0:
+                    cov[i,j] /= En[i,j]
+            
+            fpout.write("{:.6e} {:.6e} {:14.6e}\n".format(n,x,cov[i,j]))
         fpout.write("\n")
 else:
     for i,n1 in enumerate(nlist):
@@ -80,8 +88,13 @@ else:
             Enx[i,j] = np.dot(p2, np.dot(nn * xx, p1))
             En[i,j]  = np.dot(p2, np.dot(nn     , p1))
             Ex[i,j]  = np.dot(p2, np.dot(xx     , p1))
+
+            cov[i,j] = (Enx[i,j] - En[i,j] * Ex[i,j])
+            if args.normalize:
+                if En[i,j] > 0:
+                    cov[i,j] /= En[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e}\n".format(n1,n2,Enx[i,j] - En[i,j] * Ex[i,j]))
+            fpout.write("{:.6e} {:.6e} {:14.6e}\n".format(n1,n2,cov[i,j]))
         fpout.write("\n")
 
 
