@@ -22,11 +22,11 @@ parser_dilution.add_argument("-D","--dilutionmax",type=float,default=None)
 parser_dilution.add_argument("-K","--dilutionsteps",type=int,default=10)
 parser_dilution.add_argument("-L","--dilutionlogscale",default = False, action = "store_true")
 
-parser_flowmap = parser.add_argument_group(description = "==== Flowmap between mixing cycles ====")
-parser_flowmap.add_argument("-C","--newcoordinates",default=False,action="store_true",help="Use (n,x) instead of (n1,n2) as coordinates")
-parser_flowmap.add_argument("-N","--maxInoculum",type=float,default=40)
-parser_flowmap.add_argument("-n","--stepInoculum",type=float,default=2)
-parser_flowmap.add_argument("-x","--stepFraction",type=float,default=.05)
+parser_lattice = parser.add_argument_group(description = "==== Lattice parameters ====")
+parser_lattice.add_argument("-C","--newcoordinates",default=False,action="store_true",help="Use (n,x) instead of (n1,n2) as coordinates")
+parser_lattice.add_argument("-N","--maxInoculum",type=float,default=40)
+parser_lattice.add_argument("-n","--stepInoculum",type=float,default=2)
+parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
 
 args = parser.parse_args()
 
