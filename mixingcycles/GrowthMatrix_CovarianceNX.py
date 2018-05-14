@@ -74,7 +74,7 @@ if args.newcoordinates:
             covN[i,j] = cov[i,j]
             if En[i,j] > 0: covN[i,j] /= En[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,covN[i,j],cov[i,j],Enx[i,j],Ex[i,j],En[i,j]))
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,covN[i,j],cov[i,j],Enx[i,j],Ex[i,j],En[i,j]))
         fpout.write("\n")
 else:
     for i,n1 in enumerate(nlist):
@@ -90,7 +90,7 @@ else:
             covN[i,j] = cov[i,j]
             if En[i,j] > 0: covN[i,j] /= En[i,j]
             
-            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n1,n2,covN[i,j],cov[i,j],Enx[i,j],Ex[i,j],En[i,j]))
+            fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n1,n2,covN[i,j],cov[i,j],Enx[i,j],Ex[i,j],En[i,j]))
         fpout.write("\n")
 
 
