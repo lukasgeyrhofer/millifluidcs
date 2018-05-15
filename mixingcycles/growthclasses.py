@@ -89,6 +89,25 @@ def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
         return px
 
 
+def PointSeedingVectors(m,n):
+    if isinstance(n,(float,np.float,np.float64,int)):
+        n = np.array([n],dtype=float)
+    px = np.zeros((len(n),len(m)))
+    for i in range(len(n)):
+        if n[i] > 0:
+            idx0 = ((m - n[i])**2).argmin()
+            try:
+                if m[idx0] < n[i] and m[idx0+1] > n[i]:
+                    p[idx0] = (m[idx0+1] - n[i])/(m[idx0+1] - m[idx0])
+                    p[idx0+1] = 1 - p[idx0]
+                if m[idx0-1] < n[i] and m[idx0] > n[i]:
+                    p[idx0-1] = (m[idx0] - n[i])/(m[idx0] - m[idx0-1])
+                    p[idx0] = 1 - p[idx0-1]
+            except:
+                pass
+    return px
+
+
 class MicrobialStrain(object):
     '''
     Stores all characteristics of a microbial strain

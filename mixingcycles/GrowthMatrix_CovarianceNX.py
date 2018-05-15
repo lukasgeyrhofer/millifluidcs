@@ -64,6 +64,7 @@ def main():
     ENX          = np.zeros(shape)
     EX           = np.zeros(shape)
     EN           = np.zeros(shape)
+    ENp          = np.zeros(shape)
     Cov          = np.zeros(shape)
     CovNorm      = np.zeros(shape)
     EdX          = np.zeros(shape)
@@ -79,21 +80,27 @@ def main():
     if args.newcoordinates:
         for i,n in enumerate(nlist):
             for j,x in enumerate(xlist):
-                p1 = gc.PoissonSeedingVectors(m1,[n*x])[0]
-                p2 = gc.PoissonSeedingVectors(m2,[n*(1-x)])[0]
+                p1       = gc.PoissonSeedingVectors(m1,[n*x])[0]
+                p2       = gc.PoissonSeedingVectors(m2,[n*(1-x)])[0]
                 
                 EdX[i,j] = np.dot(p2, np.dot(xx - xIC, p1))
                 ENX[i,j] = np.dot(p2, np.dot(nn * xx,  p1))
                 EN[i,j]  = np.dot(p2, np.dot(nn     ,  p1))
                 EX[i,j]  = np.dot(p2, np.dot(xx     ,  p1))
                 
+                pp1      = gc.PointSeedingVectors(m1,[n*x])[0]
+                pp2      = gc.PointSeedingVectors(m1,[n*(1-x)])[0]
+                
+                ENp[i,j] = np.dot(pp2,np.dot(nn,pp1))
+                
+                relN     = 0
                 Cov[i,j] = (ENX[i,j] - EN[i,j] * EX[i,j])
                 CovNorm[i,j] = Cov[i,j]
-                relN = 0
                 if EN[i,j] > 0:
                     CovNorm[i,j] /= EN[i,j]
-                    relN = n/EN[i,j]
-               
+                    relN = ENp[i,j]/EN[i,j]
+                
+                #                                                                                                   1 2 3            4        5        6       7       8        9
                 fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n,x,CovNorm[i,j],Cov[i,j],ENX[i,j],EX[i,j],EN[i,j],EdX[i,j],relN))
             fpout.write("\n")
     else:
@@ -110,14 +117,20 @@ def main():
                 ENX[i,j] = np.dot(p2, np.dot(nn * xx,  p1))
                 EN[i,j]  = np.dot(p2, np.dot(nn     ,  p1))
                 EX[i,j]  = np.dot(p2, np.dot(xx     ,  p1))
+
+                pp1      = gc.PointSeedingVectors(m1,[n1])[0]
+                pp2      = gc.PointSeedingVectors(m1,[n2])[0]
                 
+                ENp[i,j] = np.dot(pp2,np.dot(nn,pp1))
+                
+                relN     = 0
                 Cov[i,j] = (ENX[i,j] - EN[i,j] * EX[i,j])
                 CovNorm[i,j] = Cov[i,j]
-                relN = 0
                 if EN[i,j] > 0:
                     CovNorm[i,j] /= EN[i,j]
-                    relN = (n1+n2)/EN[i,j]
+                    relN = ENp[i,j]/EN[i,j]
                 
+                #                                                                                                   1  2  3            4        5        6       7       8        9
                 fpout.write("{:.6e} {:.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(n1,n2,CovNorm[i,j],Cov[i,j],ENX[i,j],EX[i,j],EN[i,j],EdX[i,j],relN))
             fpout.write("\n")
 
