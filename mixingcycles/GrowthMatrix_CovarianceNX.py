@@ -89,7 +89,7 @@ def main():
                 EX[i,j]  = np.dot(p2, np.dot(xx     ,  p1))
                 
                 pp1      = gc.PointSeedingVectors(m1,[n*x])[0]
-                pp2      = gc.PointSeedingVectors(m1,[n*(1-x)])[0]
+                pp2      = gc.PointSeedingVectors(m2,[n*(1-x)])[0]
                 
                 ENp[i,j] = np.dot(pp2,np.dot(nn,pp1))
                 
@@ -119,7 +119,7 @@ def main():
                 EX[i,j]  = np.dot(p2, np.dot(xx     ,  p1))
 
                 pp1      = gc.PointSeedingVectors(m1,[n1])[0]
-                pp2      = gc.PointSeedingVectors(m1,[n2])[0]
+                pp2      = gc.PointSeedingVectors(m2,[n2])[0]
                 
                 ENp[i,j] = np.dot(pp2,np.dot(nn,pp1))
                 
