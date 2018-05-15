@@ -35,4 +35,4 @@ if args.transpose:
 for i,x in enumerate(xlist):
     yi = zdata[i,:].argmax()
     ymax = ylist[yi]
-    print "{} {} {}".format(x,ymax)
+    print "{} {}".format(x,ymax)
