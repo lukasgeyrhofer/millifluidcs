@@ -60,8 +60,9 @@ else:
     coordinates = list()
     for line in fp_coords.readlines():
         try:
-            values = np.array(line.split()[:2],dtype=np.float)
-            coordinates.append(values)
+            values = np.array(line.split(),dtype=np.float)
+            if len(values) >= 2:
+                coordinates.append(values[:2])
         except:
             continue
         fp_coords.close()
