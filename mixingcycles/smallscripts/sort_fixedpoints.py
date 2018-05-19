@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -9,22 +9,35 @@ import pandas as pd
 
 def stability(ev1r,ev2r,ev1i,ev2i):
     unstable  = 0
-    unstable += (ev1r**2 + ev1i**2 < 1)
-    unstable += (ev2r**2 + ev2i**2 < 1)
+    unstable += 1 if (ev1r**2 + ev1i**2 < 1) else 0
+    unstable += 1 if (ev2r**2 + ev2i**2 < 1) else 0
     unstable += 0 if (ev1i == ev2i == 0) else 3
 
     return unstable
 
+def alloweddilution(dilution,dilutionstep,threshold = 1e-10):
+    if not dilutionstep is None:
+        if (dilution / dilutionstep - dilution // dilutionstep)**2 < threshold:
+            return True
+        else:
+            return False
+    else:
+        return True
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-i","--infiles",nargs="*")
+parser.add_argument("-o","--outbasename",default=None)
 parser.add_argument("-C","--coex",default=False,action="store_true")
+parser.add_argument("-D","--dilutionminstep",default=None,type=float)
 args = parser.parse_args()
 
 data = None
+if len(args.infiles) == 0:  raise IOError("no input files")
 
 for fn in args.infiles:
     try:
-        newdata = np.gen_from_txt(fn)
+        newdata = np.genfromtxt(fn)
     except:
         continue
 
@@ -33,40 +46,41 @@ for fn in args.infiles:
     else:
         data = newdata[:,:]
 
+if data is None:    raise IOError("no input data")
 
 
-if not args.coex:
-    data_stable          = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 2])
-    data_stablecomplex   = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 5])
-    data_unstable        = np.array([x for x in data if 0 <= stability(x[6],x[7],x[8],x[9])**2 < 2])
-    data_unstablecomplex = np.array([x for x in data if 3 <= stability(x[6],x[7],x[8],x[9])**2 < 5])
-
-    newname = args.infiles[:-2]
-
-    np.save_txt(data_stable,newname + "_stable")
-    np.save_txt(data_stablecomplex,newname + "_stablecomplex")
-    np.save_txt(data_unstable,newname + "_unstable")
-    np.save_txt(data_unstablecomplex,newname + "_unstablecomplex")
+if args.outbasename is None:
+    newname = args.infiles[0][:-2]
 else:
-    data_Cstable         = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 2 and (x[3] > 0 and x[4] > 0)])
-    data_Cstablecomplex   = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 5 and (x[3] > 0 and x[4] > 0)])
-    data_Cunstable        = np.array([x for x in data if 0 <= stability(x[6],x[7],x[8],x[9])**2 < 2 and (x[3] > 0 and x[4] > 0)])
-    data_Cunstablecomplex = np.array([x for x in data if 3 <= stability(x[6],x[7],x[8],x[9])**2 < 5 and (x[3] > 0 and x[4] > 0)])
-    data_stable          = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 2 and not (x[3] > 0 and x[4] > 0)])
-    data_stablecomplex   = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 5 and not (x[3] > 0 and x[4] > 0)])
-    data_unstable        = np.array([x for x in data if 0 <= stability(x[6],x[7],x[8],x[9])**2 < 2 and not (x[3] > 0 and x[4] > 0)])
-    data_unstablecomplex = np.array([x for x in data if 3 <= stability(x[6],x[7],x[8],x[9])**2 < 5 and not (x[3] > 0 and x[4] > 0)])
+    newname = args.outbasename
     
-    newname = args.infiles[:-2]
+if not args.coex:
+    data_stable          = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 2     and alloweddilution(x[0],args.dilutionminstep)])
+    data_stablecomplex   = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 5     and alloweddilution(x[0],args.dilutionminstep)])
+    data_unstable        = np.array([x for x in data if 0 <= stability(x[6],x[7],x[8],x[9]) < 2 and alloweddilution(x[0],args.dilutionminstep)])
+    data_unstablecomplex = np.array([x for x in data if 3 <= stability(x[6],x[7],x[8],x[9]) < 5 and alloweddilution(x[0],args.dilutionminstep)])
 
-    np.save_txt(data_stable,newname + "_stable")
-    np.save_txt(data_stablecomplex,newname + "_stablecomplex")
-    np.save_txt(data_unstable,newname + "_unstable")
-    np.save_txt(data_unstablecomplex,newname + "_unstablecomplex")
+    np.savetxt(newname + "_stable",          data_stable)
+    np.savetxt(newname + "_stablecomplex",   data_stablecomplex)
+    np.savetxt(newname + "_unstable",        data_unstable)
+    np.savetxt(newname + "_unstablecomplex", data_unstablecomplex)
+else:
+    data_Cstable          = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 2     and     (x[3] > 0 and x[4] > 0) and alloweddilution(x[0],args.dilutionminstep)])
+    data_Cstablecomplex   = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 5     and     (x[3] > 0 and x[4] > 0) and alloweddilution(x[0],args.dilutionminstep)])
+    data_Cunstable        = np.array([x for x in data if 0 <= stability(x[6],x[7],x[8],x[9]) < 2 and     (x[3] > 0 and x[4] > 0) and alloweddilution(x[0],args.dilutionminstep)])
+    data_Cunstablecomplex = np.array([x for x in data if 3 <= stability(x[6],x[7],x[8],x[9]) < 5 and     (x[3] > 0 and x[4] > 0) and alloweddilution(x[0],args.dilutionminstep)])
+    data_stable           = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 2     and not (x[3] > 0 and x[4] > 0) and alloweddilution(x[0],args.dilutionminstep)])
+    data_stablecomplex    = np.array([x for x in data if stability(x[6],x[7],x[8],x[9]) == 5     and not (x[3] > 0 and x[4] > 0) and alloweddilution(x[0],args.dilutionminstep)])
+    data_unstable         = np.array([x for x in data if 0 <= stability(x[6],x[7],x[8],x[9]) < 2 and not (x[3] > 0 and x[4] > 0) and alloweddilution(x[0],args.dilutionminstep)])
+    data_unstablecomplex  = np.array([x for x in data if 3 <= stability(x[6],x[7],x[8],x[9]) < 5 and not (x[3] > 0 and x[4] > 0) and alloweddilution(x[0],args.dilutionminstep)])
 
-    np.save_txt(data_Cstable,newname + "_Cstable")
-    np.save_txt(data_Cstablecomplex,newname + "_Cstablecomplex")
-    np.save_txt(data_Cunstable,newname + "_Cunstable")
-    np.save_txt(data_Cunstablecomplex,newname + "_Cunstablecomplex")
+    np.savetxt(newname + "_stable",           data_stable)
+    np.savetxt(newname + "_stablecomplex",    data_stablecomplex)
+    np.savetxt(newname + "_unstable",         data_unstable)
+    np.savetxt(newname + "_unstablecomplex",  data_unstablecomplex)
 
+    np.savetxt(newname + "_Cstable",          data_Cstable)
+    np.savetxt(newname + "_Cstablecomplex",   data_Cstablecomplex)
+    np.savetxt(newname + "_Cunstable",        data_Cunstable)
+    np.savetxt(newname + "_Cunstablecomplex", data_Cunstablecomplex)
 
