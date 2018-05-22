@@ -3,6 +3,8 @@
 import argparse
 import numpy as np
 import sys,math
+sys.path.append(sys.path[0] + '/..')
+
 
 import growthclasses as gc
 
@@ -39,10 +41,10 @@ for dilution in dlist:
     fp                   = g.getSingleStrainFixedPointsPoissonSeeding(size = args.maxN)
     px                   = gc.PoissonSeedingVectors(m,fp,diff=False)
 
-    Egrowth1_ICm1        = np.dot(growth_ICm1[:,1,0],px[0])
-    Egrowth1_IC1m        = np.dot(growth_IC1m[1,:,0],px[0])
-    Egrowth2_ICm1        = np.dot(growth_ICm1[:,1,1],px[1])
-    Egrowth2_IC1m        = np.dot(growth_IC1m[1,:,1],px[1])
+    Egrowth1_ICm1        = np.dot(growth_ICm1[:,1,0],px[0]) * dilution
+    Egrowth1_IC1m        = np.dot(growth_IC1m[1,:,0],px[0]) * dilution
+    Egrowth2_ICm1        = np.dot(growth_ICm1[:,1,1],px[1]) * dilution
+    Egrowth2_IC1m        = np.dot(growth_IC1m[1,:,1],px[1]) * dilution
 
     if args.verbose:
         invasiongrowth1  = g.Growth([fp[0],1])
