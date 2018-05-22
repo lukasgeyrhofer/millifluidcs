@@ -43,7 +43,7 @@ def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = Fal
                         defaultgrowthrates = [2.,1.],defaultyieldfactors = [1.,2.],defaultdeathrates = [0.,0.],
                         defaultsubstrate = 1e4, defaultmixingtime = 24,defaultdilution = 2e-4, defaultnumdroplets = 1000):
     # Helper routine to generate all cmdline parameters for microbial growth
-    gp = p.add_argument_group(description = "Parameters for growth in droplets")
+    gp = p.add_argument_group(description = "==== Parameters for growth in droplets ====")
     gp.add_argument("-a","--growthrates",type=float,nargs="*",default=defaultgrowthrates)
     gp.add_argument("-y","--yieldfactors",type=float,nargs="*",default=defaultyieldfactors)
     if allparams or deathrates:
@@ -59,7 +59,7 @@ def AddGrowthParameters(p,allparams = False,deathrates = False,numdroplets = Fal
 
 def AddNRParameters(p):
     # Helper routine to generate cmdline parameters to change default behaviour of NR iterations
-    nrp = p.add_argument_group(description = "Parameters for Newton-Raphson iterations to estimate saturation time")
+    nrp = p.add_argument_group(description = "==== Parameters for Newton-Raphson iterations to estimate saturation time ====")
     nrp.add_argument("-A","--NR_alpha",type=float,default=1.)
     nrp.add_argument("-P","--NR_precision",type=float,default=1e-10)
     nrp.add_argument("-M","--NR_maxsteps",type=int,default=10000)
