@@ -879,7 +879,7 @@ class GrowthDynamicsODE(GrowthDynamics):
             if TimeOutput:
                 return np.concatenate([np.array([t]),x])
             else:
-                return retur
+                return x
         
         # set initial conditions
         initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
