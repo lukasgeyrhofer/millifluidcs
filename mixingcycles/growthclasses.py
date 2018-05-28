@@ -860,11 +860,16 @@ class GrowthDynamicsODE(GrowthDynamics):
 
     # base growth function to use for time integrator dynamics
     def GrowthOwnRK4Integrator(self,initialcells = None):
-        ic = self.checkInitialCells(initialcells)
-        ic = np.concatenate([ic,self.otherinitialconditions])
-        self.integrator.ResetInitialConditions(ic)
-        final = self.integrator.IntegrateToEndConditions()
-        return final[:self.numstrains]
+        #ic = self.checkInitialCells(initialcells)
+        #ic = np.concatenate([ic,self.otherinitialconditions])
+        #self.integrator.ResetInitialConditions(ic)
+        #final = self.integrator.IntegrateToEndConditions()
+        #return final[:self.numstrains]
+        
+        # compute whole trajectory, only output final cell numbers
+        tmp = self.TrajectoryOwnRK4Integrator(initialcells)
+        return tmp[-1,:self.numstrains]
+        
 
 
     # should also work for more complicated dynamics implemented in classes inherited from this one
