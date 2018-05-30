@@ -724,7 +724,7 @@ class TimeIntegrator(object):
         self.__triggeredEndConditions = list()
         if self.__requiredpositive:
             for i in range(len(self.x)):
-                self.setPopulationExtinctionThreshold(i,0)
+                self.SetPopulationExtinctionThreshold(i,0)
         self.have_start_values = True
 
     def SetEndConditionMaxTime(self,maxtime):
@@ -800,11 +800,11 @@ class TimeIntegrator(object):
         if int(key) < len(self.x):
             return self.x[int(key)]
     
-    def setPopulation(self,index,value):
+    def SetPopulation(self,index,value):
         if int(index) < len(self.x):
             self.x[int(index)] = float(value)
     
-    def setPopulationExtinctionThreshold(self,index,value):
+    def SetPopulationExtinctionThreshold(self,index,value):
         if int(index) < len(self.x):
             self.__extinctionthresholds[int(index)] = float(value)
     
@@ -829,8 +829,10 @@ class GrowthDynamicsODE(GrowthDynamics):
             self.integrator = TimeIntegrator(dynamics = self.dynamics,requiredpositive = True)
             self.Growth     = self.GrowthOwnRK4Integrator
             self.Trajectory = self.TrajectoryOwnRK4Integrator
-
+            
             self.integrator.SetEndCondition("maxtime",self.env.mixingtime)
+            for i in range(self.numstrains):
+                self.integrator.SetPopulationExtinctionThreshold(i,1)
 
         elif self.IntegrationMethod.upper() == 'SCIPY':
             # initialize integration from 'Scipy.integrate' = 'spint'
