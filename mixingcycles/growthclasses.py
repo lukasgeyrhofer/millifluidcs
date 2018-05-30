@@ -653,15 +653,18 @@ class StochasticGrowthDynamics(GrowthDynamics):
 class TimeIntegrator(object):
     # General forward integration of dynamics with Runge-Kutta method of 4th order
     # allows definition of multiple endconditions, currently implemented maximum time and one of the populations reaching zero
-    def __init__(self,step = 1e-3,requiredpositive = True,initialconditions = None,dynamics = None,globaltime = 0,**kwargs):
+    def __init__(self,step = 1e-3,requiredpositive = True,initialconditions = None,dynamics = None,globaltime = 0,outputstep = 100,**kwargs):
         self.__step = step
+        self.__outputstep = int(outputstep)
 
         self.params = kwargs.get('params',None)
+        
         
         self.have_start_values = False
         if not initialconditions is None:
             self.x   = np.array(initialconditions)
             self.have_start_values = True
+
         if dynamics is None:
             raise NotImplementedError
         else:
@@ -675,6 +678,8 @@ class TimeIntegrator(object):
         
         self.__extinctionthresholds = dict()
         self.__requiredpositive = requiredpositive
+        
+        self.__trajectory = None
     
     def RungeKutta4(self,xx,tt):
         # 4th order Runge-Kutta integration scheme
@@ -686,6 +691,33 @@ class TimeIntegrator(object):
         if self.__requiredpositive:
             ret[ret < 0] = 0
         return ret
+    
+    
+    def checkExtinction(self):
+        if len(self.__extinctionthresholds) >= 1:
+            for i in self.__extinctionthresholds.keys():
+                if i < len(self.x):
+                    if self.x[i] < self.__extinctionthresholds[i]:
+                        self.x[i] = 0
+
+    def HasEnded(self):
+        terminateInteration = False
+        if np.isnan(self.x).any():
+            terminateInteration = True
+        else:
+            for ec in self.__EndConditions:
+                if ec[0] == "maxtime":
+                    if ec[1] < self.__globaltime:
+                        terminateInteration = True
+                        self.__triggeredEndConditions.append(ec)
+                elif ec[0] == "reachzero":
+                    if self.x[ec[1]] <= 0.:
+                        terminateInteration = True
+                        self.__triggeredEndConditions.append(ec)
+                else:
+                    raise NotImplementedError
+        return terminateInteration
+
 
     def IntegrationStep(self,time):
         if not self.have_start_values:
@@ -695,13 +727,11 @@ class TimeIntegrator(object):
         t = 0
         while t <= time:
             self.x = self.RungeKutta4(self.x,self.__globaltime + t)
-            if len(self.__extinctionthresholds) >= 1:
-                for i in self.__extinctionthresholds.keys():
-                    if self.x[i] < self.__extinctionthresholds[i]:
-                        self.x[i] = 0
+            self.checkExtinction()
             t += self.__step
         self.__globaltime += t
         return self.__globaltime
+    
     
     def IntegrateToZero(self,index):
         if not self.have_start_values:
@@ -709,22 +739,36 @@ class TimeIntegrator(object):
         t = 0
         while self.x[index] > 0:
             self.x = self.RungeKutta4(self.x,self.__globaltime + t)
-            if len(self.__extinctionthresholds) >= 1:
-                for i in self.__extinctionthresholds.keys():
-                    if self.x[i] < self.__extinctionthresholds[i]:
-                        self.x[i] = 0
+            self.checkExtinction()
             t += self.__step
         self.__globaltime += t
         self.__triggeredEndConditions = list(["reachzero",index])
+
+    
+    def IntegrateToEndConditions(self,store_trajectory = False):
+        if not self.have_start_values:
+            raise ValueError
+        if store_trajectory:
+            self.__trajectory = list()
+        o = 0
+        if self.CountEndConditions > 0:
+            while not self.HasEnded():
+                self.x = self.RungeKutta4(self.x,self.__globaltime)
+                self.checkExtinction()
+                self.__globaltime += self.__step
+                if store_trajectory:
+                    if o%self.__outputstep == 0:
+                        self.__trajectory.append([self.__globaltime,self.x])
+                o += 1
+            return self.x
+        else:
+            raise NotImplementedError
         
     def ResetInitialConditions(self,initialconditions,globaltime = 0):
         self.x = np.array(initialconditions,dtype=np.float64)
         assert len(self.x) == len(self.dyn(0,self.x)), "Dimensions of initial conditions and dynamics do not match"
         self.__globaltime = globaltime
         self.__triggeredEndConditions = list()
-        if self.__requiredpositive:
-            for i in range(len(self.x)):
-                self.SetPopulationExtinctionThreshold(i,0)
         self.have_start_values = True
 
     def SetEndConditionMaxTime(self,maxtime):
@@ -748,43 +792,25 @@ class TimeIntegrator(object):
         else:
             raise NotImplementedError
 
-    def HasEnded(self):
-        terminateInteration = False
-        if np.isnan(self.x).any():
-            terminateInteration = True
-        else:
-            for ec in self.__EndConditions:
-                if ec[0] == "maxtime":
-                    if ec[1] < self.__globaltime:
-                        terminateInteration = True
-                        self.__triggeredEndConditions.append(ec)
-                elif ec[0] == "reachzero":
-                    if self.x[ec[1]] <= 0.:
-                        terminateInteration = True
-                        self.__triggeredEndConditions.append(ec)
-                else:
-                    raise NotImplementedError
-        return terminateInteration
     
-    def IntegrateToEndConditions(self):
-        if not self.have_start_values:
-            raise ValueError
-
-        if self.CountEndConditions > 0:
-            while not self.HasEnded():
-                self.x = self.RungeKutta4(self.x,self.__globaltime)
-                if len(self.__extinctionthresholds) >= 1:
-                    for i in self.__extinctionthresholds.keys():
-                        if self.x[i] < self.__extinctionthresholds[i]:
-                            self.x[i] = 0
-                self.__globaltime += self.__step
-            return self.x
-        else:
-            raise NotImplementedError
-
+    def SetPopulation(self,index,value):
+        if int(index) < len(self.x):
+            self.x[int(index)] = float(value)
+    
+    def SetPopulationExtinctionThreshold(self,index,value):
+        self.__extinctionthresholds[int(index)] = float(value)
+    
     def __str__(self):
         return (" ".join(["{:14.6e}"]*len(self.x))).format(*self.x)
     
+    def GetTrajectory(self,TimeOutput = False):
+        if not self.__trajectory is None:
+            if TimeOutput:
+                return np.array([np.concatenate([np.array([t]),x]) for t,x in self.__trajectory])
+            else:
+                return np.array([x for t,x in self.__trajectory])
+        else:
+            raise ValueError
     
     def __getattr__(self,key):
         if key == "CountEndConditions":
@@ -799,15 +825,6 @@ class TimeIntegrator(object):
     def __getitem__(self,key):
         if int(key) < len(self.x):
             return self.x[int(key)]
-    
-    def SetPopulation(self,index,value):
-        if int(index) < len(self.x):
-            self.x[int(index)] = float(value)
-    
-    def SetPopulationExtinctionThreshold(self,index,value):
-        if int(index) < len(self.x):
-            self.__extinctionthresholds[int(index)] = float(value)
-    
 
 class GrowthDynamicsODE(GrowthDynamics):
     def __init__(self,numstrains = None, **kwargs):
@@ -877,29 +894,37 @@ class GrowthDynamicsODE(GrowthDynamics):
     # should also work for more complicated dynamics implemented in classes inherited from this one
     def TrajectoryOwnRK4Integrator(self,initialconditions,TimeOutput = False):
         # helper routine
-        def AddTimeToOutputVector(x,t,TimeOutput):
-            if TimeOutput:
-                return np.concatenate([np.array([t]),x])
-            else:
-                return x
+        #def AddTimeToOutputVector(x,t,TimeOutput):
+            #if TimeOutput:
+                #return np.concatenate([np.array([t]),x])
+            #else:
+                #return x
         
-        # set initial conditions
+        ## set initial conditions
+        #initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
+        #if len(initialconditions) >= self.numstrains:
+            #initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
+        #self.integrator.ResetInitialConditions(initialconditions)
+        
+        ## generate first entry in output data
+        #r = list()
+        #r.append(AddTimeToOutputVector(self.integrator.x,0,TimeOutput))
+        #i = 0
+        #while not self.integrator.HasEnded():
+            #t = self.integrator.IntegrationStep(self.TimeIntegratorStep)
+            #i+=1
+            #if i%self.TimeIntegratorOutput == 0:
+                #r.append(AddTimeToOutputVector(self.integrator.x,t,TimeOutput))
+        ## return output
+        #return np.vstack(r)
+
         initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
         if len(initialconditions) >= self.numstrains:
             initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
         self.integrator.ResetInitialConditions(initialconditions)
+        self.integrator.IntegrateToEndConditions(store_trajectory = True)
+        return self.integrator.GetTrajectory(TimeOutput)
         
-        # generate first entry in output data
-        r = list()
-        r.append(AddTimeToOutputVector(self.integrator.x,0,TimeOutput))
-        i = 0
-        while not self.integrator.HasEnded():
-            t = self.integrator.IntegrationStep(self.TimeIntegratorStep)
-            i+=1
-            if i%self.TimeIntegratorOutput == 0:
-                r.append(AddTimeToOutputVector(self.integrator.x,t,TimeOutput))
-        # return output
-        return np.vstack(r)
 
 
     # compute a full trajectory, output the matrix of solutions
