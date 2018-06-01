@@ -19,6 +19,8 @@ parser_dilution.add_argument("-L","--dilutionlogscale",default = False, action =
 
 parser.add_argument("-m","--maxN",type=int,default=50)
 parser.add_argument("-v","--verbose",action="store_true",default=False)
+parser.add_argument("-R","--deltaparameters",default=False,action="store_true")
+
 args   = parser.parse_args()
 
 if args.dilutionmax is None:
@@ -35,6 +37,15 @@ m                    = np.arange(args.maxN)
 growth_ICm1          = g.getGrowthMatrix(size=(m,np.array([0,1])))
 growth_IC1m          = g.getGrowthMatrix(size=(np.array([0,1]),m))
 
+
+if args.deltaparameters:
+    p1 = (g.growthrates[0] - g.growthrates[1])/(g.growthrates[0] + g.growthrates[1])
+    p2 = (g.yieldfactors[0] - g.yieldfactors[1])/(g.yieldfactors[0] + g.yieldfactors[1])
+else:
+    # previous default behaviour
+    p1 = g.growthrates[1]/g.growthrates[0]
+    p2 = g.yieldfactors[1]/g.yieldfactors[0]
+    
 for dilution in dlist:
     g.env.dilution = dilution
 
@@ -63,12 +74,12 @@ for dilution in dlist:
             gamma2inv1   = 0
             gamma2inv2   = 0
 
-        print("{:e} {:f} {:f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f}".format(dilution,g.growthrates[1]/g.growthrates[0],g.yieldfactors[1]/g.yieldfactors[0],fp[0],fp[1],Egrowth1_ICm1,Egrowth2_ICm1,Egrowth1_IC1m,Egrowth2_IC1m,invasiongrowth1[0],invasiongrowth1[1],invasiongrowth2[0],invasiongrowth2[1],gamma1inv1,gamma2inv1,gamma1inv2,gamma2inv2))
-        #                                                                                                                               1        2                                 3                                   4     5     6             7             8             9             10                 11                 12                 13                 14         15         16         17
+        print("{:e} {:f} {:f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f}".format(dilution,p1,p2,fp[0],fp[1],Egrowth1_ICm1,Egrowth2_ICm1,Egrowth1_IC1m,Egrowth2_IC1m,invasiongrowth1[0],invasiongrowth1[1],invasiongrowth2[0],invasiongrowth2[1],gamma1inv1,gamma2inv1,gamma1inv2,gamma2inv2))
+        #                                                                                                                               1        2  3  4     5     6             7             8             9             10                 11                 12                 13                 14         15         16         17
         # invasibility                                                                                                                                                                                                                                                                                        ^strain 1 invaded  ^strain 2 invaded
 
     else:
         # reduced output. print only fixed points and their relevant stability component
-        print("{:e} {:f} {:f} {:.6f} {:6f} {:.6f} {:.6f}".format(dilution,g.growthrates[1]/g.growthrates[0],g.yieldfactors[1]/g.yieldfactors[0],fp[0],fp[1],Egrowth2_ICm1,Egrowth1_IC1m))
+        print("{:e} {:f} {:f} {:.6f} {:6f} {:.6f} {:.6f}".format(dilution,p1,p2,fp[0],fp[1],Egrowth2_ICm1,Egrowth1_IC1m))
 
 
