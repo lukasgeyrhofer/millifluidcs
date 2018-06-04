@@ -40,7 +40,7 @@ else:
 
 for y in ylist:
     if args.deltaparameters:
-        params["yieldfactors"] = np.array([1-y,1+y])
+        params["yieldfactors"] = np.array([1+y,1-y])
     else:
         params["yieldfactors"][1] = y
     g = gc.GrowthDynamics(**params)
