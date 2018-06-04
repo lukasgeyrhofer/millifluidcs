@@ -8,14 +8,18 @@ import growthclasses as gc
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-a","--growthrateratio",default=1,type=float)
-parser.add_argument("-y","--minyieldratio",default=.4,type=float)
-parser.add_argument("-Y","--maxyieldratio",default=4,type=float)
 parser.add_argument("-D","--dilution",default=2e-4,type=float)
-parser.add_argument("-d","--stepyield",default=.01,type=float)
 parser.add_argument("-m","--maxM",default=100,type=int)
 parser.add_argument("-L","--logSteps",action="store_true",default=False)
 parser.add_argument("-S","--substrateconcentration",default=1e4,type=float)
 parser.add_argument("-T","--mixingtime",default=1000,type=float)
+
+parser.add_argument("-R","--deltaparameters",default=False,action="store_true")
+parser.add_argument("-y","--minyieldratio",default=.4,type=float)
+parser.add_argument("-Y","--maxyieldratio",default=4,type=float)
+parser.add_argument("-d","--stepyield",default=.01,type=float)
+
+
 args = parser.parse_args()
 
 m      = np.arange(args.maxM)
@@ -25,15 +29,18 @@ params = { "growthrates"            : np.array([1.,args.growthrateratio]),
            "substrateconcentration" : args.substrateconcentration,
            "mixingtime"             : args.mixingtime}
 
+
 if args.logSteps:
     ylistexp  = np.arange(args.minyieldratio,args.maxyieldratio+args.stepyield,args.stepyield)
     ylist     = np.power(10,ylistexp)
 else:
     ylist     = np.arange(args.minyieldratio,args.maxyieldratio+args.stepyield,args.stepyield)
 
-
 for y in ylist:
-    params["yieldfactors"][1] = y
+    if args.deltaparameters:
+        params["yieldfactors"] = np.array([1-y,1+y])
+    else:
+        params["yieldfactors"][1] = y
     g = gc.GrowthDynamics(**params)
     n = g.getSingleStrainFixedPointsPoissonSeeding(size=args.maxM)
 
