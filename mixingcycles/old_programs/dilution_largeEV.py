@@ -29,6 +29,8 @@ params = { "growthrates"            : np.array([1.,args.growthrateratio]),
            "substrateconcentration" : args.substrateconcentration,
            "mixingtime"             : args.mixingtime}
 
+if args.deltaparameters:
+    params["growthrates"] = np.array([1-args.growthrateratio,1+args.growthrateratio])
 
 if args.logSteps:
     ylistexp  = np.arange(args.minyieldratio,args.maxyieldratio+args.stepyield,args.stepyield)
