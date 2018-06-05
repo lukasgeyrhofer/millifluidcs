@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import sys,math
 
+sys.path.append(sys.path[0] + '/..')
 import growthclasses as gc
 
 parser = argparse.ArgumentParser()
