@@ -108,6 +108,19 @@ def PointSeedingVectors(m,n):
     return px
 
 
+def SeedingAverage(matrix,n1 = 2.,n2 = 2.,m1 = None, m2 = None):
+    dim = matrix.shape
+    if m1 is None:
+        m1 = np.arange(dim[0])
+    if m2 is None:
+        m2 = np.arange(dim[1])
+        
+    p1 = PoissonSeedingVectors(m1,[n1])[0]
+    p2 = PoissonSeedingVectors(m2,[n2])[0]
+    
+    return np.dot(p2,np.dot(matrix,p1))
+    
+
 class MicrobialStrain(object):
     '''
     Stores all characteristics of a microbial strain
