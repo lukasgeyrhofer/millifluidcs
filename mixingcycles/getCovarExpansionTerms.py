@@ -64,40 +64,45 @@ wd_Xini[wd_Nini>0] = mm1[wd_Nini>0]/wd_Nini[wd_Nini>0]
 wd_dX              = wd_Xfin - wd_Xini
 wd_XNNfin          = gm1 * wd_Nfin
 
+wd_xi = g.getXiMatrix()
 
 if args.newcoordinates:
     for i,n in enumerate(nlist):
         for j,x in enumerate(xlist):
             
-            avg_NNN = gc.SeedingAverage(NNN,       n*x, n*(1-x))
-            avg_dX  = gc.SeedingAverage(dX,        n*x, n*(1-x))
-            avg_n1  = gc.SeedingAverage(gm1,       n*x, n*(1-x))
-            avg_n1n = gc.SeedingAverage(gm1 * NNN, n*x, n*(1-x))
-            cov     = (avg_n1n - avg_n1 * avg_NNN)/(avg_NNN * avg_NNN)
+            avg_Nfin  = gc.SeedingAverage(wd_Nfin,         n*x, n*(1-x))
+            avg_N1fin = gc.SeedingAverage(gm1,             n*x, n*(1-x))
+            avg_Xfinwd= gc.SeedingAverage(wd_Xfin,         n*x, n*(1-x))
+            avg_N1N   = gc.SeedingAverage(gm1 * wd_Nfin,   n*x, n*(1-x))
+            avg_nxi   = gc.SeedingAverage(wd_Nini * wd_xi, n*x, n*(1-x))
             
-            Xomega1 = X * (NNN / avg_NNN - 1)
+            avg_Xfin  = avg_N1fin / avg_Nfin
+            
+            cov       = (avg_N1N - avg_N1fin * avg_Nfin)/(avg_Nfin * avg_Nfin)
+            Xomega1   = X * (wd_Nini * wd_xi / avg_nxi - 1)
+            
             avg_Xomega1 = gc.SeedingAverage(Xomega1,n*x, n*(1-x))
 
-            dxx     = avg_n1/avg_NNN
-            
-            print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_NNN,avg_dX,cov,avg_Xomega1,dxx)
+            print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_Nfin,cov,avg_Xomega1,avg_Xfin,avg_Xfinwd)
         print
 else:
     for i,n1 in enumerate(nlist):
         for j,n2 in enumerate(nlist):
             
-            avg_NNN = gc.SeedingAverage(NNN,       n1, n2)
-            avg_dX  = gc.SeedingAverage(dX,        n1, n2)
-            avg_n1  = gc.SeedingAverage(gm1,       n1, n2)
-            avg_n1n = gc.SeedingAverage(gm1 * NNN, n1, n2)
-            cov     = (avg_n1n - avg_n1 * avg_NNN)/(avg_NNN * avg_NNN)
+            avg_Nfin  = gc.SeedingAverage(wd_Nfin,         n1, n2)
+            avg_N1fin = gc.SeedingAverage(gm1,             n1, n2)
+            avg_Xfinwd= gc.SeedingAverage(wd_Xfin,         n1, n2)
+            avg_N1N   = gc.SeedingAverage(gm1 * wd_Nfin,   n1, n2)
+            avg_nxi   = gc.SeedingAverage(wd_Nini * wd_xi, n1, n2)
             
-            Xomega1 = X * (NNN / avg_NNN - 1)
-            avg_Xomega1 = gc.SeedingAverage(Xomega1,n1,n2)
+            avg_Xfin  = avg_N1fin / avg_Nfin
+            
+            cov       = (avg_N1N - avg_N1fin * avg_Nfin)/(avg_Nfin * avg_Nfin)
+            Xomega1   = X * (wd_Nini * wd_xi / avg_nxi - 1)
+            
+            avg_Xomega1 = gc.SeedingAverage(Xomega1,n1, n2)
 
-            dxx     = avg_n1/avg_NNN
-            
-            print "{:10.2f} {:10.2f} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n1,n2,avg_NNN,avg_dX,cov,avg_Xomega1,dxx)
+            print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_Nfin,cov,avg_Xomega1,avg_Xfin,avg_Xfinwd)
         print
             
             
