@@ -36,11 +36,11 @@ if args.verbose:
     sys.stdout.write(g.ParameterString())
 
 if args.newcoordinates:
-    nlist = np.arange(start = 0,stop = args.maxInoculum,step = args.stepInoculum)
+    nlist = np.arange(start = 0,stop = args.maxInoculum + .5*args.stepInoculum,step = args.stepInoculum)
     xlist = np.arange(start = 0,stop = 1 + .5*args.stepFraction,step = args.stepFraction)
     shape = (len(nlist),len(xlist))
 else:
-    nlist = np.arange(start = 0,stop = args.maxInoculum,step = args.stepInoculum)
+    nlist = np.arange(start = 0,stop = args.maxInoculum+ .5*args.stepInoculum,step = args.stepInoculum)
     xlist = None
     shape = (len(nlist),len(nlist))
 
@@ -64,6 +64,7 @@ dX        = XX - X
 n1n       = gm1 * NN
 
 
+
 if args.newcoordinates:
     for i,n in enumerate(nlist):
         for j,x in enumerate(xlist):
@@ -71,7 +72,8 @@ if args.newcoordinates:
             p1 = gc.PoissonSeedingVectors(m1,n*x)[0]
             p2 = gc.PoissonSeedingVectors(m2,n*(1-x))[0]
             
-            avg_NNN  = np.dot(p2,np.dot(NNN,p1))
+            
+            avg_NNN = np.dot(p2,np.dot(NNN,p1))
             avg_dX  = np.dot(p2,np.dot(dX,p1))
             avg_n1  = np.dot(p2,np.dot(gm1,p1))
             avg_n1n = np.dot(p2,np.dot(n1n,p1))
@@ -80,7 +82,10 @@ if args.newcoordinates:
             Xomega1 = X * (NNN / avg_NNN - 1)
             avg_Xomega1 = np.dot(p2,np.dot(Xomega1,p1))
             
-            print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_NNN,avg_dX,cov,avg_Xomega1)
+            avg_n1  = np.dot(p2,np.dot(gm1,p1))
+            dxx     = avg_n1/avg_NNN
+            
+            print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_NNN,avg_dX,cov,avg_Xomega1,dxx)
         print
 else:
     for i,n1 in enumerate(nlist):
@@ -97,8 +102,11 @@ else:
             
             Xomega1 = X * (NNN / avg_NNN - 1)
             avg_Xomega1 = np.dot(p2,np.dot(Xomega1,p1))
+
+            avg_n1  = np.dot(p2,np.dot(gm1,p1))
+            dxx     = avg_n1/avg_NNN
             
-            print "{:10.2f} {:10.2f} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n1,n2,avg_NNN,avg_dX,cov,avg_Xomega1)
+            print "{:10.2f} {:10.2f} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n1,n2,avg_NNN,avg_dX,cov,avg_Xomega1,dxx)
         print
             
             
