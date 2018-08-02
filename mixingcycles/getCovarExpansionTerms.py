@@ -69,20 +69,15 @@ if args.newcoordinates:
     for i,n in enumerate(nlist):
         for j,x in enumerate(xlist):
             
-            p1 = gc.PoissonSeedingVectors(m1,n*x)[0]
-            p2 = gc.PoissonSeedingVectors(m2,n*(1-x))[0]
-            
-            
-            avg_NNN = np.dot(p2,np.dot(NNN,p1))
-            avg_dX  = np.dot(p2,np.dot(dX,p1))
-            avg_n1  = np.dot(p2,np.dot(gm1,p1))
-            avg_n1n = np.dot(p2,np.dot(n1n,p1))
+            avg_NNN = gc.SeedingAverage(NNN,       n*x, n*(1-x))
+            avg_dX  = gc.SeedingAverage(dX,        n*x, n*(1-x))
+            avg_n1  = gc.SeedingAverage(gm1,       n*x, n*(1-x))
+            avg_n1n = gc.SeedingAverage(gm1 * NNN, n*x, n*(1-x))
             cov     = (avg_n1n - avg_n1 * avg_NNN)/(avg_NNN * avg_NNN)
             
             Xomega1 = X * (NNN / avg_NNN - 1)
-            avg_Xomega1 = np.dot(p2,np.dot(Xomega1,p1))
-            
-            avg_n1  = np.dot(p2,np.dot(gm1,p1))
+            avg_Xomega1 = gc.SeedingAverage(Xomega1,n*x, n*(1-x))
+
             dxx     = avg_n1/avg_NNN
             
             print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_NNN,avg_dX,cov,avg_Xomega1,dxx)
@@ -91,19 +86,15 @@ else:
     for i,n1 in enumerate(nlist):
         for j,n2 in enumerate(nlist):
             
-            p1 = gc.PoissonSeedingVectors(m1,n1)[0]
-            p2 = gc.PoissonSeedingVectors(m2,n2)[0]
-            
-            avg_NNN  = np.dot(p2,np.dot(NNN,p1))
-            avg_dX  = np.dot(p2,np.dot(dX,p1))
-            avg_n1  = np.dot(p2,np.dot(gm1,p1))
-            avg_n1n = np.dot(p2,np.dot(n1n,p1))
+            avg_NNN = gc.SeedingAverage(NNN,       n1, n2)
+            avg_dX  = gc.SeedingAverage(dX,        n1, n2)
+            avg_n1  = gc.SeedingAverage(gm1,       n1, n2)
+            avg_n1n = gc.SeedingAverage(gm1 * NNN, n1, n2)
             cov     = (avg_n1n - avg_n1 * avg_NNN)/(avg_NNN * avg_NNN)
             
             Xomega1 = X * (NNN / avg_NNN - 1)
-            avg_Xomega1 = np.dot(p2,np.dot(Xomega1,p1))
+            avg_Xomega1 = gc.SeedingAverage(Xomega1,n1,n2)
 
-            avg_n1  = np.dot(p2,np.dot(gm1,p1))
             dxx     = avg_n1/avg_NNN
             
             print "{:10.2f} {:10.2f} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n1,n2,avg_NNN,avg_dX,cov,avg_Xomega1,dxx)
