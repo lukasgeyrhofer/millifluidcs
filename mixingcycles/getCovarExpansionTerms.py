@@ -52,17 +52,17 @@ gm2   = g.growthmatrix[:,:,1]
 mm1   = np.repeat([m1],len(m2),axis=0)
 mm2   = np.repeat([m2],len(m1),axis=0).T
 
-NNN       = np.zeros(gm1.shape)
-NN        = np.zeros(gm1.shape)
-XX        = np.zeros(gm1.shape)
-X         = np.zeros(gm1.shape)
-NNN       = gm1 + gm2
-NN        = mm1 + mm2
-XX[NNN>0] = gm1[NNN>0]/NNN[NNN>0]
-X[NN>0]   = mm1[NN>0]/NN[NN>0]
-dX        = XX - X
-n1n       = gm1 * NN
+wd_Nfin   = np.zeros(gm1.shape)
+wd_Nini   = np.zeros(gm1.shape)
+wd_Xfin   = np.zeros(gm1.shape)
+wd_Xini   = np.zeros(gm1.shape)
 
+wd_Nfin            = gm1 + gm2
+wd_Nini            = mm1 + mm2
+wd_Xfin[wd_Nfin>0] = gm1[wd_Nfin>0>0]/wd_Nfin>0[wd_Nfin>0>0]
+wd_Xini[wd_Nini>0] = mm1[wd_Nini>0]/wd_Nini[wd_Nini>0]
+wd_dX              = wd_Xfin - wd_Xini
+wd_XNNfin          = gm1 * wd_Nfin
 
 
 if args.newcoordinates:

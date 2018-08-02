@@ -283,6 +283,8 @@ class GrowthDynamics(object):
         
         self.__kwargs_for_pickle = kwargs
         
+        self.__hasximatrix = False
+        
     
     def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
         self.strains.append(MicrobialStrain(growthrate = growthrate, yieldfactor = yieldfactor, deathrate = deathrate))
@@ -531,6 +533,47 @@ class GrowthDynamics(object):
                 self.__growthmatrix[self.__growthmatrix == threshold] = newvalue
             else:
                 raise NotImplementedError
+
+
+    def ComputeXi(self,initialconditions):
+        if self.hasGrowthMatrix():
+            ic  = self.checkInitialCells(initialconditions)
+            idx0 = ((self.growthmatrixgrid[0] - ic[0])**2).argmin()
+            idx1 = ((self.growthmatrixgrid[1] - ic[1])**2).argmin()
+            n = np.sum(ic)
+            assert n>0
+            x = ic/n
+            nfin  = np.sum(self.growthmatrix[idx0,idx1,:])
+            da    = self.growthrates/np.mean(self.growthrates) - 1.
+
+            xi1   = nfin/n
+            xi0 = 0
+            i=0
+            while ((xi0-xi1)/xi1)**2) > self.NR['precision2']:
+                xi0 = xi1
+                # Newton-Raphson iteration to refine solution
+                s = np.dot(x,np.power(xi1,da))
+                xi1 += self.NR['alpha']*(n * xi1 * s)/(n * s - n * xi1 * np.dot(x,da * np.power(xi,da-1)))
+                i+=1
+                # should not iterate infinitely
+                if i > self.NR['maxsteps']:
+                    raise ValueError
+            return xi1
+        else:
+            return None
+
+    def ComputeXiMatrix(self):
+        if self.hasGrowthMatrix:
+            self.__xi = np.empty((len(self.growthmatrixgrid[0]),len(self.growthmatrixgrid[1])))
+            for i,n1 in enumerate(self.growthmatrixgrid[0]):
+                for j,n2 in enumerate(self.growthmatrixgrid[1]):
+                    self.__xi[i,j] = self.getXi([n1,n2])
+            self.__hasximatrix = True
+        
+    def GetXiMatrix(self):
+        if not self.__hasximatrix:
+            self.ComputeXiMatrix()
+        return self.__xi
 
     def __getattr__(self,key):
         if key == "numstrains":
