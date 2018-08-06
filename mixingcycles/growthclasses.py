@@ -108,15 +108,33 @@ def PointSeedingVectors(m,n):
     return px
 
 
-def SeedingAverage(matrix,n1 = 2.,n2 = 2.,m1 = None, m2 = None):
+def getInoculumAxes(**kwargs):
+    newcoord  = kwargs.get("newcoordinates",False)
+    nmax      = kwargs.get("maxInoculum",50)
+    nstep     = kwargs.get("stepInoculum",2)
+    nlist     = np.arange(start = 0,stop = nmax + .5*nstep,step = nstep)
+    if newcoord:
+        xstep = kwargs.get("stepFraction",0.05)
+        xlist = np.arange(start = 0,stop = 1 + .5*xstep,step = xstep)
+        return nlist,xlist
+    else:
+        return nlist,nlist
+
+def getAbsoluteInoculumNumbers(coordinate,newcoordinates = False):
+    if newcoordinates:
+        return coordinate[0] * coordinate[1], coordinate[0] * (1 - coordinate[1])
+    else:
+        return coordinate[0],coordinate[1]
+
+def SeedingAverage(matrix,coordinates,m1 = None, m2 = None):
     dim = matrix.shape
     if m1 is None:
         m1 = np.arange(dim[0])
     if m2 is None:
         m2 = np.arange(dim[1])
         
-    p1 = PoissonSeedingVectors(m1,[n1])[0]
-    p2 = PoissonSeedingVectors(m2,[n2])[0]
+    p1 = PoissonSeedingVectors(m1,[coordinates[0]])[0]
+    p2 = PoissonSeedingVectors(m2,[coordinates[1]])[0]
     
     return np.dot(p2,np.dot(p1,matrix))
     
