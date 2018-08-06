@@ -59,12 +59,12 @@ wd_Xini   = np.zeros(gm1.shape)
 
 wd_Nfin            = gm1 + gm2
 wd_Nini            = mm1 + mm2
-wd_Xfin[wd_Nfin>0] = gm1[wd_Nfin>0>0]/wd_Nfin>0[wd_Nfin>0>0]
+wd_Xfin[wd_Nfin>0] = gm1[wd_Nfin>0]/wd_Nfin[wd_Nfin>0]
 wd_Xini[wd_Nini>0] = mm1[wd_Nini>0]/wd_Nini[wd_Nini>0]
 wd_dX              = wd_Xfin - wd_Xini
 wd_XNNfin          = gm1 * wd_Nfin
 
-wd_xi = g.getXiMatrix()
+wd_xi = g.GetXiMatrix()
 
 if args.newcoordinates:
     for i,n in enumerate(nlist):
@@ -79,11 +79,11 @@ if args.newcoordinates:
             avg_Xfin  = avg_N1fin / avg_Nfin
             
             cov       = (avg_N1N - avg_N1fin * avg_Nfin)/(avg_Nfin * avg_Nfin)
-            Xomega1   = X * (wd_Nini * wd_xi / avg_nxi - 1)
+            Xomega1   = wd_Xfin * (wd_Nini * wd_xi / avg_nxi - 1)
             
             avg_Xomega1 = gc.SeedingAverage(Xomega1,n*x, n*(1-x))
 
-            print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_Nfin,cov,avg_Xomega1,avg_Xfin,avg_Xfinwd)
+            print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_Nfin,cov,avg_Xomega1,avg_Xfin,avg_Xfinwd)
         print
 else:
     for i,n1 in enumerate(nlist):
@@ -102,7 +102,7 @@ else:
             
             avg_Xomega1 = gc.SeedingAverage(Xomega1,n1, n2)
 
-            print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_Nfin,cov,avg_Xomega1,avg_Xfin,avg_Xfinwd)
+            print "{:10.2f} {:.6f} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(n,x,avg_Nfin,cov,avg_Xomega1,avg_Xfin,avg_Xfinwd)
         print
             
             
