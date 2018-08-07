@@ -555,39 +555,43 @@ class GrowthDynamics(object):
 
     def GetXi(self,initialconditions):
         if self.hasGrowthMatrix():
+            
+            # reverse compute expansion factor xi from total population size N,
+            # using the analytic solution N(t) = n xi SUM_j[x_j xi(t)^da_j]
+            
             ic   = self.checkInitialCells(initialconditions)
             idx0 = ((self.growthmatrixgrid[0] - ic[0])**2).argmin()
             idx1 = ((self.growthmatrixgrid[1] - ic[1])**2).argmin()
             n    = np.sum(ic)
             
             if n>0:
-                x     = ic/n
-                nfin  = np.sum(self.growthmatrix[idx0,idx1,:])
-                xi0   = nfin/n
-                da    = self.growthrates/np.mean(self.growthrates) - 1.
-                dy    = self.yieldfactors/np.mean(self.yieldfactors) - 1.
-                s0y   = self.env.substrate * np.mean(self.yieldfactors)
-                x1dy  = x/(1.+dy)
-                Sx1dy = np.sum(x1dy)
-
-                xi      = nfin/n
+                x       = ic/n
+                nfin    = np.sum(self.growthmatrix[idx0,idx1,:])
+                xi0     = nfin/n
+                da      = self.growthrates/np.mean(self.growthrates) - 1.
+                xi      = xi0
                 xi_last = 0
                 i       = 0
                 while (((xi_last-xi)/xi)**2) > self.NR['precision2']:
+                    # store value to measure convergence
                     xi_last = xi
+                    
                     # Newton-Raphson iteration to refine solution
-                    Sxi    = xi*np.dot(x,np.power(xi,da))
-                    Sxddxi = np.dot(x*(1+da),np.power(xi1,da))
-                    xi1   -= self.NR['alpha']*(Sxi - xi0)/Sxddxi
-                    i     += 1
+                    xida   = np.power(xi, da)
+                    Sxi    = xi * np.dot(x, xida)
+                    Sxddxi = np.dot(x * (1. + da), xida)
+                    xi    -= self.NR['alpha']*(Sxi - xi0)/Sxddxi
+                    
                     # should not iterate infinitely
+                    i     += 1
                     if i > self.NR['maxsteps']:
                         raise ValueError
+                    
                 return xi
             else:
                 return 0.
         else:
-            return None
+            raise ValueError
 
     def ComputeXiMatrix(self):
         if self.hasGrowthMatrix:
