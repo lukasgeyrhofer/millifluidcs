@@ -126,17 +126,19 @@ def getAbsoluteInoculumNumbers(coordinate,newcoordinates = False):
     else:
         return coordinate[0],coordinate[1]
 
-def SeedingAverage(matrix,coordinates,m1 = None, m2 = None):
+def SeedingAverage(matrix,coordinates,axis1 = None, axis2 = None, mask = None, replaceNAN = True):
     dim = matrix.shape
-    if m1 is None:
-        m1 = np.arange(dim[0])
-    if m2 is None:
-        m2 = np.arange(dim[1])
+    if axis1 is None:   axis1 = np.arange(dim[0])
+    if axis2 is None:   axis2 = np.arange(dim[1])
         
-    p1 = PoissonSeedingVectors(m1,[coordinates[0]])[0]
-    p2 = PoissonSeedingVectors(m2,[coordinates[1]])[0]
+    p1 = PoissonSeedingVectors(axis1,[coordinates[0]])[0]
+    p2 = PoissonSeedingVectors(axis2,[coordinates[1]])[0]
     
-    return np.dot(p2,np.dot(p1,np.nan_to_num(matrix)))
+    matrix0 = matrix[:,:]
+    if not mask is None:    matrix0[np.logical_not(mask)] = 0
+    if replaceNAN:          matrix0 = np.nan_to_num(matrix0)
+    
+    return np.dot(p2,np.dot(p1,matrix0))
     
 
 class MicrobialStrain(object):
