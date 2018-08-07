@@ -136,7 +136,7 @@ def SeedingAverage(matrix,coordinates,m1 = None, m2 = None):
     p1 = PoissonSeedingVectors(m1,[coordinates[0]])[0]
     p2 = PoissonSeedingVectors(m2,[coordinates[1]])[0]
     
-    return np.dot(p2,np.dot(p1,matrix))
+    return np.dot(p2,np.dot(p1,np.nan_to_num(matrix)))
     
 
 class MicrobialStrain(object):
@@ -302,7 +302,7 @@ class GrowthDynamics(object):
         self.__kwargs_for_pickle = kwargs
         
         self.__hasximatrix = False
-        
+        self.__restrictFractionalPopulation = kwargs.get("RestrictFractionalPopulation",True)
     
     def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
         self.strains.append(MicrobialStrain(growthrate = growthrate, yieldfactor = yieldfactor, deathrate = deathrate))
@@ -555,33 +555,35 @@ class GrowthDynamics(object):
 
     def GetXi(self,initialconditions):
         if self.hasGrowthMatrix():
-            ic  = self.checkInitialCells(initialconditions)
+            ic   = self.checkInitialCells(initialconditions)
             idx0 = ((self.growthmatrixgrid[0] - ic[0])**2).argmin()
             idx1 = ((self.growthmatrixgrid[1] - ic[1])**2).argmin()
-            n = np.sum(ic)
+            n    = np.sum(ic)
+            
             if n>0:
                 x     = ic/n
                 nfin  = np.sum(self.growthmatrix[idx0,idx1,:])
+                xi0   = nfin/n
                 da    = self.growthrates/np.mean(self.growthrates) - 1.
                 dy    = self.yieldfactors/np.mean(self.yieldfactors) - 1.
                 s0y   = self.env.substrate * np.mean(self.yieldfactors)
                 x1dy  = x/(1.+dy)
                 Sx1dy = np.sum(x1dy)
 
-                xi1  = nfin/n
-                xi0  = 0
-                i    = 0
-                while (((xi0-xi1)/xi1)**2) > self.NR['precision2']:
-                    xi0 = xi1
+                xi      = nfin/n
+                xi_last = 0
+                i       = 0
+                while (((xi_last-xi)/xi)**2) > self.NR['precision2']:
+                    xi_last = xi
                     # Newton-Raphson iteration to refine solution
-                    Sxi    = xi1*np.dot(x1dy,np.power(xi1,da))
-                    Sxddxi = np.dot(x1dy*(1+da),np.power(xi1,da))
-                    xi1 -= self.NR['alpha']*(xi1 * Sxi - Sx1dy - s0y/n)/Sxddxi
-                    i   += 1
+                    Sxi    = xi*np.dot(x,np.power(xi,da))
+                    Sxddxi = np.dot(x*(1+da),np.power(xi1,da))
+                    xi1   -= self.NR['alpha']*(Sxi - xi0)/Sxddxi
+                    i     += 1
                     # should not iterate infinitely
                     if i > self.NR['maxsteps']:
                         raise ValueError
-                return xi1
+                return xi
             else:
                 return 0.
         else:
@@ -613,7 +615,10 @@ class GrowthDynamics(object):
             if self.__growthmatrix is None:
                 raise ValueError("Growthmatrix not yet computed")
             else:
-                return self.__growthmatrix
+                tmp = self.__growthmatrix
+                if self.__restrictFractionalPopulation:
+                    tmp[tmp<1] = 0
+                return tmp
         elif key == "growthmatrixgrid":
             if (self.__growthmatrixgridX is None) or (self.__growthmatrixgridY is None):
                 raise ValueError("Growthmatrix not yet computed")
