@@ -572,7 +572,7 @@ class GrowthDynamics(object):
                 xi      = xi0
                 xi_last = 0
                 i       = 0
-                while (((xi_last-xi)/xi)**2) > self.NR['precision2']:
+                while ((xi_last-xi)**2) > self.NR['precision2'] * (xi**2):
                     # store value to measure convergence
                     xi_last = xi
                     

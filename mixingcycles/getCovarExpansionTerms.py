@@ -68,6 +68,13 @@ wd_Xi                = g.GetXiMatrix()
 wd_logXi             = np.nan_to_num(np.log(wd_Xi))
 
 
+fp = open('xi.txt','w')
+for i,n1 in enumerate(m1):
+    for j,n2 in enumerate(m2):
+        fp.write("{} {} {}\n".format(n1,n2,wd_Xi[i,j]))
+    fp.write("\n")
+fp.close()
+
 # compute averages for all inocula given by the two axes
 for i,a1 in enumerate(a1_list):
     for j,a2 in enumerate(a2_list):
@@ -92,6 +99,7 @@ for i,a1 in enumerate(a1_list):
         cov_XrelN = (var_N1 + cov_N1N2) / denom
         
         avg_Xi    = gc.SeedingAverage(wd_Xi,inoc)
+        avg_LogXi = gc.SeedingAverage(wd_logXi,inoc)
         
         # individual 4 terms for 2 strains in the expansion of Cov[X,N/<N>] up to O(da), weak selection limit
         avg_exp1  = gc.SeedingAverage(wd_N_ini * (omega - 1), inoc)
@@ -99,6 +107,6 @@ for i,a1 in enumerate(a1_list):
         avg_exp3  = da * gc.SeedingAverage(wd_X_ini * omega, inoc) * gc.SeedingAverage(wd_X_ini * omega * wd_logXi, inoc)
         avg_exp4  = da * gc.SeedingAverage(wd_X_ini * (1-2*wd_X_ini) * wd_logXi, inoc)
 
-        # output                                                                               1   2   3       4          5         6         7         8
-        print "{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(a1, a2, avg_dX, cov_XrelN, avg_exp1, avg_exp2, avg_exp3, avg_exp4,avg_Xi)
+        # output                                                                                                 1   2   3       4          5         6         7         8         9       10
+        print "{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(a1, a2, avg_dX, cov_XrelN, avg_exp1, avg_exp2, avg_exp3, avg_exp4, avg_Xi, avg_LogXi)
     print
