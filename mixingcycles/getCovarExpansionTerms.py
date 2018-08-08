@@ -119,7 +119,7 @@ def main():
             avg_exp3  = da * gc.SeedingAverage(wd_X_ini * omega,                     inoc) * gc.SeedingAverage(wd_X_ini * omega * wd_logXi, inoc)
             avg_exp4  = da * gc.SeedingAverage(wd_X_ini * (1-2*wd_X_ini) * wd_logXi, inoc)
 
-            # output                                                                                                    1   2   3       4          5         6         7         8         9       10
+            # output                                                                                                      1   2   3       4          5         6         7         8         9       10
             fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(a1, a2, avg_dX, cov_XrelN, avg_exp1, avg_exp2, avg_exp3, avg_exp4, avg_Xi, avg_LogXi))
         fp.write("\n")
 
