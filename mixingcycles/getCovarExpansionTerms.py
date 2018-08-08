@@ -109,11 +109,11 @@ for i,a1 in enumerate(a1_list):
         avg_LogXi = gc.SeedingAverage(wd_logXi, inoc)
         
         # individual 4 terms for 2 strains in the expansion of Cov[X,N/<N>] up to O(da), weak selection limit
-        avg_exp1  =      gc.SeedingAverage(wd_N_ini * (omega - 1),               inoc)
+        avg_exp1  =      gc.SeedingAverage(wd_X_ini * (omega - 1),               inoc)
         avg_exp2  = da * gc.SeedingAverage(wd_X_ini * (omega - 1) * wd_logXi,    inoc)
         avg_exp3  = da * gc.SeedingAverage(wd_X_ini * omega,                     inoc) * gc.SeedingAverage(wd_X_ini * omega * wd_logXi, inoc)
         avg_exp4  = da * gc.SeedingAverage(wd_X_ini * (1-2*wd_X_ini) * wd_logXi, inoc)
 
-        # output                                                                                                          1   2   3       4          5         6         7         8         9       10
+        # output                                                                                                 1   2   3       4          5         6         7         8         9       10
         print "{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}".format(a1, a2, avg_dX, cov_XrelN, avg_exp1, avg_exp2, avg_exp3, avg_exp4, avg_Xi, avg_LogXi)
     print
