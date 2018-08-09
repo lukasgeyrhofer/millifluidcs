@@ -31,7 +31,7 @@ args = parser.parse_args()
 try:
     g = pickle.load(open(args.infile))
 except:
-    raise IOError
+    raise IOError("could not open file '{}'".format(args.infile))
 
 m1,m2 = g.growthmatrixgrid
 gm1   = g.growthmatrix[:,:,0]
@@ -46,26 +46,27 @@ for i,a in enumerate(axis1):
         
 avgPopSize /= np.max(avgPopSize)
 
-if len(args.thresholds) > 0:
-    for t in args.thresholds:
-        fp = open(args.baseoutfilename + '_{:.6f}'.format(t),'w')
-        contours = measure.find_contours(avgPopSize,t)
-        for c in contours:
-            out2 = list()
-            for i in range(len(c)):
-                ix = int(np.floor(c[i,0]))
-                iy = int(np.floor(c[i,1]))
-                px = c[i,0] - ix
-                py = c[i,1] - iy
-                
-                try:    cx = (1.-px)*axis1[ix] + px*axis1[ix+1]
-                except: cx = axis1[ix]
-                try:    cy = (1.-py)*axis2[iy] + py*axis2[iy+1]
-                except: cy = axis2[iy]
-        
-                fp.write('{} {}\n'.format(cx,cy))
-            fp.write('\n')
-        fp.close()
+if not args.thresholds is None:
+    if len(args.thresholds) > 0:
+        for t in args.thresholds:
+            fp = open(args.baseoutfilename + '_{:.6f}'.format(t),'w')
+            contours = measure.find_contours(avgPopSize,t)
+            for c in contours:
+                out2 = list()
+                for i in range(len(c)):
+                    ix = int(np.floor(c[i,0]))
+                    iy = int(np.floor(c[i,1]))
+                    px = c[i,0] - ix
+                    py = c[i,1] - iy
+                    
+                    try:    cx = (1.-px)*axis1[ix] + px*axis1[ix+1]
+                    except: cx = axis1[ix]
+                    try:    cy = (1.-py)*axis2[iy] + py*axis2[iy+1]
+                    except: cy = axis2[iy]
+            
+                    fp.write('{} {}\n'.format(cx,cy))
+                fp.write('\n')
+            fp.close()
     
     
 
