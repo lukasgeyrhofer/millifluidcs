@@ -28,7 +28,7 @@ z = data[:,args.zcolumn].reshape((len(x),len(y)))
 
 for cval in args.contourvalues:
     if not args.outbasename is None:
-        fp = open(args.outbasename + "_{:.4e}.txt".format(cval))
+        fp = open(args.outbasename + "_{:.4e}.txt".format(cval),"w")
     else:
         fp = sys.stdout
         fp.write("# contourvalue = {:e}".format(cval))
