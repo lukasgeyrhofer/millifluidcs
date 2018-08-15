@@ -1382,7 +1382,7 @@ class GrowthDynamicsAntibiotics3(GrowthDynamicsODE):
         return s
 
 
-class GrowthDynamicsAntibiotics34(GrowthDynamics):
+class GrowthDynamicsAntibiotics4(GrowthDynamics):
     def __init__(self,**kwargs):
 
         super(GrowthDynamicsAntibiotics3,self).__init__(**kwargs)
