@@ -32,34 +32,46 @@ def MakeDictFromParameters(params):
             curkey = entry
     return p
 
-parser = argparse.ArgumentParser()
-parser = gc.AddGrowthParameters(parser)
+def main():
+    parser = argparse.ArgumentParser()
+    parser = gc.AddGrowthParameters(parser)
 
-parser_gc = parser.add_argument_group("==== GrowthDynamics ====")
-parser_gc.add_argument("-d","--GrowthDynamics",default="")
-parser_gc.add_argument("-L","--ParameterList",nargs="*",default=[])
+    parser_gc = parser.add_argument_group("==== GrowthDynamics ====")
+    parser_gc.add_argument("-d","--GrowthDynamics",default="")
+    parser_gc.add_argument("-L","--ParameterList",nargs="*",default=[])
 
-parser_alg = parser.add_argument_group(description = "==== Parameters for algorithm ====")
-parser_alg.add_argument("-t","--TimeIntegratorStep",default=1e-3,type=float)
-parser_alg.add_argument("-O","--TimeIntegratorOutput",default=10,type=int)
-parser_alg.add_argument("-M","--IntegrationMethod",choices = ['ownRK4','SciPy'],default = 'ownRK4')
+    parser_alg = parser.add_argument_group(description = "==== Parameters for algorithm ====")
+    parser_alg.add_argument("-t","--TimeIntegratorStep",default=1e-3,type=float)
+    parser_alg.add_argument("-O","--TimeIntegratorOutput",default=10,type=int)
+    parser_alg.add_argument("-M","--IntegrationMethod",choices = ['ownRK4','SciPy'],default = 'ownRK4')
 
-parser_ic = parser.add_argument_group(description = "==== Initial conditions ====")
-parser_ic.add_argument("-N","--initialconditions",default=[1],type=float,nargs="*")
+    parser_ic = parser.add_argument_group(description = "==== Initial conditions ====")
+    parser_ic.add_argument("-N","--initialconditions",default=[1],type=float,nargs="*")
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
-GrowthDynList = MakeGrowthDynList(gc)
-param = MakeDictFromParameters(args.ParameterList)
-param.update(**vars(args))
+    # make dictionary of all classes in 'gc', where the name starts with 'GrowthDynamics'
+    GrowthDynList = MakeGrowthDynList(gc)
+    # generate parameter dictionary from list
+    # every string is a key that is assigned all numerical values after that
+    param = MakeDictFromParameters(args.ParameterList)
+    # need to add the default parameters from 'AddGrowthParameters' as well
+    param.update(**vars(args))
 
-if 'GrowthDynamics' + args.GrowthDynamics in GrowthDynList.keys():
-    g = GrowthDynList['GrowthDynamics' + args.GrowthDynamics](**param)
-else:
-    raise ValueError("'{}' not implemented in growthclasses.py".format('GrowthDynamics' + args.GrowthDynamics))
+    
+    # check if GrowthDynamics exists, and assign class
+    # __init__ just takes the dictionary of all parameters
+    if 'GrowthDynamics' + args.GrowthDynamics in GrowthDynList.keys():
+        g = GrowthDynList['GrowthDynamics' + args.GrowthDynamics](**param)
+    else:
+        raise ValueError("'{}' not implemented in growthclasses.py".format('GrowthDynamics' + args.GrowthDynamics))
+
+    # compute trajectory
+    traj = g.Trajectory(args.initialconditions,TimeOutput=True)
+    # output
+    for x in traj:
+        print ' '.join(['{:14.6e}'.format(y) for y in x])
 
 
-traj = g.Trajectory(args.initialconditions,TimeOutput=True)
-for x in traj:
-    print ' '.join(['{:14.6e}'.format(y) for y in x])
-
+if __name__ == "__main__":
+    main()
