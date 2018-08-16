@@ -8,11 +8,8 @@ import growthclasses as gc
 
 def main():
     parser = argparse.ArgumentParser()
+    parser = gc.AddGrowthDynamicsArguments(parser)
     parser = gc.AddGrowthParameters(parser)
-
-    parser_gc = parser.add_argument_group("==== GrowthDynamics ====")
-    parser_gc.add_argument("-d","--GrowthDynamics",default="")
-    parser_gc.add_argument("-L","--ParameterList",nargs="*",default=[])
 
     parser_alg = parser.add_argument_group(description = "==== Parameters for algorithm ====")
     parser_alg.add_argument("-t","--TimeIntegratorStep",default=1e-3,type=float)

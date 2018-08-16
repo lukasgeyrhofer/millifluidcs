@@ -147,22 +147,30 @@ def SeedingAverage(matrix,coordinates,axis1 = None, axis2 = None, mask = None, r
 def AssignGrowthDynamics(**kwargs):
     # pick GrowthDynamics class from below via argument string
     # convert all values of the dict-entry 'ParameterList' into entries of kwargs itself
-    
+
+    def AddEntry(d,key,val):
+        tmp = dict()
+        if not key is None:
+            if len(val) == 1:
+                tmp[key] = val[0]
+            elif len(val) > 1:
+                tmp[key] = np.array(val)
+        tmp.update(d)
+        return tmp
+
     def MakeDictFromParameterList(params):
         p = dict()
         curkey = None
         curvalue = list()
         for entry in params:
-            if is_number(entry):
+            if entry.isnumeric():
                 curvalue.append(float(entry))
             else:
-                if not curkey is None:
-                    if len(curvalue) == 1:
-                        p[curkey] = curvalue[0]
-                    elif len(curvalue) > 1:
-                        p[curkey] = np.array(curvalue)
+                p = AddEntry(p,curkey,curvalue)
                 curvalue = list()
                 curkey = entry
+
+        p = AddEntry(p,curkey,curvalue)
         return p
     
     GrowthDynamics = kwargs.get('GrowthDynamics','')
@@ -172,6 +180,7 @@ def AssignGrowthDynamics(**kwargs):
     params.update(kwargs)
     # get rid of original description for these parameters,
     # such that they are not passed twice in different form
+    
     if 'ParameterList' in params.keys():
         del params['ParameterList']
     
@@ -181,6 +190,15 @@ def AssignGrowthDynamics(**kwargs):
     
     # did not find GrowthDynamics
     raise NotImplementedError("'GrowthDynamics{}' not yet implemented.".format(GrowthDynamics.strip()))
+
+
+def AddGrowthDynamicsArguments(p):
+    c = [name[14:] for name,obj in inspect.getmembers(sys.modules['growthclasses'],inspect.isclass) if name[:14] == 'GrowthDynamics']
+    pgd = p.add_argument_group(description = "==== GrowthDynamics ====")
+    pgd.add_argument("-G","--GrowthDynamics",choices = c, default = '')
+    pgd.add_argument("-P","--ParameterList",nargs="*",default = [])
+    return p
+
 
 class MicrobialStrain(object):
     '''
