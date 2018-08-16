@@ -21,13 +21,14 @@
 
 '''
 
-
-
 import numpy as np
 import argparse
 from scipy.stats import poisson
 import itertools
 import scipy.integrate as spint
+import inspect
+import sys
+
 #import pickle
 
 def RungeKutta4(func,xx,tt,step):
@@ -140,6 +141,46 @@ def SeedingAverage(matrix,coordinates,axis1 = None, axis2 = None, mask = None, r
     
     return np.dot(p2,np.dot(p1,matrix0))
     
+
+
+
+def AssignGrowthDynamics(**kwargs):
+    # pick GrowthDynamics class from below via argument string
+    # convert all values of the dict-entry 'ParameterList' into entries of kwargs itself
+    
+    def MakeDictFromParameterList(params):
+        p = dict()
+        curkey = None
+        curvalue = list()
+        for entry in params:
+            if is_number(entry):
+                curvalue.append(float(entry))
+            else:
+                if not curkey is None:
+                    if len(curvalue) == 1:
+                        p[curkey] = curvalue[0]
+                    elif len(curvalue) > 1:
+                        p[curkey] = np.array(curvalue)
+                curvalue = list()
+                curkey = entry
+        return p
+    
+    GrowthDynamics = kwargs.get('GrowthDynamics','')
+    
+    # generate dict from parameters and update with kwargs
+    params = MakeDictFromParameterList(kwargs.get('ParameterList',[]))
+    params.update(kwargs)
+    # get rid of original description for these parameters,
+    # such that they are not passed twice in different form
+    if 'ParameterList' in params.keys():
+        del params['ParameterList']
+    
+    for name,dyn in inspect.getmembers(sys.modules['growthclasses'],inspect.isclass):
+        if name == 'GrowthDynamics' + GrowthDynamics.strip():
+            return dyn(**params)
+    
+    # did not find GrowthDynamics
+    raise NotImplementedError("'GrowthDynamics{}' not yet implemented.".format(GrowthDynamics.strip()))
 
 class MicrobialStrain(object):
     '''
@@ -305,6 +346,9 @@ class GrowthDynamics(object):
         
         self.__hasximatrix = False
         self.__restrictFractionalPopulation = kwargs.get("RestrictFractionalPopulation",True)
+        
+        self.__trajectorytimestep = kwargs.get('TimeIntegratorStep',1e-3) * kwargs.get('TimeIntegratorOutput',10)
+        
     
     def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
         self.strains.append(MicrobialStrain(growthrate = growthrate, yieldfactor = yieldfactor, deathrate = deathrate))
@@ -360,6 +404,24 @@ class GrowthDynamics(object):
             # or crop list if it is too long
             ret_ic = ret_ic[:self.numstrains]
         return ret_ic
+
+
+    def Trajectory(self,initialconditions,TimeOutput = False):
+        ic = self.checkInitialCells(initialconditions)
+        tdepl = self.getTimeToDepletion(ic)
+        t = np.arange(start = self.__trajectorytimestep, stop = self.env.mixingtime, step = self.__trajectorytimestep)
+        x = list([ic])
+        for tcur in t:
+            if tcur < tdepl:
+                x.append(ic * np.exp(self.growthrates * tcur))
+            else:
+                x.append(ic * np.exp(self.growthrates * tdepl))
+        xx = np.vstack(x)
+        if TimeOutput:
+            tt = np.array([np.concatenate([[0],t])]).T
+            return np.concatenate([tt,xx],axis = 1)
+        else:
+            return xx
         
 
     def Growth(self,initialcells = None):
@@ -632,6 +694,7 @@ class GrowthDynamics(object):
                 return (self.__growthmatrixgridX,self.__growthmatrixgridY)
         #else:
             #super(GrowthDynamics,self).__getattr__(key,value)
+
 
     def __setattr__(self,key,value):
         if key == "growthrates":
@@ -1385,7 +1448,7 @@ class GrowthDynamicsAntibiotics3(GrowthDynamicsODE):
 class GrowthDynamicsAntibiotics4(GrowthDynamics):
     def __init__(self,**kwargs):
 
-        super(GrowthDynamicsAntibiotics3,self).__init__(**kwargs)
+        super(GrowthDynamicsAntibiotics4,self).__init__(**kwargs)
         self.ABparams = {   'kappa' :            kwargs.get("kappa",2),
                             'gamma' :            kwargs.get("gamma",2),
                             'BL_Production':     np.array(kwargs.get("BL_Production",np.zeros(self.numstrains)),dtype=np.float64),
@@ -1449,7 +1512,7 @@ class GrowthDynamicsAntibiotics4(GrowthDynamics):
 
     def ParameterString(self):
         r  = '\n'
-        s  = super(GrowthDynamicsAntibiotics3,self).ParameterString() +r
+        s  = super(GrowthDynamicsAntibiotics4,self).ParameterString() +r
         s += "*** antibiotic parameters ***" +r
         s += "  Antibiotics Initial Conc    " + str(self.ABparams['AB_Conc']) +r
         s += "  gamma                       " + str(self.ABparams['gamma']) +r
@@ -1784,7 +1847,7 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
             np.array([                                      
                 np.dot(extr - a/self.yieldfactors, x[:self.numstrains]), # resources are extracted and used for growth
                 np.dot(-extr,x[:self.numstrains])                        # extractable resources decay
-                )]
+                ])
             ])
     
     def ParameterString(self):
@@ -1794,7 +1857,7 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         s += "  Extraction rate   " + self.arraystring(self.__params['ExtractionMaxRate']) +r
         s += "  Extraction Km     " + self.arraystring(self.__params['ExtractionKm']) +r
         s += "  Growth Km         " + self.arraystring(self.__params['GrowthKm']) +r
-        s += "  Initially Extracted Resources " + str(self.__params['InitiallyExtractedRes']) +r
+        s += "  Initially Extracted Resources " +  str(self.__params['InitiallyExtractedRes']) +r
         return s
     
     
