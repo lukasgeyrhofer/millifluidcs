@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -65,7 +65,6 @@ if args.verbose:
     sys.stdout.write(g.ParameterString())
     sys.stdout.write("\n generating matrices\n")
 
-
 if args.dilutionmax is None:
     dlist = np.array([args.dilutionmin])
 else:
@@ -74,55 +73,34 @@ else:
     else:
         dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
 
-if args.newcoordinates:
-    nlist = np.arange(start = 0,stop = args.maxInoculum,step = args.stepInoculum)
-    xlist = np.arange(start = 0,stop = 1 + .5*args.stepFraction,step = args.stepFraction)
-    shape = (len(nlist),len(xlist))
-else:
-    nlist = np.arange(start = 0,stop = args.maxInoculum,step = args.stepInoculum)
-    xlist = None
-    shape = (len(nlist),len(nlist))
+# get new axes, which depends on parameters above (in lattice parameter group)
+axis1,axis2 = gc.getInoculumAxes(**vars(args)) # either (n1,n2) or [ (n,x) if args.newcoordinates == True ]
+shape       = (len(axis1),len(axis2))
 
+# loaded from pickle file
+m1,m2       = g.growthmatrixgrid
+gm1         = g.growthmatrix[:,:,0]
+gm2         = g.growthmatrix[:,:,1]
 
-m1,m2 = g.growthmatrixgrid
-gm1   = g.growthmatrix[:,:,0]
-gm2   = g.growthmatrix[:,:,1]
+# matrices to store averages
+g1          = np.zeros(shape,dtype=np.float64) # avg'd growth strain 1
+g2          = np.zeros(shape,dtype=np.float64) # avg'd growth strain 2
+rr1         = np.zeros(shape,dtype=np.float64) # avg'd ratio of strains at end
+r1          = np.zeros(shape,dtype=np.float64) # avg'd ratio of strains at beginning
+sn1         = np.zeros(shape,dtype=np.float64) # number of cells of strain 1 in new matrix shape
+sn2         = np.zeros(shape,dtype=np.float64) # number of cells of strain 1 in new matrix shape
 
+# get all averages and store them in the appropriate matrices
+for i,a1 in enumerate(axis1):
+    for j,a2 in enumerate(axis2):
+        sn1[i,j],sn2[i,j] = gc.getAbsoluteInoculumNumbers([a1,a2],args.newcoordinates)
+        g1[i,j] = gc.SeedingAverage(gm1, [sn1[i,j],sn2[i,j]])
+        g2[i,j] = gc.SeedingAverage(gm2, [sn1[i,j],sn2[i,j]])
 
-g1  = np.zeros(shape,dtype=np.float64)
-g2  = np.zeros(shape,dtype=np.float64)
-rr1 = np.zeros(shape,dtype=np.float64)
-r1  = np.zeros(shape,dtype=np.float64)
+rr1[g1+g2>0]  = (g1[g1+g2>0])/((g1+g2)[g1+g2>0])
+r1[sn1+sn2>0] = (sn1[sn1+sn2>0])/((sn1+sn2)[sn1+sn2>0])
 
-if not args.newcoordinates:
-    for i,n1 in enumerate(nlist):
-        for j,n2 in enumerate(nlist):
-            p1 = gc.PoissonSeedingVectors(m1,[n1])
-            p2 = gc.PoissonSeedingVectors(m2,[n2])
-            g1[i,j] = np.dot(p2[0],np.dot(p1[0],gm1))
-            g2[i,j] = np.dot(p2[0],np.dot(p1[0],gm2))
-
-    sn1 = np.array(np.repeat(np.transpose([nlist]),len(nlist),axis=1),dtype=float)
-    sn2 = np.repeat(np.array([nlist],dtype = float),len(nlist),axis=0)
-
-    rr1[g1+g2>0]  = (g1[g1+g2>0])/((g1+g2)[g1+g2>0])
-    r1[sn1+sn2>0] = (sn1[sn1+sn2>0])/((sn1+sn2)[sn1+sn2>0])
-
-else:
-    for i,n in enumerate(nlist):
-        for j,x in enumerate(xlist):
-            p1 = gc.PoissonSeedingVectors(m1,[x*n])
-            p2 = gc.PoissonSeedingVectors(m2,[(1-x)*n])
-            g1[i,j] = np.dot(p2[0],np.dot(p1[0],gm1))
-            g2[i,j] = np.dot(p2[0],np.dot(p1[0],gm2))
-            
-    sn1 = np.outer(nlist,xlist)
-    sn2 = np.outer(nlist,1-xlist)
-
-    rr1[g1+g2>0] = (g1[g1+g2>0])/((g1+g2)[g1+g2>0])
-    r1[sn1+sn2>0] = (sn1[sn1+sn2>0])/((sn1+sn2)[sn1+sn2>0])
-
-
+# output
 if args.verbose:
     sys.stdout.write('\n computing nullcline for fraction of strains\n')
 cont_xx = measure.find_contours(rr1 - r1,0)

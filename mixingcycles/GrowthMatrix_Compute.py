@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 import numpy as np
 import argparse
 import sys,math
@@ -31,7 +30,7 @@ if args.infile is None:
 
 else:
     try:
-        g = pickle.load(open(args.infile))
+        g = pickle.load(open(args.infile,'rb'),encoding='bytes')
     except:
         raise IOError("could not open pickle file")
     if args.verbose:print(g.ParameterString())
@@ -41,8 +40,9 @@ else:
         raise IOError("pickle file does not contain growthmatrix")
     
 try:
-    fp = open(args.outfile,"w")
+    fp = open(args.outfile,"wb")
     pickle.dump(g,fp)
+    fp.close()
 except:
     raise IOError("could not open file for pickle dump")
         

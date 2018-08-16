@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import numpy as np
@@ -32,12 +32,12 @@ parser_flowmap.add_argument("-l","--trajectorylength",type=int,default=20)
 args = parser.parse_args()
 
 try:
-    g = pickle.load(open(args.infile))
+    g = pickle.load(open(args.infile,'rb'), encoding = 'bytes')
 except:
-    raise IOError,"Could not open and load from pickle file"
+    raise IOError("Could not open and load from pickle file")
 
 if not g.hasGrowthMatrix():
-    raise ValueError,"Loaded pickle instance does not contain growthmatrix"
+    raise ValueError("Loaded pickle instance does not contain growthmatrix")
 
 mx,my = g.growthmatrixgrid
 

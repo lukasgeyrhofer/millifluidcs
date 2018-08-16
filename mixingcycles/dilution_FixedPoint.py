@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -39,7 +39,7 @@ args = parser.parse_args()
 
 
 try:
-    g = pickle.load(open(args.infile))
+    g = pickle.load(open(args.infile,'rb'), encoding = 'bytes')
 except:
     raise IOError("could not open pickle file")
 

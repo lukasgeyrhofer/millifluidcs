@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -16,12 +16,12 @@ parser.add_argument("-v","--verbose",default=False,action="store_true")
 args = parser.parse_args()
 
 try:
-    g = pickle.load(open(args.infile))
+    g = pickle.load(open(args.infile,'rb'),encoding = 'bytes')
 except:
-    raise IOError,"could not open file"
+    raise IOError("could not open file")
 
 if not g.hasGrowthMatrix():
-    raise IOError,"pickle file does not contain a growth matrix"
+    raise IOError("pickle file does not contain a growth matrix")
 
 if not args.outfile is None:
     try:
@@ -32,20 +32,20 @@ else:
     out = sys.stdout
 
 if args.verbose:
-    print >> sys.stderr,g.ParameterString()
+    sys.stderr.write(g.ParameterString())
 
 if isinstance(g.growthmatrixgrid,int):
     for x in range(g.growthmatrixgrid):
         for y in range(g.growthmatrixgrid):
-            print >> out,x,y,g.growthmatrix[x,y,0],g.growthmatrix[x,y,1]
-        print >> out
+            out.write('{} {} {} {}\n'.format(x,y,g.growthmatrix[x,y,0],g.growthmatrix[x,y,1]))
+        out.write('\n')
 elif isinstance(g.growthmatrixgrid,(tuple,list,np.ndarray)):
     gridx = g.growthmatrixgrid[0]
     gridy = g.growthmatrixgrid[1]
     for i in range(len(gridx)):
         for j in range(len(gridy)):
-            print >> out,gridx[i],gridy[j],g.growthmatrix[i,j,0],g.growthmatrix[i,j,1]
-        print >> out
+            out.write('{} {} {} {}\n'.format(gridx[i],gridy[j],g.growthmatrix[i,j,0],g.growthmatrix[i,j,1]))
+        out.write('\n')
 else:
     raise NotImplementedError
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -13,17 +13,17 @@ parser.add_argument("-i","--infile",default=None)
 args = parser.parse_args()
 
 try:
-    g = pickle.load(open(args.infile))
+    g = pickle.load(open(args.infile,'rb'),encoding = 'bytes')
 except:
-    raise IOError,"Could not open and load from pickle file"
+    raise IOError("Could not open and load from pickle file")
 
-print "=================================================================="
-print "  growthmatrix file : {}".format(args.infile)
-print "  dynamics type :     {}".format(str(type(g)).split("'")[1])
-print "  GMshape :           {}".format(np.shape(g.growthmatrix))
-print "  GMgridX :           \n{}".format(g.growthmatrixgrid[0])
-print "  GMgridY :           \n{}".format(g.growthmatrixgrid[1])
-print "=================================================================="
-print
+print("==================================================================")
+print("  growthmatrix file : {}".format(args.infile)                      )
+print("  dynamics type :     {}".format(str(type(g)).split("'")[1])       )
+print("  GMshape :           {}".format(np.shape(g.growthmatrix))         )
+print("  GMgridX :           \n{}".format(g.growthmatrixgrid[0])          )
+print("  GMgridY :           \n{}".format(g.growthmatrixgrid[1])          )
+print("==================================================================")
+print(""                                                                  )
 
-print g.ParameterString()
+print(g.ParameterString())

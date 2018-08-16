@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import numpy as np
@@ -31,7 +31,7 @@ parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
 args = parser.parse_args()
 
 try:
-    g = pickle.load(open(args.infile))
+    g = pickle.load(open(args.infile,'rb'), encoding = 'bytes')
 except:
     raise IOError,"Could not open and load from pickle file"
 

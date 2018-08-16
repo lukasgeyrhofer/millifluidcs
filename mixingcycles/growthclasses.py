@@ -29,7 +29,7 @@ import scipy.integrate as spint
 import inspect
 import sys
 
-#import pickle
+import pickle
 
 def RungeKutta4(func,xx,tt,step):
   # 4th order Runge-Kutta integration scheme
@@ -774,7 +774,13 @@ class GrowthDynamics(object):
         return [self.__kwargs_for_pickle,self.__growthmatrix,(self.__growthmatrixgridX,self.__growthmatrixgridY)]
     
     def __setstate__(self,state):
-        self.__init__(**state[0])
+        # python 3 keys in dictionaries are <type 'bytes'>, but in order to use **kwargs, we need <type 'str'>
+        # need to check conversion
+        kwargs = dict()
+        for k,v in state[0].items():
+            if isinstance(k,str):   kwargs[k] = v
+            else:                   kwargs[k.decode('utf-8')] = v
+        self.__init__(**kwargs)
         self.__growthmatrix = state[1]
         if isinstance(state[2],int):
             # backward compatibility

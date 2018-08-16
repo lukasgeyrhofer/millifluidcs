@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -17,7 +17,7 @@ def main():
     parser_alg.add_argument("-M","--IntegrationMethod",choices = ['ownRK4','SciPy'],default = 'ownRK4')
 
     parser_ic = parser.add_argument_group(description = "==== Initial conditions ====")
-    parser_ic.add_argument("-N","--initialconditions",default=[1],type=float,nargs="*")
+    parser_ic.add_argument("-N","--initialconditions",default=[1,1],type=float,nargs="*")
 
     args = parser.parse_args()
 
@@ -27,7 +27,7 @@ def main():
     traj = g.Trajectory(args.initialconditions,TimeOutput=True)
     # output
     for x in traj:
-        print ' '.join(['{:14.6e}'.format(y) for y in x])
+        print(' '.join(['{:14.6e}'.format(y) for y in x]))
 
 
 if __name__ == "__main__":

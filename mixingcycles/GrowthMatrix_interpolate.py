@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import numpy as np
@@ -35,7 +35,7 @@ parser_lattice.add_argument("-S","--sorting",choices = ("1","2"),default = "1")
 args = parser.parse_args()
 
 try:
-    g = pickle.load(open(args.infile))
+    g = pickle.load(open(args.infile,'rb'),encoding='bytes')
 except:
     raise IOError,"Could not open and load from pickle file"
 
