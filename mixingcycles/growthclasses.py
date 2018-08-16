@@ -163,9 +163,10 @@ def AssignGrowthDynamics(**kwargs):
         curkey = None
         curvalue = list()
         for entry in params:
-            if entry.isnumeric():
-                curvalue.append(float(entry))
-            else:
+            try:
+                v = float(entry)
+                curvalue.append(v)
+            except:
                 p = AddEntry(p,curkey,curvalue)
                 curvalue = list()
                 curkey = entry
@@ -178,9 +179,9 @@ def AssignGrowthDynamics(**kwargs):
     # generate dict from parameters and update with kwargs
     params = MakeDictFromParameterList(kwargs.get('ParameterList',[]))
     params.update(kwargs)
+    
     # get rid of original description for these parameters,
     # such that they are not passed twice in different form
-    
     if 'ParameterList' in params.keys():
         del params['ParameterList']
     
@@ -1847,6 +1848,7 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
     
         # extractable resources, extracted resources
         self.otherinitialconditions = np.array([self.env.substrate * self.__params['InitiallyExtractedRes'],self.env.substrate * (1-self.__params['InitiallyExtractedRes'])])
+        
     
     def MichaelisMenten(self,conc,maxrate,km):
         return maxrate*conc/(conc + km)
@@ -1860,7 +1862,7 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         if x[self.numstrains+1] >= 0:   extr = self.MichaelisMenten(x[:self.numstrains],self.__params['ExtractionMaxRate'],self.__params['ExtractionKm'])
         else:                           extr = np.zeros(self.numstrains)
         
-        return np.array([
+        return np.concatenate([
             a * x[:self.numstrains],                                     # growth
             np.array([                                      
                 np.dot(extr - a/self.yieldfactors, x[:self.numstrains]), # resources are extracted and used for growth

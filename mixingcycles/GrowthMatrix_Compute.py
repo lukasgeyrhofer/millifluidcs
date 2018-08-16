@@ -34,7 +34,7 @@ else:
         g = pickle.load(open(args.infile))
     except:
         raise IOError("could not open pickle file")
-    if args.verbose:print g.ParameterString()
+    if args.verbose:print(g.ParameterString())
     if g.hasGrowthMatrix():
         g.ExtendGrowthMatrix(size = args.maxsize)
     else:
