@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -25,15 +25,14 @@ def main():
     args = parser.parse_args()
 
     try:
-        g = pickle.load(open(args.infile))
+        g = pickle.load(open(args.infile,'rb'),encoding = 'bytes')
     except:
-        raise IOError,"Could not open and load from pickle file"
+        raise IOError("Could not open and load from pickle file")
 
     if not g.hasGrowthMatrix():
-        raise ValueError,"Loaded pickle instance does not contain growthmatrix"
+        raise ValueError("Loaded pickle instance does not contain growthmatrix")
 
-    if args.verbose:
-        sys.stdout.write(g.ParameterString())
+    if args.verbose: sys.stderr.write(g)
 
     a1_list,a2_list = gc.getInoculumAxes(**vars(args))
 
