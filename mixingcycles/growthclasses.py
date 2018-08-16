@@ -1743,9 +1743,58 @@ class GrowthDynamicsApprox(GrowthDynamics):
         s += "  Model parameters  " + self.arraystring(self.__modelparameters) +r
         return s
         
+
+class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
+    # implement something similar to
+    # Elhanati et al, TPB 2011
+    # Behar et al, TPB 2014
+    # Behar et al, EPL 2015
+    # but exclude death rates, as this is replaced by the finite amount of extractable resources and finite time of a cycle
     
+    def __init__(self,**kwargs):
+        super(GrowthDynamicsResourceExtraction,self).__init__(**kwargs)
+        
+        self.__params = dict()
+        self.__params['ExtractionMaxRate']     = np.array(kwargs.get('ExtractionMaxRate',     np.zeros(self.numstrains)),dtype=np.float)
+        self.__params['ExtractionKm']          = np.array(kwargs.get('ExtractionKm',          np.ones(self.numstrains)), dtype=np.float)
+        self.__params['GrowthKm']              = np.array(kwargs.get('GrowthKm',              np.ones(self.numstrains)), dtype=np.float)
+        self.__params['InitiallyExtractedRes'] =          kwargs.get('InitiallyExtractedRes', 0)
     
+        assert len(self.__params['ExtractionMaxRate']) == self.numstrains, 'Extraction rates not defined for each strain'
+        assert len(self.__params['ExtractionKm'])      == self.numstrains, 'ExtractionKm not defined for each strain'
+        assert len(self.__params['GrowthKm'])          == self.numstrains, 'GrowthKm rates not defined for each strain'
     
+        # extractable resources, extracted resources
+        self.otherinitialconditions = np.array([self.env.substrate * self.__params['InitiallyExtractedRes'],self.env.substrate * (1-self.__params['InitiallyExtractedRes'])])
     
+    def MichaelisMenten(self,conc,maxrate,km):
+        return maxrate*conc/(conc + km)
+    
+    def dynamics(self,t,x):
+        # growth rates now depending on MM kinetics, if extracted resources available
+        if x[self.numstrains] >= 0:     a    = self.MichaelisMenten(x[self.numstrains],self.growthrates,self.__params['GrowthKm'])
+        else:                           a    = np.zeros(self.numstrains)
+        
+        # extraction dynamics depends on MM kinetics, if extractable resources available
+        if x[self.numstrains+1] >= 0:   extr = self.MichaelisMenten(x[:self.numstrains],self.__params['ExtractionMaxRate'],self.__params['ExtractionKm'])
+        else:                           extr = np.zeros(self.numstrains)
+        
+        return np.array([
+            a * x[:self.numstrains],                                     # growth
+            np.array([                                      
+                np.dot(extr - a/self.yieldfactors, x[:self.numstrains]), # resources are extracted and used for growth
+                np.dot(-extr,x[:self.numstrains])                        # extractable resources decay
+                )]
+            ])
+    
+    def ParameterString(self):
+        r  = '\n'
+        s  = super(GrowthDynamicsResourceExtraction,self).ParameterString() +r
+        s += "*** Resource Extraction parameters ***" +r
+        s += "  Extraction rate   " + self.arraystring(self.__params['ExtractionMaxRate']) +r
+        s += "  Extraction Km     " + self.arraystring(self.__params['ExtractionKm']) +r
+        s += "  Growth Km         " + self.arraystring(self.__params['GrowthKm']) +r
+        s += "  Initially Extracted Resources " + str(self.__params['InitiallyExtractedRes']) +r
+        return s
     
     
