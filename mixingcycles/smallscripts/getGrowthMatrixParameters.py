@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 import argparse
@@ -34,6 +34,17 @@ out += " -S {:e} ".format(g.env.substrate)
 
 if not g.env.mixingtime is None:
     out += " -T {:e} ".format(g.env.mixingtime)
+
+
+if len(g.__params) > 0:
+    out += "-P "
+    for key,value in g.__params:
+        if isinstance(value,(list,np.array)):
+            out += " " + key + " " + array_to_str(value)
+        else:
+            out += " " + key + " " + str(value)
+
+out += " -G " + type(g).__name__[14:]
 
 sys.stdout.write(out + '\n')
 

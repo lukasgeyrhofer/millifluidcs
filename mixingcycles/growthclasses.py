@@ -367,6 +367,7 @@ class GrowthDynamics(object):
         self.__restrictFractionalPopulation = kwargs.get("RestrictFractionalPopulation",True)
         
         self.__trajectorytimestep = kwargs.get('TimeIntegratorStep',1e-3) * kwargs.get('TimeIntegratorOutput',10)
+        self.__params = dict()
         
     
     def addStrain(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0):
@@ -1306,22 +1307,22 @@ class GrowthDynamicsAntibiotics(GrowthDynamicsODE):
     def __init__(self,**kwargs):
         super(GrowthDynamicsAntibiotics,self).__init__(**kwargs)
         
-        self.ABparams = {   'kappa' :         kwargs.get("kappa",2),
+        self.__params = {   'kappa' :         kwargs.get("kappa",2),
                             'gamma' :         kwargs.get("gamma",2),
                             'PGproduction' :  np.array(kwargs.get("PGproduction",np.zeros(self.numstrains)),dtype=np.float64),
                             'PGreductionAB' : kwargs.get("PGreductionAB",1),
                             'PGconc' :        kwargs.get("PGconc",0),   # initial condition PG concentration
                             'ABconc' :        kwargs.get("ABconc",.5)}  # initial concentration antibiotics measured in zMIC
 
-        assert len(self.ABparams['PGproduction']) == self.numstrains, "PG production not defined correctly"
-        assert sum(self.ABparams['PGproduction']) > 0, "PG is not produced"
+        assert len(self.__params['PGproduction']) == self.numstrains, "PG production not defined correctly"
+        assert sum(self.__params['PGproduction']) > 0, "PG is not produced"
 
-        self.otherinitialconditions = np.array([self.env.substrate,self.ABparams['PGconc'],self.ABparams['ABconc']])
+        self.otherinitialconditions = np.array([self.env.substrate,self.__params['PGconc'],self.__params['ABconc']])
     
     
     def beta(self,abconc):
-        bk = np.power(abconc,self.ABparams['kappa'])
-        return 1 - (1+self.ABparams['gamma'])*bk/(bk + self.ABparams['gamma'])
+        bk = np.power(abconc,self.__params['kappa'])
+        return 1 - (1+self.__params['gamma'])*bk/(bk + self.__params['gamma'])
     
     def growthr(self,substrate,abconc):
         if substrate > 0:
@@ -1333,20 +1334,20 @@ class GrowthDynamicsAntibiotics(GrowthDynamicsODE):
         a = self.growthr(x[-3],x[-1])
         return np.concatenate([ a*x[:-3],                                                      # growth of strains
                                 np.array( [ -np.sum(a/self.yieldfactors*x[:-3]),               # decay of nutrients
-                                            np.sum(self.ABparams['PGproduction']*x[:-3]),      # production of public good
-                                            -self.ABparams['PGreductionAB']*x[-1]*x[-2] ])])   # reduction of antibiotics by public good
+                                            np.sum(self.__params['PGproduction']*x[:-3]),      # production of public good
+                                            -self.__params['PGreductionAB']*x[-1]*x[-2] ])])   # reduction of antibiotics by public good
     
     
     def ParameterString(self):
         r  = '\n'
         s  = super(GrowthDynamicsAntibiotics,self).ParameterString() +r
         s += "*** antibiotic parameters ***" +r
-        s += "  initial concentration " + str(self.ABparams['ABconc']) +r
-        s += "  gamma                 " + str(self.ABparams['gamma']) +r
-        s += "  kappa                 " + str(self.ABparams['kappa']) +r
-        s += "  enzyme production     " + self.arraystring(self.ABparams['PGproduction']) +r
-        s += "  enzyme activity       " + str(self.ABparams['PGreductionAB']) +r
-        s += "  enzyme initial conc.  " + str(self.ABparams['PGconc']) +r
+        s += "  initial concentration " + str(self.__params['ABconc']) +r
+        s += "  gamma                 " + str(self.__params['gamma']) +r
+        s += "  kappa                 " + str(self.__params['kappa']) +r
+        s += "  enzyme production     " + self.arraystring(self.__params['PGproduction']) +r
+        s += "  enzyme activity       " + str(self.__params['PGreductionAB']) +r
+        s += "  enzyme initial conc.  " + str(self.__params['PGconc']) +r
         return s
 
 
@@ -1355,20 +1356,20 @@ class GrowthDynamicsAntibiotics2(GrowthDynamicsODE):
     def __init__(self,**kwargs):
         super(GrowthDynamicsAntibiotics2,self).__init__(**kwargs)
         
-        self.ABparams = {   'kappa' :         kwargs.get("kappa",2),
+        self.__params = {   'kappa' :         kwargs.get("kappa",2),
                             'gamma' :         kwargs.get("gamma",2),
                             'ProductionEfficiency' :  np.array(kwargs.get("AB_Production_Efficiency",np.zeros(self.numstrains)),dtype=np.float64),
                             'ABconc' :        kwargs.get("ABconc",.5)}  # initial concentration antibiotics measured in zMIC
 
-        assert len(self.ABparams['ProductionEfficiency']) == self.numstrains, "PG production not defined correctly"
-        assert sum(self.ABparams['ProductionEfficiency']) > 0, "PG is not produced"
+        assert len(self.__params['ProductionEfficiency']) == self.numstrains, "PG production not defined correctly"
+        assert sum(self.__params['ProductionEfficiency']) > 0, "PG is not produced"
         
-        self.otherinitialconditions = np.array([self.env.substrate,self.ABparams['ABconc']])
+        self.otherinitialconditions = np.array([self.env.substrate,self.__params['ABconc']])
     
     def beta(self,abconc):
         if abconc >= 1e-10:
-            bk = np.power(abconc,self.ABparams['kappa'])
-            return (1. - bk)/(1 + bk/self.ABparams['gamma'])
+            bk = np.power(abconc,self.__params['kappa'])
+            return (1. - bk)/(1 + bk/self.__params['gamma'])
         else:
             return 1.
     
@@ -1387,7 +1388,7 @@ class GrowthDynamicsAntibiotics2(GrowthDynamicsODE):
                                 a*x[:self.numstrains],                                                              # growth of strains
                                 np.array([
                                     -np.sum(a0/self.yieldfactors*x[:self.numstrains]),                              # decay of nutrients
-                                    -np.sum(self.ABparams['ProductionEfficiency']*x[:self.numstrains]) * x[-1]      # reduction of antibiotics by cells
+                                    -np.sum(self.__params['ProductionEfficiency']*x[:self.numstrains]) * x[-1]      # reduction of antibiotics by cells
                                     ])
                                 ])
     
@@ -1395,10 +1396,10 @@ class GrowthDynamicsAntibiotics2(GrowthDynamicsODE):
         r  = '\n'
         s  = super(GrowthDynamicsAntibiotics2,self).ParameterString() +r
         s += "*** antibiotic parameters ***" +r
-        s += "  initial concentration    " + str(self.ABparams['ABconc']) +r
-        s += "  gamma                    " + str(self.ABparams['gamma']) +r
-        s += "  kappa                    " + str(self.ABparams['kappa']) +r
-        s += "  Enzyme Prod & Efficiency " + self.arraystring(self.ABparams['ProductionEfficiency']) +r
+        s += "  initial concentration    " + str(self.__params['ABconc']) +r
+        s += "  gamma                    " + str(self.__params['gamma']) +r
+        s += "  kappa                    " + str(self.__params['kappa']) +r
+        s += "  Enzyme Prod & Efficiency " + self.arraystring(self.__params['ProductionEfficiency']) +r
         return s
         
 
@@ -1406,7 +1407,7 @@ class GrowthDynamicsAntibiotics3(GrowthDynamicsODE):
     def __init__(self,**kwargs):
 
         super(GrowthDynamicsAntibiotics3,self).__init__(**kwargs)
-        self.ABparams = {   'kappa' :            kwargs.get("kappa",2),
+        self.__params = {   'kappa' :            kwargs.get("kappa",2),
                             'gamma' :            kwargs.get("gamma",2),
                             'BL_Production':     np.array(kwargs.get("BL_Production",np.zeros(self.numstrains)),dtype=np.float64),
                             'BL_Efficiency':     kwargs.get("BL_Efficiency",1e-2),
@@ -1417,21 +1418,21 @@ class GrowthDynamicsAntibiotics3(GrowthDynamicsODE):
                             'VolumeSeparation':  kwargs.get("VolumeSeparation",1)
                             }
 
-        assert len(self.ABparams['BL_Production']) == self.numstrains, "PG production not defined correctly"
-        assert sum(self.ABparams['BL_Production']) > 0, "PG is not produced"
+        assert len(self.__params['BL_Production']) == self.numstrains, "PG production not defined correctly"
+        assert sum(self.__params['BL_Production']) > 0, "PG is not produced"
         
         self.otherinitialconditions =   np.concatenate([
                                             np.array([self.env.substrate]),      # substrate
                                             np.zeros(self.numstrains),           # internal enzyme concentrations
                                             np.zeros(self.numstrains),           # internal antibiotics concentrations
                                             np.array([0]),                       # external enzyme concentration
-                                            np.array([self.ABparams['AB_Conc']]) # external antibiotics concentration
+                                            np.array([self.__params['AB_Conc']]) # external antibiotics concentration
                                         ])
 
     def beta(self,abconc):
-        if np.any(abconc >= self.ABparams['AB_Conc_threshold']):
-            bk = np.power(abconc,self.ABparams['kappa'])
-            return (1. - bk)/(1 + bk/self.ABparams['gamma'])
+        if np.any(abconc >= self.__params['AB_Conc_threshold']):
+            bk = np.power(abconc,self.__params['kappa'])
+            return (1. - bk)/(1 + bk/self.__params['gamma'])
         else:
             return 1.
     
@@ -1449,24 +1450,24 @@ class GrowthDynamicsAntibiotics3(GrowthDynamicsODE):
         return np.concatenate([
                                     a*x[:self.numstrains],                                                              # growth of strains
                                     np.array([-np.sum(a0/self.yieldfactors*x[:self.numstrains])]),                      # decay of nutrients
-                                    self.ABparams['BL_Production'] * x[:self.numstrains] - self.ABparams['BL_Diffusivity'] * (x[self.numstrains + 1:2 * self.numstrains + 1] - x[-2]),
-                                    -self.ABparams['BL_Efficiency'] * x[self.numstrains + 1:2*self.numstrains + 1] * x[2*self.numstrains + 1:3*self.numstrains + 1] - self.ABparams['BL_Diffusivity'] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1]),
-                                    np.array([self.ABparams['BL_Diffusivity'] * np.sum(x[:self.numstrains] * (x[self.numstrains + 1:2*self.numstrains + 1] - x[-2]))]),
-                                    np.array([self.ABparams['AB_Diffusivity'] * np.sum(x[:self.numstrains] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1])) - self.ABparams['BL_Efficiency'] * x[-1] * x[-2]])
+                                    self.__params['BL_Production'] * x[:self.numstrains] - self.__params['BL_Diffusivity'] * (x[self.numstrains + 1:2 * self.numstrains + 1] - x[-2]),
+                                    -self.__params['BL_Efficiency'] * x[self.numstrains + 1:2*self.numstrains + 1] * x[2*self.numstrains + 1:3*self.numstrains + 1] - self.__params['BL_Diffusivity'] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1]),
+                                    np.array([self.__params['BL_Diffusivity'] * np.sum(x[:self.numstrains] * (x[self.numstrains + 1:2*self.numstrains + 1] - x[-2]))]),
+                                    np.array([self.__params['AB_Diffusivity'] * np.sum(x[:self.numstrains] * (x[2*self.numstrains + 1:3*self.numstrains + 1] - x[-1])) - self.__params['BL_Efficiency'] * x[-1] * x[-2]])
                                 ])
 
     def ParameterString(self):
         r  = '\n'
         s  = super(GrowthDynamicsAntibiotics3,self).ParameterString() +r
         s += "*** antibiotic parameters ***" +r
-        s += "  Antibiotics Initial Conc    " + str(self.ABparams['AB_Conc']) +r
-        s += "  gamma                       " + str(self.ABparams['gamma']) +r
-        s += "  kappa                       " + str(self.ABparams['kappa']) +r
-        s += "  Enzyme Production           " + self.arraystring(self.ABparams['BL_Production']) +r
-        s += "  Enzyme Efficiency           " + str(self.ABparams['BL_Efficiency']) +r
-        s += "  Enzyme Diffusity rate       " + str(self.ABparams['BL_Diffusivity']) +r
-        s += "  Antibiotic Diffusity rate   " + str(self.ABparams['AB_Diffusivity']) +r
-        s += "  Volume/Timescale Separation " + str(self.ABparams['VolumeSeparation']) +r
+        s += "  Antibiotics Initial Conc    " + str(self.__params['AB_Conc']) +r
+        s += "  gamma                       " + str(self.__params['gamma']) +r
+        s += "  kappa                       " + str(self.__params['kappa']) +r
+        s += "  Enzyme Production           " + self.arraystring(self.__params['BL_Production']) +r
+        s += "  Enzyme Efficiency           " + str(self.__params['BL_Efficiency']) +r
+        s += "  Enzyme Diffusity rate       " + str(self.__params['BL_Diffusivity']) +r
+        s += "  Antibiotic Diffusity rate   " + str(self.__params['AB_Diffusivity']) +r
+        s += "  Volume/Timescale Separation " + str(self.__params['VolumeSeparation']) +r
         return s
 
 
@@ -1474,7 +1475,7 @@ class GrowthDynamicsAntibiotics4(GrowthDynamics):
     def __init__(self,**kwargs):
 
         super(GrowthDynamicsAntibiotics4,self).__init__(**kwargs)
-        self.ABparams = {   'kappa' :            kwargs.get("kappa",2),
+        self.__params = {   'kappa' :            kwargs.get("kappa",2),
                             'gamma' :            kwargs.get("gamma",2),
                             'BL_Production':     np.array(kwargs.get("BL_Production",np.zeros(self.numstrains)),dtype=np.float64),
                             'BL_Efficiency':     kwargs.get("BL_Efficiency",1e-2),
@@ -1487,25 +1488,25 @@ class GrowthDynamicsAntibiotics4(GrowthDynamics):
         
         
         # commonly used parameters for the dynamics
-        self.rhosigmaE = self.ABparams['BL_Production'] / self.ABparams['BL_Diffusivity']
-        self.epssigmaB = self.ABparams['BL_Efficiency'] / self.ABparams['AB_Diffusivity']
-        self.etarho    = self.ABparams['BL_Production'] * self.ABparams['VolumeSeparation']
-        self.etasigmaB = self.ABparams['AB_Diffusivity'] * self.ABparams['VolumeSeparation']
+        self.rhosigmaE = self.__params['BL_Production'] / self.__params['BL_Diffusivity']
+        self.epssigmaB = self.__params['BL_Efficiency'] / self.__params['AB_Diffusivity']
+        self.etarho    = self.__params['BL_Production'] * self.__params['VolumeSeparation']
+        self.etasigmaB = self.__params['AB_Diffusivity'] * self.__params['VolumeSeparation']
         
 
-        assert len(self.ABparams['BL_Production']) == self.numstrains, "PG production not defined correctly"
-        assert sum(self.ABparams['BL_Production']) > 0, "PG is not produced"
+        assert len(self.__params['BL_Production']) == self.numstrains, "PG production not defined correctly"
+        assert sum(self.__params['BL_Production']) > 0, "PG is not produced"
         
         self.otherinitialconditions =   np.concatenate([
                                             np.array([self.env.substrate]),      # substrate
                                             np.array([0]),                       # external enzyme concentration
-                                            np.array([self.ABparams['AB_Conc']]) # external antibiotics concentration
+                                            np.array([self.__params['AB_Conc']]) # external antibiotics concentration
                                         ])
         
     def beta(self,abconc):
-        if np.any(abconc >= self.ABparams['AB_Conc_threshold']):
-            bk = np.power(abconc,self.ABparams['kappa'])
-            return (1. - bk)/(1 + bk/self.ABparams['gamma'])
+        if np.any(abconc >= self.__params['AB_Conc_threshold']):
+            bk = np.power(abconc,self.__params['kappa'])
+            return (1. - bk)/(1 + bk/self.__params['gamma'])
         else:
             return 1.
     
@@ -1530,7 +1531,7 @@ class GrowthDynamicsAntibiotics4(GrowthDynamics):
                     np.array([
                             np.sum(a0y * x[:self.numstrains]), # depletion of nutrients
                             np.sum(self.etarho * x[:self.numstrains]), # production of enzyme
-                            -self.ABparams['BL_Efficiency'] * x[self.numstrains + 1] * x[self.numstrains + 2] + self.etasigmaB * np.dot(x[:self.numstrains],antibiotics_internal - x[self.numstrains + 2]) # reduction of antibiotics
+                            -self.__params['BL_Efficiency'] * x[self.numstrains + 1] * x[self.numstrains + 2] + self.etasigmaB * np.dot(x[:self.numstrains],antibiotics_internal - x[self.numstrains + 2]) # reduction of antibiotics
                             ])
                     ])
 
@@ -1539,14 +1540,14 @@ class GrowthDynamicsAntibiotics4(GrowthDynamics):
         r  = '\n'
         s  = super(GrowthDynamicsAntibiotics4,self).ParameterString() +r
         s += "*** antibiotic parameters ***" +r
-        s += "  Antibiotics Initial Conc    " + str(self.ABparams['AB_Conc']) +r
-        s += "  gamma                       " + str(self.ABparams['gamma']) +r
-        s += "  kappa                       " + str(self.ABparams['kappa']) +r
-        s += "  Enzyme Production           " + self.arraystring(self.ABparams['BL_Production']) +r
-        s += "  Enzyme Efficiency           " + str(self.ABparams['BL_Efficiency']) +r
-        s += "  Enzyme Diffusity rate       " + str(self.ABparams['BL_Diffusivity']) +r
-        s += "  Antibiotic Diffusity rate   " + str(self.ABparams['AB_Diffusivity']) +r
-        s += "  Volume/Timescale Separation " + str(self.ABparams['VolumeSeparation']) +r
+        s += "  Antibiotics Initial Conc    " + str(self.__params['AB_Conc']) +r
+        s += "  gamma                       " + str(self.__params['gamma']) +r
+        s += "  kappa                       " + str(self.__params['kappa']) +r
+        s += "  Enzyme Production           " + self.arraystring(self.__params['BL_Production']) +r
+        s += "  Enzyme Efficiency           " + str(self.__params['BL_Efficiency']) +r
+        s += "  Enzyme Diffusity rate       " + str(self.__params['BL_Diffusivity']) +r
+        s += "  Antibiotic Diffusity rate   " + str(self.__params['AB_Diffusivity']) +r
+        s += "  Volume/Timescale Separation " + str(self.__params['VolumeSeparation']) +r
         return s
 
 
@@ -1555,35 +1556,35 @@ class GrowthDynamicsPyoverdin(GrowthDynamicsODE):
     def __init__(self,**kwargs):
         super(GrowthDynamicsPyoverdin,self).__init__(**kwargs)
         
-        self.PVDparams = {  'PVDproduction' :  np.array(kwargs.get("PVDproduction",np.zeros(self.numstrains)),dtype=np.float64),
+        self.__params = {  'PVDproduction' :  np.array(kwargs.get("PVDproduction",np.zeros(self.numstrains)),dtype=np.float64),
                             'PVDincreaseS'  :  kwargs.get("PVDincreaseS",1),
                             'PVDmaxFactorS' :  kwargs.get("PVDmaxFactorS",1),   # initial condition PG concentration
                             'PVDconc' :        kwargs.get("PVDconc",0)}  # initial concentration antibiotics measured in zMIC
 
-        assert len(self.PVDparams['PVDproduction']) == self.numstrains, "PVD production not defined correctly"
-        assert sum(self.PVDparams['PVDproduction']) > 0, "PVD is not produced"
+        assert len(self.__params['PVDproduction']) == self.numstrains, "PVD production not defined correctly"
+        assert sum(self.__params['PVDproduction']) > 0, "PVD is not produced"
         
-        self.otherinitialconditions = np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])
+        self.otherinitialconditions = np.array([self.env.substrate,self.__params['PVDconc'],self.env.substrate])
 
 
     def dynamics(self,t,x):
-        p = self.PVDparams['PVDincreaseS'] if x[-1] <= self.env.substrate * self.PVDparams['PVDmaxFactorS'] else 0
+        p = self.__params['PVDincreaseS'] if x[-1] <= self.env.substrate * self.__params['PVDmaxFactorS'] else 0
         if x[-3] >= 0:
             a = self.growthrates
         else:
             a = np.zeros(self.numstrains)
         return np.concatenate([ a*x[:-3],   np.array([  np.sum(-a*x[:-3]/self.yieldfactors) + p * x[-2],
-                                                        np.sum(self.PVDparams['PVDproduction']*x[:-3]),
+                                                        np.sum(self.__params['PVDproduction']*x[:-3]),
                                                         p * x[-2]   ])])
 
     def ParameterString(self):
         r  = '\n'
         s  = super(GrowthDynamicsPyoverdin,self).ParameterString() +r
         s += "*** pyoverdin parameters ***" +r
-        s += "  initial concentration " + str(self.PVDparams['PVDconc']) +r
-        s += "  increase rate S       " + str(self.PVDparams['PVDincreaseS']) +r
-        s += "  max ratio S           " + str(self.PVDparams['PVDmaxFactorS']) +r
-        s += "  pyoverdin production  " + self.arraystring(self.PVDparams['PVDproduction']) +r
+        s += "  initial concentration " + str(self.__params['PVDconc']) +r
+        s += "  increase rate S       " + str(self.__params['PVDincreaseS']) +r
+        s += "  max ratio S           " + str(self.__params['PVDmaxFactorS']) +r
+        s += "  pyoverdin production  " + self.arraystring(self.__params['PVDproduction']) +r
         return s
 
 
@@ -1593,25 +1594,25 @@ class GrowthDynamicsPyoverdin2(GrowthDynamicsODE):
 
         super(GrowthDynamicsPyoverdin2,self).__init__(**kwargs)
         
-        self.PVDparams = {  'PVDproduction' :  np.array(kwargs.get("PVDproduction",np.zeros(self.numstrains)),dtype=np.float64),
+        self.__params = {  'PVDproduction' :  np.array(kwargs.get("PVDproduction",np.zeros(self.numstrains)),dtype=np.float64),
                             'PVDincreaseS'  :  kwargs.get("PVDincreaseS",1),
                             'PVDmaxFactorS' :  kwargs.get("PVDmaxFactorS",1),   # initial condition PG concentration
                             'PVDconc' :        kwargs.get("PVDconc",0)}  # initial concentration antibiotics measured in zMIC
 
-        assert len(self.PVDparams['PVDproduction']) == self.numstrains, "PVD production not defined correctly"
-        assert sum(self.PVDparams['PVDproduction']) > 0, "PVD is not produced"
+        assert len(self.__params['PVDproduction']) == self.numstrains, "PVD production not defined correctly"
+        assert sum(self.__params['PVDproduction']) > 0, "PVD is not produced"
         
-        self.otherinitialconditions = np.array([self.env.substrate,self.PVDparams['PVDconc'],self.env.substrate])
+        self.otherinitialconditions = np.array([self.env.substrate,self.__params['PVDconc'],self.env.substrate])
 
 
     def dynamics(self,t,x):
-        p = self.PVDparams['PVDincreaseS'] if x[-1] <= self.env.substrate * self.PVDparams['PVDmaxFactorS'] else 0
+        p = self.__params['PVDincreaseS'] if x[-1] <= self.env.substrate * self.__params['PVDmaxFactorS'] else 0
         if x[-3] > 0:
             a = self.growthrates
         else:
             a = np.zeros(self.numstrains)
         return np.concatenate([ a*x[:-3],   np.array([  np.sum(-a*x[:-3]/self.yieldfactors) + p * x[-2],
-                                                        np.sum(self.PVDparams['PVDproduction']*x[:-3]),
+                                                        np.sum(self.__params['PVDproduction']*x[:-3]),
                                                         p * x[-2]   ])])
 
     
@@ -1627,7 +1628,7 @@ class GrowthDynamicsPyoverdin3(GrowthDynamicsODE):
     def __init__(self,**kwargs):
         super(GrowthDynamicsPyoverdin3,self).__init__(**kwargs)
         
-        self.PVDparams = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.ones(self.numstrains)),dtype=np.float64),
+        self.__params = {  'InternalIronYieldCoefficient' : np.array(kwargs.get("PVD_Internal_Yield",np.ones(self.numstrains)),dtype=np.float64),
                             'Production' :                   np.array(kwargs.get("PVD_Production",np.zeros(self.numstrains)),dtype=np.float64),
                             'InitialInternalIron' :          np.array(kwargs.get("PVD_Initial_Internal_Iron",np.zeros(self.numstrains)),dtype=np.float64),
                             'MatchingReceptors' :            np.array(kwargs.get("PVD_Matching_Receptors",np.zeros(self.numstrains)),dtype=np.float64),
@@ -1638,16 +1639,16 @@ class GrowthDynamicsPyoverdin3(GrowthDynamicsODE):
                             'YieldDependence' :                       kwargs.get("PVD_Yield_Dependence","linear")
                         }
         
-        assert len(self.PVDparams['Production']) == self.numstrains, "PVD production not defined correctly"
-        assert np.sum(self.PVDparams['Production']) > 0, "PVD is not produced"
+        assert len(self.__params['Production']) == self.numstrains, "PVD production not defined correctly"
+        assert np.sum(self.__params['Production']) > 0, "PVD is not produced"
         
-        if self.PVDparams['YieldDependence'] == 'linear':
+        if self.__params['YieldDependence'] == 'linear':
             self.IronYield = self.IronYieldLinear
-        elif self.PVDparams['YieldDependence'] == 'exp':
+        elif self.__params['YieldDependence'] == 'exp':
             self.IronYield = self.IronYieldExp
         else:
             raise NotImplementedError
-        self.otherinitialconditions = np.concatenate([self.PVDparams['InitialInternalIron'],np.array([self.env.substrate])])
+        self.otherinitialconditions = np.concatenate([self.__params['InitialInternalIron'],np.array([self.env.substrate])])
         
     
     
@@ -1661,17 +1662,17 @@ class GrowthDynamicsPyoverdin3(GrowthDynamicsODE):
         return r
     
     def IronYieldExp(self,x):
-        return self.yieldfactors * (1 - np.exp(-self.PVDparams['InternalIronYieldCoefficient'] * x))
+        return self.yieldfactors * (1 - np.exp(-self.__params['InternalIronYieldCoefficient'] * x))
     
     def IronYieldLinear(self,x):
-        return self.yieldfactors + self.PVDparams['InternalIronYieldCoefficient'] * x
+        return self.yieldfactors + self.__params['InternalIronYieldCoefficient'] * x
     
     def dynamics(self,t,x):
         y = self.IronYield( x[self.numstrains:2*self.numstrains] )
-        totalPVD = np.sum(self.PVDparams['Production']/self.growthrates * x[:self.numstrains])
+        totalPVD = np.sum(self.__params['Production']/self.growthrates * x[:self.numstrains])
         totalPopSize = np.sum(x[:self.numstrains])
         if totalPopSize > 0:
-            pvdFe = self.g(self.PVDparams['TotalIron']/self.PVDparams['Kpvd'],totalPVD/self.PVDparams['Kpvd']) * totalPVD / totalPopSize
+            pvdFe = self.g(self.__params['TotalIron']/self.__params['Kpvd'],totalPVD/self.__params['Kpvd']) * totalPVD / totalPopSize
         else:
             pvdFe = 0.
         if x[-1] > 0:
@@ -1680,7 +1681,7 @@ class GrowthDynamicsPyoverdin3(GrowthDynamicsODE):
             a,ay = np.zeros((2,self.numstrains))
         return np.concatenate([
             a*x[:self.numstrains],
-            -a*x[self.numstrains:2*self.numstrains] + self.PVDparams['Efficiency'] * pvdFe + self.PVDparams['BaseIronInflux'],
+            -a*x[self.numstrains:2*self.numstrains] + self.__params['Efficiency'] * pvdFe + self.__params['BaseIronInflux'],
             np.array([-np.sum(ay * x[:-3])])
             ])
     
@@ -1689,13 +1690,13 @@ class GrowthDynamicsPyoverdin3(GrowthDynamicsODE):
         r  = '\n'
         s  = super(GrowthDynamicsPyoverdin3,self).ParameterString() +r
         s += "*** Pyoverdin parameters ***" +r
-        s += "  Initial internal iron " + self.arraystring(self.PVDparams['InitialInternalIron']) +r
-        s += "  Pyoverdin production  " + self.arraystring(self.PVDparams['Production']) +r
-        s += "  Yield effect          " + self.arraystring(self.PVDparams['InternalIronYieldCoefficient']) + r
-        s += "  Base Iron influx      " + str(self.PVDparams['BaseIronInflux']) +r
-        s += "  Kpvd                  " + str(self.PVDparams['Kpvd']) +r
-        s += "  TotalIron             " + str(self.PVDparams['TotalIron']) +r
-        s += "  Efficiency            " + str(self.PVDparams['Efficiency']) +r
+        s += "  Initial internal iron " + self.arraystring(self.__params['InitialInternalIron']) +r
+        s += "  Pyoverdin production  " + self.arraystring(self.__params['Production']) +r
+        s += "  Yield effect          " + self.arraystring(self.__params['InternalIronYieldCoefficient']) + r
+        s += "  Base Iron influx      " + str(self.__params['BaseIronInflux']) +r
+        s += "  Kpvd                  " + str(self.__params['Kpvd']) +r
+        s += "  TotalIron             " + str(self.__params['TotalIron']) +r
+        s += "  Efficiency            " + str(self.__params['Efficiency']) +r
         return s
 
         
@@ -1704,13 +1705,13 @@ class GrowthDynamicsPyoverdin4(GrowthDynamicsODE):
 
         super(GrowthDynamicsPyoverdin4,self).__init__(**kwargs)
         
-        self.PVDparams = {  'YieldIncreaseFactor' : kwargs.get("PVD_Yield_Increase_Factor",2),
+        self.__params = {  'YieldIncreaseFactor' : kwargs.get("PVD_Yield_Increase_Factor",2),
                             'Production' :          np.array(kwargs.get("PVD_Production",np.zeros(self.numstrains)),dtype=np.float64)
                         }
         
-        assert len(self.PVDparams['Production']) == self.numstrains, "PVD production not defined correctly"
-        assert np.sum(self.PVDparams['Production']) > 0, "PVD is not produced"
-        assert self.PVDparams['YieldIncreaseFactor'] > 0, "Effect on yield not properly defined"
+        assert len(self.__params['Production']) == self.numstrains, "PVD production not defined correctly"
+        assert np.sum(self.__params['Production']) > 0, "PVD is not produced"
+        assert self.__params['YieldIncreaseFactor'] > 0, "Effect on yield not properly defined"
 
         self.otherinitialconditions = np.array([self.env.substrate])
 
@@ -1718,7 +1719,7 @@ class GrowthDynamicsPyoverdin4(GrowthDynamicsODE):
     def dynamics(self,t,x):
         n = np.sum(x[:self.numstrains])
         if n>0:
-            y = self.yieldfactors * (self.PVDparams['YieldIncreaseFactor'] - (self.PVDparams['YieldIncreaseFactor'] - 1.)*np.exp(-np.dot(self.PVDparams['Production'],x[:self.numstrains])/n))
+            y = self.yieldfactors * (self.__params['YieldIncreaseFactor'] - (self.__params['YieldIncreaseFactor'] - 1.)*np.exp(-np.dot(self.__params['Production'],x[:self.numstrains])/n))
         else:
             y = self.yieldfactors
         if x[-1] > 0:
@@ -1735,8 +1736,8 @@ class GrowthDynamicsPyoverdin4(GrowthDynamicsODE):
         r  = '\n'
         s  = super(GrowthDynamicsPyoverdin4,self).ParameterString() +r
         s += "*** Pyoverdin parameters ***" +r
-        s += "  Pyoverdin production  " + self.arraystring(self.PVDparams['Production']) +r
-        s += "  Yield effect          " + str(self.PVDparams['YieldIncreaseFactor']) + r
+        s += "  Pyoverdin production  " + self.arraystring(self.__params['Production']) +r
+        s += "  Yield effect          " + str(self.__params['YieldIncreaseFactor']) + r
         return s
             
         
@@ -1746,13 +1747,13 @@ class GrowthDynamicsPyoverdin5(GrowthDynamicsODE):
     def __init__(self,**kwargs):
         super(GrowthDynamicsPyoverdin5,self).__init__(**kwargs)
         
-        self.PVDparams = {  'YieldIncreaseFactor' : kwargs.get("PVD_Yield_Increase_Factor",2),
+        self.__params = {  'YieldIncreaseFactor' : kwargs.get("PVD_Yield_Increase_Factor",2),
                             'Production' :          np.array(kwargs.get("PVD_Production",np.zeros(self.numstrains)),dtype=np.float64)
                         }
         
-        assert len(self.PVDparams['Production']) == self.numstrains, "PVD production not defined correctly"
-        assert np.sum(self.PVDparams['Production']) > 0, "PVD is not produced"
-        assert self.PVDparams['YieldIncreaseFactor'] > 0, "Effect on yield not properly defined"
+        assert len(self.__params['Production']) == self.numstrains, "PVD production not defined correctly"
+        assert np.sum(self.__params['Production']) > 0, "PVD is not produced"
+        assert self.__params['YieldIncreaseFactor'] > 0, "Effect on yield not properly defined"
 
         self.otherinitialconditions = np.array([self.env.substrate,0])
 
@@ -1760,7 +1761,7 @@ class GrowthDynamicsPyoverdin5(GrowthDynamicsODE):
     def dynamics(self,t,x):
         n = np.sum(x[:self.numstrains])
         if n>0:
-            y = self.yieldfactors * (self.PVDparams['YieldIncreaseFactor'] - (self.PVDparams['YieldIncreaseFactor'] - 1.)*np.exp(-x[-1]))
+            y = self.yieldfactors * (self.__params['YieldIncreaseFactor'] - (self.__params['YieldIncreaseFactor'] - 1.)*np.exp(-x[-1]))
         else:
             y = self.yieldfactors
         if x[-2] > 0:
@@ -1770,7 +1771,7 @@ class GrowthDynamicsPyoverdin5(GrowthDynamicsODE):
         return np.concatenate([
                                     a * x[:self.numstrains],
                                     np.array([-np.sum(a * x[:self.numstrains]/y),
-                                              np.dot(self.PVDparams['Production'],x[:self.numstrains]) ])
+                                              np.dot(self.__params['Production'],x[:self.numstrains]) ])
                               ])
 
                             
@@ -1778,8 +1779,8 @@ class GrowthDynamicsPyoverdin5(GrowthDynamicsODE):
         r  = '\n'
         s  = super(GrowthDynamicsPyoverdin5,self).ParameterString() +r
         s += "*** Pyoverdin parameters ***" +r
-        s += "  Pyoverdin production  " + self.arraystring(self.PVDparams['Production']) +r
-        s += "  Yield effect          " + str(self.PVDparams['YieldIncreaseFactor']) + r
+        s += "  Pyoverdin production  " + self.arraystring(self.__params['Production']) +r
+        s += "  Yield effect          " + str(self.__params['YieldIncreaseFactor']) + r
         return s
             
         
