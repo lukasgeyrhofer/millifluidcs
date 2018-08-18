@@ -1864,7 +1864,7 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         else:                           a    = np.zeros(self.numstrains)
         
         # extraction dynamics depends on MM kinetics, if extractable resources available
-        if x[self.numstrains+1] >= 0:   extr = np.sum(x[:self.numstrains]*self.__params['ExtractionMaxRate']/(x[:self.numstrains] + self.__params['ExtractionKm'])
+        if x[self.numstrains+1] >= 0:   extr = np.sum(x[:self.numstrains]*self.__params['ExtractionMaxRate']/(x[:self.numstrains] + self.__params['ExtractionKm']))
         else:                           extr = 0
         
         return np.concatenate([
