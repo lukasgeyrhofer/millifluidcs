@@ -1846,12 +1846,10 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         self.__params = dict()
         self.__params['ExtractionMaxRate']     = np.array(kwargs.get('ExtractionMaxRate',     np.zeros(self.numstrains)),dtype=np.float)
         self.__params['ExtractionKm']          = np.array(kwargs.get('ExtractionKm',          np.ones(self.numstrains)), dtype=np.float)
-        self.__params['GrowthKm']              = np.array(kwargs.get('GrowthKm',              np.ones(self.numstrains)), dtype=np.float)
         self.__params['InitiallyExtractedRes'] =          kwargs.get('InitiallyExtractedRes', 0)
     
         assert len(self.__params['ExtractionMaxRate']) == self.numstrains, 'Extraction rates not defined for each strain'
         assert len(self.__params['ExtractionKm'])      == self.numstrains, 'ExtractionKm not defined for each strain'
-        assert len(self.__params['GrowthKm'])          == self.numstrains, 'GrowthKm rates not defined for each strain'
     
         # extractable resources, extracted resources
         self.otherinitialconditions = np.array([self.env.substrate * self.__params['InitiallyExtractedRes'],self.env.substrate * (1-self.__params['InitiallyExtractedRes'])])
@@ -1861,8 +1859,8 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         return maxrate*conc/(conc + km)
     
     def dynamics(self,t,x):
-        # growth rates now depending on MM kinetics, if extracted resources available
-        if x[self.numstrains] >= 0:     a    = self.MichaelisMenten(x[self.numstrains],self.growthrates,self.__params['GrowthKm'])
+        # growth rates depend linearly on amount of available nutrients
+        if x[self.numstrains] >= 0:     a    = self.growthrates * x[self.numstrains]
         else:                           a    = np.zeros(self.numstrains)
         
         # extraction dynamics depends on MM kinetics, if extractable resources available
@@ -1883,7 +1881,6 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         s += "*** Resource Extraction parameters ***" +r
         s += "  Extraction rate   " + self.arraystring(self.__params['ExtractionMaxRate']) +r
         s += "  Extraction Km     " + self.arraystring(self.__params['ExtractionKm']) +r
-        s += "  Growth Km         " + self.arraystring(self.__params['GrowthKm']) +r
         s += "  Initially Extracted Resources " +  str(self.__params['InitiallyExtractedRes']) +r
         return s
     
