@@ -33,10 +33,10 @@ args = parser.parse_args()
 try:
     g = pickle.load(open(args.infile,'rb'), encoding = 'bytes')
 except:
-    raise IOError,"Could not open and load from pickle file"
+    raise IOError("Could not open and load from pickle file")
 
 if not g.hasGrowthMatrix():
-    raise ValueError,"Loaded pickle instance does not contain growthmatrix"
+    raise ValueError("Loaded pickle instance does not contain growthmatrix")
 
 mx,my = g.growthmatrixgrid
 if args.dilutionmax is None:
