@@ -1854,10 +1854,6 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         # extractable resources, extracted resources
         self.otherinitialconditions = np.array([self.env.substrate * self.__params['InitiallyExtractedRes'],self.env.substrate * (1-self.__params['InitiallyExtractedRes'])])
         
-    
-    def MichaelisMenten(self,conc,maxrate,km):
-        return maxrate/(conc + km)
-    
     def dynamics(self,t,x):
         # growth rates depend linearly on amount of available nutrients
         if x[self.numstrains] >= 0:     a    = self.growthrates * x[self.numstrains]
@@ -1870,7 +1866,7 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         return np.concatenate([
             a * x[:self.numstrains],                                     # growth
             np.array([                                      
-                np.dot(extr - a/self.yieldfactors, x[:self.numstrains]), # resources are extracted and used for growth
+                extr - np.dot(a/self.yieldfactors, x[:self.numstrains]), # resources are extracted and used for growth
                 -np.sum(extr)                        # extractable resources decay
                 ])
             ])
