@@ -10,7 +10,7 @@ from skimage import measure
 import growthclasses as gc
 
 
-def write_contours_to_file(contours, filename, nlist, xlist = None):
+def write_contours_to_file(contours, filename, axis1, axis2):
     fp = open(filename,"w")
     for c in contours:
         for i in range(len(c)):
@@ -18,14 +18,10 @@ def write_contours_to_file(contours, filename, nlist, xlist = None):
             iy = int(np.floor(c[i,1]))
             px = c[i,0] - ix
             py = c[i,1] - iy
-            try:        cx = (1.-px)*nlist[ix] + px*nlist[ix+1]
-            except:     cx = nlist[ix]
-            if xlist is None:
-                try:    cy = (1.-py)*nlist[iy] + py*nlist[iy+1]
-                except: cy = nlist[iy]
-            else:
-                try:    cy = (1.-py)*xlist[iy] + py*xlist[iy+1]
-                except: cy = xlist[iy]
+            try:    cx = (1.-px)*axis1[ix] + px*axis1[ix+1]
+            except: cx = axis1[ix]
+            try:    cy = (1.-py)*axis2[iy] + py*axis2[iy+1]
+            except: cy = axis2[iy]
             fp.write('{:14.6e} {:14.6e}\n'.format(cx,cy))
         fp.write('\n')
     fp.close()
@@ -54,7 +50,7 @@ parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
 args=parser.parse_args()
 
 try:
-    g = pickle.load(open(args.infile))
+    g = pickle.load(open(args.infile,'rb'), encoding = 'bytes')
 except:
     raise IOError("Could not open and load from pickle file")
 
@@ -104,16 +100,16 @@ r1[sn1+sn2>0] = (sn1[sn1+sn2>0])/((sn1+sn2)[sn1+sn2>0])
 if args.verbose:
     sys.stdout.write('\n computing nullcline for fraction of strains\n')
 cont_xx = measure.find_contours(rr1 - r1,0)
-write_contours_to_file(cont_xx,args.baseoutfilename + '_X',nlist,xlist)
+write_contours_to_file(cont_xx,args.baseoutfilename + '_X',axis1,axis2)
 
 for dilution in dlist:
     if args.verbose:
         sys.stdout.write(' computing nullclines for dilution D = {:.4e}\n'.format(dilution))
     cont_nn = measure.find_contours((g1 + g2) * dilution - sn1 - sn2,0)
-    write_contours_to_file(cont_nn,args.baseoutfilename + '_N_D{:.3e}'.format(dilution),nlist,xlist)
+    write_contours_to_file(cont_nn,args.baseoutfilename + '_N_D{:.3e}'.format(dilution),axis1,axis2)
     if args.OutputSinglestrainNullclines:
         cont_n1 = measure.find_contours(g1 * dilution - sn1,0)
         cont_n2 = measure.find_contours(g2 * dilution - sn2,0)
-        write_contours_to_file(cont_n1,args.baseoutfilename + '_1_D{:.3e}'.format(dilution),nlist,xlist)
-        write_contours_to_file(cont_n2,args.baseoutfilename + '_2_D{:.3e}'.format(dilution),nlist,xlist)
+        write_contours_to_file(cont_n1,args.baseoutfilename + '_1_D{:.3e}'.format(dilution),axis1,axis2)
+        write_contours_to_file(cont_n2,args.baseoutfilename + '_2_D{:.3e}'.format(dilution),axis1,axis2)
 
