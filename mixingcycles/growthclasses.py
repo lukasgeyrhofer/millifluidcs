@@ -1845,7 +1845,7 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         
         self.__params = dict()
         self.__params['ExtractionMaxRate']     = np.array(kwargs.get('ExtractionMaxRate',     np.zeros(self.numstrains)),dtype=np.float)
-        self.__params['ExtractionKm']          = np.array(kwargs.get('ExtractionKm',          np.ones(self.numstrains)), dtype=np.float)
+        self.__params['ExtractionKm']          = np.array(kwargs.get('ExtractionKm',          100. * np.ones(self.numstrains)), dtype=np.float)
         self.__params['InitiallyExtractedRes'] =          kwargs.get('InitiallyExtractedRes', 0)
     
         assert len(self.__params['ExtractionMaxRate']) == self.numstrains, 'Extraction rates not defined for each strain'
@@ -1856,7 +1856,7 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         
     
     def MichaelisMenten(self,conc,maxrate,km):
-        return maxrate*conc/(conc + km)
+        return maxrate/(conc + km)
     
     def dynamics(self,t,x):
         # growth rates depend linearly on amount of available nutrients
@@ -1864,14 +1864,14 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         else:                           a    = np.zeros(self.numstrains)
         
         # extraction dynamics depends on MM kinetics, if extractable resources available
-        if x[self.numstrains+1] >= 0:   extr = self.MichaelisMenten(x[:self.numstrains],self.__params['ExtractionMaxRate'],self.__params['ExtractionKm'])
-        else:                           extr = np.zeros(self.numstrains)
+        if x[self.numstrains+1] >= 0:   extr = np.sum(x[:self.numstrains]*self.__params['ExtractionMaxRate']/(x[:self.numstrains] + self.__params['ExtractionKm'])
+        else:                           extr = 0
         
         return np.concatenate([
             a * x[:self.numstrains],                                     # growth
             np.array([                                      
                 np.dot(extr - a/self.yieldfactors, x[:self.numstrains]), # resources are extracted and used for growth
-                np.dot(-extr,x[:self.numstrains])                        # extractable resources decay
+                -np.sum(extr)                        # extractable resources decay
                 ])
             ])
     
