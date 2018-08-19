@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+
+
+'''
+==================================
+=  withindeme_Trajectory.py
+==================================
+
+    Compute the trajectory for a single inoculum size,
+    then output the whole trajectory over time
+    
+    Lukas Geyrhofer, l.geyrhofer@technion.ac.il
+
+'''
 
 import numpy as np
 import argparse

@@ -4,7 +4,7 @@
 
 '''
 ==================================
-=  GrowthMatrix_MakeReadable.py
+=  withindeme_ReadGrowthMatrix.py
 ==================================
 
     Reads a GrowthMatrix file generated before and
