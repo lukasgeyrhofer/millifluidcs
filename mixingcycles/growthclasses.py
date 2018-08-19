@@ -497,7 +497,6 @@ class GrowthDynamics(object):
         self.__growthmatrix = np.zeros((len(self.__growthmatrixgridX),len(self.__growthmatrixgridY),2))
         for i,n1 in enumerate(self.__growthmatrixgridX):
             for j,n2 in enumerate(self.__growthmatrixgridY):
-                print("computing ({},{})".format(n1,n2))
                 self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([n1,n2]))
 
     
@@ -936,7 +935,6 @@ class TimeIntegrator(object):
                     if o%self.__outputstep == 0:
                         self.__trajectory.append([self.__globaltime,self.x])
                 o += 1
-            print(self.__globaltime)
             return self.x
         else:
             raise NotImplementedError
@@ -1055,7 +1053,6 @@ class GrowthDynamicsODE(GrowthDynamics):
     # base growth function to use for time integrator dynamics
     def GrowthOwnRK4Integrator(self,initialcells = None):
         # compute whole trajectory, only output final cell numbers
-        print("integrator: " + " ".join([str(i) for i in initialcells]))
         tmp = self.TrajectoryOwnRK4Integrator(initialcells)
         return tmp[-1,:self.numstrains]
         
