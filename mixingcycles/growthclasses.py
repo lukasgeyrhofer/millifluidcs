@@ -21,15 +21,19 @@
 
 '''
 
+
+
 import numpy as np
 import argparse
-from scipy.stats import poisson
-import itertools
-import scipy.integrate as spint
-import inspect
 import sys
-
 import pickle
+import scipy.integrate as spint
+
+from scipy.stats import poisson
+from inspect     import getmembers as ins_getmembers
+from inspect     import isclass    as ins_isclass
+from itertools   import product    as it_product
+
 
 def RungeKutta4(func,xx,tt,step):
   # 4th order Runge-Kutta integration scheme
@@ -121,11 +125,13 @@ def getInoculumAxes(**kwargs):
     else:
         return nlist,nlist
 
+
 def getAbsoluteInoculumNumbers(coordinate,newcoordinates = False):
     if newcoordinates:
         return coordinate[0] * coordinate[1], coordinate[0] * (1 - coordinate[1])
     else:
         return coordinate[0],coordinate[1]
+
 
 def SeedingAverage(matrix,coordinates,axis1 = None, axis2 = None, mask = None, replaceNAN = True):
     dim = matrix.shape
@@ -141,8 +147,6 @@ def SeedingAverage(matrix,coordinates,axis1 = None, axis2 = None, mask = None, r
     
     return np.dot(p2,np.dot(p1,matrix0))
     
-
-
 
 def AssignGrowthDynamics(**kwargs):
     # pick GrowthDynamics class from below via argument string
@@ -185,7 +189,7 @@ def AssignGrowthDynamics(**kwargs):
     if 'ParameterList' in params.keys():
         del params['ParameterList']
     
-    for name,dyn in inspect.getmembers(sys.modules['growthclasses'],inspect.isclass):
+    for name,dyn in ins_getmembers(sys.modules['growthclasses'],ins_isclass):
         if name == 'GrowthDynamics' + GrowthDynamics.strip():
             return dyn(**params)
     
@@ -194,7 +198,7 @@ def AssignGrowthDynamics(**kwargs):
 
 
 def AddGrowthDynamicsArguments(p):
-    c = [name[14:] for name,obj in inspect.getmembers(sys.modules['growthclasses'],inspect.isclass) if name[:14] == 'GrowthDynamics']
+    c = [name[14:] for name,obj in ins_getmembers(sys.modules['growthclasses'],ins_isclass) if name[:14] == 'GrowthDynamics']
     pgd = p.add_argument_group(description = "==== GrowthDynamics ====")
     pgd.add_argument("-G","--GrowthDynamics",choices = c, default = '')
     pgd.add_argument("-P","--ParameterList",nargs="*",default = [])
@@ -321,6 +325,25 @@ class Environment(object):
     
     def getParams():
         return {"substrate":self.substrate,"dilution":self.dilution,"mixingtime":self.mixingtime,"numdroplets":self.numdroplets}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class GrowthDynamics(object):
@@ -538,7 +561,7 @@ class GrowthDynamics(object):
     
     def getGrowthMultipleStrains(self,size,nstrains=2):
         g = [np.zeros(np.repeat(size,nstrains)) for i in range(nstrains)]
-        for ic in itertools.product(range(size),repeat=nstrains):
+        for ic in it_product(range(size),repeat=nstrains):
             tmpgrowth = self.Growth(ic)
             for i in range(nstrains):
                 g[i][ic] = tmpgrowth[i]
@@ -712,8 +735,6 @@ class GrowthDynamics(object):
                 raise ValueError("Growthmatrix not yet computed")
             else:
                 return (self.__growthmatrixgridX,self.__growthmatrixgridY)
-        #else:
-            #super(GrowthDynamics,self).__getattr__(key,value)
 
 
     def __setattr__(self,key,value):
@@ -791,42 +812,20 @@ class GrowthDynamics(object):
             # current implementation
             self.__growthmatrixgridX,self.__growthmatrixgridY = state[2]
 
-class StochasticGrowthDynamics(GrowthDynamics):
-    def __init__(self,**kwargs):
-        GrowthDynamics.__init__(self,kwargs)
-        self.__lastgrowthtime = np.nan
 
-    def __getNextDivision(self,population):
-        totalrate = np.dot(population,self.growthrates[:len(population)])
-        return np.random.choice(len(population),p = population*self.growthrates[:len(population)]/totalrate),np.random.exponential(1./totalrate)
-    
-    def checkInitialCells(self, initialcells = None):
-        return np.array(GrowthDynamics.checkInitialCells(initialcells),dtype=int)
-    
-    def Growth(self,initialcells = None):
-        n = self.checkInitialCells(self,initialcells)
-        t = 0
-        s = self.env.substrate
-        while True:
-            i,dt  = self.__getNextDivision(n)
-            
-            if s-self.yieldfactor[i] < 0: break
-            if t+dt > self.mixingtime: break
 
-            t += dt
-            n[i] += 1
-            s -= self.yieldrates[i]
-        self.__lastgrowthtime = min(t,self.env.mixingtime)
-        return n
-    
-    def __getattr__(self,key):
-        if key == "lastgrowthtime":
-            if self.__lastgrowthtime is np.nan:
-                raise ValueError("StochasticGrowthDynamics.Growth(initialcells) was not yet called")
-            else:
-                return self.__lastgrowthtime
-        else:
-            super(StochasticGrowthDynamics,self).__getattr__(self,key)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -999,6 +998,8 @@ class TimeIntegrator(object):
         if int(key) < len(self.x):
             return self.x[int(key)]
 
+
+
 class GrowthDynamicsODE(GrowthDynamics):
     def __init__(self,numstrains = None, **kwargs):
         super(GrowthDynamicsODE,self).__init__(numstrains = numstrains,**kwargs)
@@ -1105,6 +1106,73 @@ class GrowthDynamicsODE(GrowthDynamics):
 
 
 
+class StochasticGrowthDynamics(GrowthDynamics):
+    def __init__(self,**kwargs):
+        GrowthDynamics.__init__(self,kwargs)
+        self.__lastgrowthtime = np.nan
+
+    def __getNextDivision(self,population):
+        totalrate = np.dot(population,self.growthrates[:len(population)])
+        return np.random.choice(len(population),p = population*self.growthrates[:len(population)]/totalrate),np.random.exponential(1./totalrate)
+    
+    def checkInitialCells(self, initialcells = None):
+        return np.array(GrowthDynamics.checkInitialCells(initialcells),dtype=int)
+    
+    def Growth(self,initialcells = None):
+        n = self.checkInitialCells(self,initialcells)
+        t = 0
+        s = self.env.substrate
+        while True:
+            i,dt  = self.__getNextDivision(n)
+            
+            if s-self.yieldfactor[i] < 0: break
+            if t+dt > self.mixingtime: break
+
+            t += dt
+            n[i] += 1
+            s -= self.yieldrates[i]
+        self.__lastgrowthtime = min(t,self.env.mixingtime)
+        return n
+    
+    def __getattr__(self,key):
+        if key == "lastgrowthtime":
+            if self.__lastgrowthtime is np.nan:
+                raise ValueError("StochasticGrowthDynamics.Growth(initialcells) was not yet called")
+            else:
+                return self.__lastgrowthtime
+        else:
+            super(StochasticGrowthDynamics,self).__getattr__(self,key)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class GrowthDynamicsPublicGoods(GrowthDynamicsODE):
     def __init__(self,numstrains = None,**kwargs):
         
@@ -1207,7 +1275,6 @@ class GrowthDynamicsPublicGoods(GrowthDynamicsODE):
     
                             
     
-
 
 
 class GrowthDynamicsAntibiotics(GrowthDynamicsODE):
