@@ -25,7 +25,7 @@ args = parser.parse_args()
 
 if args.infile is None:
     g = gc.AssignGrowthDynamics(**vars(args))
-    if args.verbose:print(g.ParameterString())
+    if args.verbose:print(g)
     g.ComputeGrowthMatrix(size = args.maxsize,step = args.step)
 
 else:
@@ -33,7 +33,7 @@ else:
         g = pickle.load(open(args.infile,'rb'),encoding='bytes')
     except:
         raise IOError("could not open pickle file")
-    if args.verbose:print(g.ParameterString())
+    if args.verbose:print(g)
     if g.hasGrowthMatrix():
         g.ExtendGrowthMatrix(size = args.maxsize)
     else:

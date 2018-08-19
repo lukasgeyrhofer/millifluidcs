@@ -497,6 +497,7 @@ class GrowthDynamics(object):
         self.__growthmatrix = np.zeros((len(self.__growthmatrixgridX),len(self.__growthmatrixgridY),2))
         for i,n1 in enumerate(self.__growthmatrixgridX):
             for j,n2 in enumerate(self.__growthmatrixgridY):
+                print("computing ({},{})".format(n1,n2))
                 self.__growthmatrix[i,j] = self.Growth(initialcells = np.array([n1,n2]))
 
     
@@ -834,25 +835,17 @@ class StochasticGrowthDynamics(GrowthDynamics):
 class TimeIntegrator(object):
     # General forward integration of dynamics with Runge-Kutta method of 4th order
     # allows definition of multiple endconditions, currently implemented maximum time and one of the populations reaching zero
-    def __init__(self,step = 1e-3,requiredpositive = True,initialconditions = None,dynamics = None,globaltime = 0,outputstep = 100,**kwargs):
-        self.__step = step
-        self.__outputstep = int(outputstep)
-
-        self.params = kwargs.get('params',None)
+    def __init__(self,requiredpositive = True,dynamics = None,**kwargs):
         
-        self.have_start_values = False
-        if not initialconditions is None:
-            self.x   = np.array(initialconditions)
-            self.have_start_values = True
+        self.__step       = float(kwargs.get("TimeIntegratorStep",1e-3))
+        self.__outputstep = int(kwargs.get("TimeIntegratorOutput",100))
 
         if dynamics is None:
             raise NotImplementedError
         else:
             self.dyn = dynamics
-        
-        #assert len(self.x) == len(self.dyn(0,self.x)), "Dimensions of initial conditions and dynamics do not match"
             
-        self.__globaltime = globaltime        
+        self.__globaltime = kwargs.get("GlobalTime",0)
         self.__EndConditions = list()
         self.__triggeredEndConditions = list()
         
@@ -862,6 +855,7 @@ class TimeIntegrator(object):
                                                                             # if requiredpositive is true, set everything below this threshold to 0
         
         self.__trajectory = None
+        self.have_start_values = False
     
     def RungeKutta4(self,xx,tt):
         # 4th order Runge-Kutta integration scheme
@@ -871,7 +865,7 @@ class TimeIntegrator(object):
         k4 = self.__step * self.dyn( tt+self.__step   , xx+k3   )
         ret = xx + (k1+2*k2+2*k3+k4)/6.
         if self.__requiredpositive:
-            ret[ret < self.__minimalpositivevalue] = 0
+            ret[ret <= self.__minimalpositivevalue] = 0
         return ret
     
     
@@ -942,6 +936,7 @@ class TimeIntegrator(object):
                     if o%self.__outputstep == 0:
                         self.__trajectory.append([self.__globaltime,self.x])
                 o += 1
+            print(self.__globaltime)
             return self.x
         else:
             raise NotImplementedError
@@ -1001,8 +996,6 @@ class TimeIntegrator(object):
             return self.x
         elif key == "time":
             return self.__globaltime
-        #else:
-            #super(TimeIntegrator,self).__getattr__(self,key)
     
     def __getitem__(self,key):
         if int(key) < len(self.x):
@@ -1061,13 +1054,8 @@ class GrowthDynamicsODE(GrowthDynamics):
 
     # base growth function to use for time integrator dynamics
     def GrowthOwnRK4Integrator(self,initialcells = None):
-        #ic = self.checkInitialCells(initialcells)
-        #ic = np.concatenate([ic,self.otherinitialconditions])
-        #self.integrator.ResetInitialConditions(ic)
-        #final = self.integrator.IntegrateToEndConditions()
-        #return final[:self.numstrains]
-        
         # compute whole trajectory, only output final cell numbers
+        print("integrator: " + " ".join([str(i) for i in initialcells]))
         tmp = self.TrajectoryOwnRK4Integrator(initialcells)
         return tmp[-1,:self.numstrains]
         
@@ -1075,31 +1063,6 @@ class GrowthDynamicsODE(GrowthDynamics):
 
     # should also work for more complicated dynamics implemented in classes inherited from this one
     def TrajectoryOwnRK4Integrator(self,initialconditions,TimeOutput = False):
-        # helper routine
-        #def AddTimeToOutputVector(x,t,TimeOutput):
-            #if TimeOutput:
-                #return np.concatenate([np.array([t]),x])
-            #else:
-                #return x
-        
-        ## set initial conditions
-        #initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
-        #if len(initialconditions) >= self.numstrains:
-            #initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
-        #self.integrator.ResetInitialConditions(initialconditions)
-        
-        ## generate first entry in output data
-        #r = list()
-        #r.append(AddTimeToOutputVector(self.integrator.x,0,TimeOutput))
-        #i = 0
-        #while not self.integrator.HasEnded():
-            #t = self.integrator.IntegrationStep(self.TimeIntegratorStep)
-            #i+=1
-            #if i%self.TimeIntegratorOutput == 0:
-                #r.append(AddTimeToOutputVector(self.integrator.x,t,TimeOutput))
-        ## return output
-        #return np.vstack(r)
-
         initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
         if len(initialconditions) >= self.numstrains:
             initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
@@ -1143,60 +1106,6 @@ class GrowthDynamicsODE(GrowthDynamics):
         return traj[-1,:self.numstrains]
     
 
-#class GrowthDynamicsTimeIntegrator(GrowthDynamics):
-    ## deprecated
-    
-    #def __init__(self,numstrains = None, **kwargs):
-        #if kwargs.get("mixingtime") is None:
-            #kwargs["mixingtime"] = 24.
-        #super(GrowthDynamicsTimeIntegrator,self).__init__(numstrains = numstrains,**kwargs)
-
-        #self.dyn = TimeIntegrator(dynamics = self.f,initialconditions = np.ones(self.numstrains + 1), params = None)
-        #self.dyn.SetEndCondition("maxtime",self.env.mixingtime)
-        
-        ##self.dyn.SetEndCondition("reachzero",self.numstrains)
-
-        #self.x = np.zeros(self.numstrains)
-        #self.otherinitialconditions = np.array([self.env.substrate])
-
-        
-    ## simplest dynamics of pure growth and resource use
-    ## implemented already in much faster way in parent class
-    #def f(self,t,x,params):
-        #return np.concatenate([ self.growthrates * x[:self.numstrains],
-                                #np.array([ -np.sum(self.growthrates / self.yieldfactors * x[:self.numstrains]) ])
-                              #])
-    
-    ## base growth function to use for time integrator dynamics
-    #def Growth(self,initialcells = None):
-        #ic = self.checkInitialCells(initialcells)
-        #ic = np.concatenate([ic,self.otherinitialconditions])
-        #self.dyn.ResetInitialConditions(ic)
-        #final = self.dyn.IntegrateToEndConditions()
-        #print ic,final
-        #return final[:self.numstrains]
-
-
-    ## should also work for more complicated dynamics implemented in classes inherited from this one
-    #def Trajectory(self,timestep,initialconditions):
-        ## helper routine
-        #def AddTimeToOutputVector(x,t):
-            #return np.array([np.concatenate([np.array([t]),x])],dtype=np.float)
-        
-        ## set initial conditions
-        #initialconditions[:self.numstrains] = self.checkInitialCells(initialconditions[:self.numstrains])
-        #if len(initialconditions) >= self.numstrains:
-            #initialconditions = np.concatenate([initialconditions,self.otherinitialconditions])
-        #self.dyn.ResetInitialConditions(initialconditions)
-        
-        ## generate first entry in output data
-        #r = AddTimeToOutputVector(self.dyn.x,0)
-        #while not self.dyn.HasEnded():
-            #t = self.dyn.IntegrationStep(timestep)
-            #r = np.concatenate([r,AddTimeToOutputVector(self.dyn.x,t)],axis=0)
-        
-        ## return output
-        #return r
 
 
 class GrowthDynamicsPublicGoods(GrowthDynamicsODE):
