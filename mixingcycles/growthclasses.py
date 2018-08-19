@@ -840,7 +840,6 @@ class TimeIntegrator(object):
 
         self.params = kwargs.get('params',None)
         
-        
         self.have_start_values = False
         if not initialconditions is None:
             self.x   = np.array(initialconditions)
@@ -859,6 +858,8 @@ class TimeIntegrator(object):
         
         self.__extinctionthresholds = dict()
         self.__requiredpositive = requiredpositive
+        self.__minimalpositivevalue = kwargs.get('MinimalPositiveValue',0)  # can introduce hard-cutoff, if values get too small
+                                                                            # if requiredpositive is true, set everything below this threshold to 0
         
         self.__trajectory = None
     
@@ -870,7 +871,7 @@ class TimeIntegrator(object):
         k4 = self.__step * self.dyn( tt+self.__step   , xx+k3   )
         ret = xx + (k1+2*k2+2*k3+k4)/6.
         if self.__requiredpositive:
-            ret[ret < 0] = 0
+            ret[ret < self.__minimalpositivevalue] = 0
         return ret
     
     
@@ -1024,7 +1025,7 @@ class GrowthDynamicsODE(GrowthDynamics):
         
         if self.IntegrationMethod.upper() == 'OWNRK4':
             # use TimeIntegrator class defined above
-            self.integrator = TimeIntegrator(dynamics = self.dynamics,requiredpositive = True)
+            self.integrator = TimeIntegrator(dynamics = self.dynamics,requiredpositive = True,**kwargs)
             self.Growth     = self.GrowthOwnRK4Integrator
             self.Trajectory = self.TrajectoryOwnRK4Integrator
             
@@ -1856,11 +1857,11 @@ class GrowthDynamicsResourceExtraction(GrowthDynamicsODE):
         
     def dynamics(self,t,x):
         # growth rates depend linearly on amount of available nutrients
-        if x[self.numstrains] >= 0:     a    = self.growthrates * x[self.numstrains]
+        if x[self.numstrains] > 0:      a    = self.growthrates * x[self.numstrains]
         else:                           a    = np.zeros(self.numstrains)
         
         # extraction dynamics depends on MM kinetics, if extractable resources available
-        if x[self.numstrains+1] >= 0:   extr = np.sum(x[:self.numstrains]*self.__params['ExtractionMaxRate']/(x[:self.numstrains] + self.__params['ExtractionKm']))
+        if x[self.numstrains+1] > 0:    extr = np.sum(x[:self.numstrains]*self.__params['ExtractionMaxRate']/(x[:self.numstrains] + self.__params['ExtractionKm']))
         else:                           extr = 0
         
         return np.concatenate([
