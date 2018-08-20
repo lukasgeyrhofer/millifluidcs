@@ -31,12 +31,13 @@ def main():
 
     parser = gc.AddDilutionParameters(parser)
     
-    parser_flowmap = parser.add_argument_group(description = "==== Lattice parameters ====")
-    parser_flowmap_startingconditions = parser_flowmap.add_mutually_exclusive_group()
-    parser_flowmap_startingconditions.add_argument("-n","--maxIC",type=float,default=40)
-    parser_flowmap_startingconditions.add_argument("-N","--initialcoordinatesfile",default=None)
-    parser_flowmap.add_argument("-s","--stepIC",type=float,default=2)
-    parser_flowmap.add_argument("-l","--trajectorylength",type=int,default=20)
+    parser_lattice = parser.add_argument_group(description = "==== Lattice parameters ====")
+    parser_lattice.add_argument("-A","--AbsoluteCoordinates",default=False,action="store_true",help="Use (n1,n2) instead of (n,x) as coordinates")
+    parser_lattice_startingconditions = parser_lattice.add_mutually_exclusive_group()
+    parser_lattice_startingconditions.add_argument("-N","--maxInoculum",type=float,default=40)
+    parser_lattice_startingconditions.add_argument("-I","--initialcoordinatesfile",default=None)
+    parser_lattice.add_argument("-n","--stepInoculum",type=float,default=2)
+    parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
 
     args = parser.parse_args()
 
@@ -45,19 +46,19 @@ def main():
     dlist = gc.getDilutionList(**vars(args))
 
     if args.initialcoordinatesfile is None:
-        nlist = np.arange(start = 0,stop = args.maxIC,step = args.stepIC)
-        coordinates = list(itertools.product(nlist,repeat=2))
+        axis1,axis2 = gc.getInoculumAxes(**vars(kwargs))
+        coordinates = list(itertools.product(axis1,axis2))
     else:
         try:
             fp_coords = open(args.initialcoordinatesfile)
         except:
             raise IOError("could not open file '{}' to load coordinates".format(args.initialcoordinatesfile))
-        coordinates = list()
+        initialcoordinates = list()
         for line in fp_coords.readlines():
             try:
                 values = np.array(line.split(),dtype=np.float)
                 if len(values) >= 2:
-                    coordinates.append(values[:2])
+                    initialcoordinates.append(gc.getAbsoluteInoculumNumbers(values[:2],args.AbsoluteCoordinates))
             except:
                 continue
             fp_coords.close()
@@ -74,17 +75,16 @@ def main():
         if args.verbose:
             sys.stderr.write("# computing trajectories for D = {:e}\n".format(dilution))
         fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
-        for icx,icy in coordinates:
-            x = icx
-            y = icy
-            fp.write("{} {}\n".format(x,y))
+        for ic1,ic2 in initialcoordinates:
+            n1 = ic1
+            n2 = ic2
+            fp.write("{} {}\n".format(*gc.getCoordinatesFromAbsoluteInoculum([n1,n2],args.AbsoluteCoordinates)))
             for i in range(args.trajectorylength):
-                px = gc.PoissonSeedingVectors(mx,x)[0]
-                py = gc.PoissonSeedingVectors(my,y)[0]
-                x = np.dot(py,np.dot(px,gm1))*dilution
-                y = np.dot(py,np.dot(px,gm2))*dilution
-                fp.write("{} {}\n".format(x,y))
-                if (x==0) and (y==0):
+                next1 = gc.SeedingAverage(gm1,[n1,n2]) * dilution
+                next2 = gc.SeedingAverage(gm2,[n1,n2]) * dilution
+                n1,n2 = next1,next2
+                fp.write("{} {}\n".format(*gc.getCoordinatesFromAbsoluteInoculum([n1,n2],args.AbsoluteCoordinates)))
+                if (n1==0) and (n2==0):
                     break
             fp.write("\n")
         fp.close()

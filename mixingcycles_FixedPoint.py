@@ -134,7 +134,7 @@ def main():
         outputstring  = "{:13.6e} {:8.6f} {:8.6f} {:13.6e} {:13.6e} {:4d}".format(dilution,g.growthrates[1]/g.growthrates[0], g.yieldfactors[1]/g.yieldfactors[0], n[0], n[1], stepcount)
         outputstring += " {:13.6e} {:13.6e}".format(re(w[0]),re(w[1]))
         if args.complexOutput:
-            # have yet to find complex eigenvalues
+            # have yet to find complex eigenvalues (NB: they exist for antibiotics dynamics)
             outputstring += " {:13.6e} {:13.6e}".format(im(w[0]),im(w[1]))
 
         if args.printeigenvectors:

@@ -55,7 +55,7 @@ def main():
             for j,a2 in enumerate(axis2):
                 next1 = gc.SeedingAverage(gm1, gc.getAbsoluteInoculumNumbers([a1,a2],args.AbsoluteCoordinates)) * dilution
                 next2 = gc.SeedingAverage(gm2, gc.getAbsoluteInoculumNumbers([a1,a2],args.AbsoluteCoordinates)) * dilution
-                fp.write('{} {} {} {}\n'.format(a1,a2,*gc.getCoordinatesFromAbsoluteInoculum([next1,next2])))
+                fp.write('{} {} {} {}\n'.format(a1,a2,*gc.getCoordinatesFromAbsoluteInoculum([next1,next2],args.AbsoluteCoordinates)))
             fp.write('\n')
         fp.close()
                 

@@ -155,7 +155,12 @@ def getCoordinatesFromAbsoluteInoculum(inoculum,absolutecoordinates = False):
     if absolutecoordinates:
         return inoculum[0],inoculum[1]
     else:
-        return inoculum[0] * inoculum[1], inoculum[0] * (1. - inoculum[1])
+        n = float(inoculum[0] + inoculum[1])
+        if n>0:
+            x = inoculum[0]/n
+        else:
+            x = 0
+        return n,x
 
 
 def getDilutionList(**kwargs):
