@@ -71,6 +71,23 @@ def AddNRParameters(p):
     return p
 
 
+def AddGrowthDynamicsArguments(p):
+    c = [name[14:] for name,obj in ins_getmembers(sys.modules['growthclasses'],ins_isclass) if name[:14] == 'GrowthDynamics']
+    pgd = p.add_argument_group(description = "==== GrowthDynamics ====")
+    pgd.add_argument("-G","--GrowthDynamics",choices = c, default = '')
+    pgd.add_argument("-P","--ParameterList",nargs="*",default = [])
+    return p
+
+
+def AddDilutionParameters(p):
+    parser_dilution = p.add_argument_group(description = "==== Dilution values ====")
+    parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
+    parser_dilution.add_argument("-D","--dilutionmax",type=float,default=None)
+    parser_dilution.add_argument("-K","--dilutionsteps",type=int,default=10)
+    parser_dilution.add_argument("-L","--dilutionlogscale",default = False, action = "store_true")
+    return p
+
+
 def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
     if isinstance(n,(float,np.float,np.float64,int)):
         n = np.array([n],dtype=float)
@@ -93,8 +110,9 @@ def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
     else:
         return px
 
-
 def PointSeedingVectors(m,n):
+    # seeding without variance
+    # only interpolate between neighboring inoculum sizes to allow for fractional numbers
     if isinstance(n,(float,np.float,np.float64,int)):
         n = np.array([n],dtype=float)
     px = np.zeros((len(n),len(m)))
@@ -114,11 +132,11 @@ def PointSeedingVectors(m,n):
 
 
 def getInoculumAxes(**kwargs):
-    newcoord  = kwargs.get("newcoordinates",False)
+    abscoord  = kwargs.get("AbsoluteCoordinates",False)
     nmax      = kwargs.get("maxInoculum",50)
     nstep     = kwargs.get("stepInoculum",2)
     nlist     = np.arange(start = 0,stop = nmax + .5*nstep,step = nstep)
-    if newcoord:
+    if not abscoord:
         xstep = kwargs.get("stepFraction",0.05)
         xlist = np.arange(start = 0,stop = 1 + .5*xstep,step = xstep)
         return nlist,xlist
@@ -126,11 +144,34 @@ def getInoculumAxes(**kwargs):
         return nlist,nlist
 
 
-def getAbsoluteInoculumNumbers(coordinate,newcoordinates = False):
-    if newcoordinates:
+def getAbsoluteInoculumNumbers(coordinate,absolutecoordinates = False):
+    if not absolutecoordinates:
         return coordinate[0] * coordinate[1], coordinate[0] * (1 - coordinate[1])
     else:
         return coordinate[0],coordinate[1]
+
+
+def getCoordinatesFromAbsoluteInoculum(inoculum,absolutecoordinates = False):
+    if absolutecoordinates:
+        return inoculum[0],inoculum[1]
+    else:
+        return inoculum[0] * inoculum[1], inoculum[0] * (1. - inoculum[1])
+
+
+def getDilutionList(**kwargs):
+    dilutionmin = kwargs.get("dilutionmin",1e-6)
+    dilutionmax = kwargs.get("dilutionmax",None)
+    dilutionlogscale = kwargs.get("dilutionlogscale",False)
+    dilutionsteps = kwargs.get("dilutionsteps",10)
+    
+    if dilutionmax is None:
+        dlist = np.array([dilutionmin])
+    else:
+        if dilutionlogscale:
+            dlist = np.power(10,np.linspace(start = np.log10(dilutionmin), stop = np.log10(dilutionmax), num = dilutionsteps))
+        else:
+            dlist = np.linspace(start = dilutionmin, stop = dilutionmax, num = dilutionsteps)
+    return dlist
 
 
 def SeedingAverage(matrix,coordinates,axis1 = None, axis2 = None, mask = None, replaceNAN = True):
@@ -197,12 +238,24 @@ def AssignGrowthDynamics(**kwargs):
     raise NotImplementedError("'GrowthDynamics{}' not yet implemented.".format(GrowthDynamics.strip()))
 
 
-def AddGrowthDynamicsArguments(p):
-    c = [name[14:] for name,obj in ins_getmembers(sys.modules['growthclasses'],ins_isclass) if name[:14] == 'GrowthDynamics']
-    pgd = p.add_argument_group(description = "==== GrowthDynamics ====")
-    pgd.add_argument("-G","--GrowthDynamics",choices = c, default = '')
-    pgd.add_argument("-P","--ParameterList",nargs="*",default = [])
-    return p
+
+def LoadGM(**kwargs):
+    infile = kwargs.get("infile",None)
+    verbose = kwargs.get("verbose",False)
+    try:
+        g = pickle.load(open(infile,'rb'), encoding = 'bytes')
+    except:
+        raise IOError("could not load growthmatrix from pickle file '{}'".format(infile))
+    
+    if not g.hasGrowthMatrix:
+        raise ValueError("loaded pickle instance does not contain growthmatrix")
+    
+    if verbose:
+        sys.stderr.write("Loaded growthmatrix from file '{}'\n".format(infile))
+        sys.stderr.write("Dynamics based on parameters:\n")
+        sys.stderr.write(str(g))
+    
+    return g
 
 
 class MicrobialStrain(object):

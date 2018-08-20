@@ -21,23 +21,15 @@ import pickle
 import growthclasses as gc
 
 
-def re(x):
-    return float(np.real(x))
-
-
-def im(x):
-    return float(np.imag(x))
+def re(x):  return float(np.real(x))
+def im(x):  return float(np.imag(x))
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i","--infile",help = "Pickle-file with stored parameters and growthmatrix")
 
-    parser_dilution = parser.add_argument_group(description = "==== Parameters for dilution values ====")
-    parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
-    parser_dilution.add_argument("-D","--dilutionmax",type=float,default=None)
-    parser_dilution.add_argument("-K","--dilutionsteps",type=int,default=10)
-    parser_dilution.add_argument("-L","--dilutionlogscale",default = False, action = "store_true")
+    parser = gc.AddDilutionParameters(parser)
 
     parser_algorithm = parser.add_argument_group(description = "==== Algorithm parameters ====")
     parser_algorithm.add_argument("-N","--newtonraphson",action="store_true",default=False,help = "Plain iteration of dynamics or try to use NR to estimate fixed point")
@@ -55,24 +47,13 @@ def main():
     args = parser.parse_args()
 
 
-    try:
-        g = pickle.load(open(args.infile,'rb'), encoding = 'bytes')
-    except:
-        raise IOError("could not open pickle file")
-
+    g     = gc.LoadGM(**vars(args))
+    dlist = gc.getDilutionList(**vars(args))
 
     gm1   = g.growthmatrix[:,:,0]
     gm2   = g.growthmatrix[:,:,1]
     mx,my = g.growthmatrixgrid
 
-
-    if args.dilutionmax is None:
-        dlist = np.array([args.dilutionmin])
-    else:
-        if args.dilutionlogscale:
-            dlist = np.power(10,np.linspace(start = np.log10(args.dilutionmin),stop = np.log10(args.dilutionmax), num = args.dilutionsteps))
-        else:
-            dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
 
     for i,dilution in enumerate(dlist):
 

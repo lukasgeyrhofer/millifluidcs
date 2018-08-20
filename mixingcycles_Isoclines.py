@@ -41,7 +41,7 @@ def write_contours_to_file(contours, filename, axis1, axis2):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser_io = parser.add_argument_group(description = "==== I/O ====")
+    parser_io = parser.add_argument_group(description = "==== I/O parameters ====")
     parser_io.add_argument("-i","--infile",required=True)
     parser_io.add_argument("-o","--baseoutfilename",default="out")
     parser_io.add_argument("-v","--verbose",action="store_true",default=False)
@@ -55,35 +55,18 @@ def main():
 
 
     parser_lattice = parser.add_argument_group(description = "==== Lattice parameters ====")
-    parser_lattice.add_argument("-C","--newcoordinates",default=False,action="store_true",help="Use (n,x) instead of (n1,n2) as coordinates")
+    parser_lattice.add_argument("-A","--AbsoluteCoordinates",default=False,action="store_true",help="Use (n1,n2) instead of (n,x) as coordinates")
     parser_lattice.add_argument("-N","--maxInoculum",type=float,default=40)
     parser_lattice.add_argument("-n","--stepInoculum",type=float,default=2)
     parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
 
     args=parser.parse_args()
 
-    try:
-        g = pickle.load(open(args.infile,'rb'), encoding = 'bytes')
-    except:
-        raise IOError("Could not open and load from pickle file")
-
-    if not g.hasGrowthMatrix():
-        raise ValueError("Loaded pickle instance does not contain growthmatrix")
-
-    if args.verbose:
-        sys.stdout.write(g.ParameterString())
-        sys.stdout.write("\n generating matrices\n")
-
-    if args.dilutionmax is None:
-        dlist = np.array([args.dilutionmin])
-    else:
-        if args.dilutionlogscale:
-            dlist = np.power(10,np.linspace(start = np.log10(args.dilutionmin),stop = np.log10(args.dilutionmax), num = args.dilutionsteps))
-        else:
-            dlist = np.linspace(start = args.dilutionmin,stop = args.dilutionmax,num = args.dilutionsteps)
+    g     = gc.LoadGM(**vars(args))
+    dlist = gc.getDilutionList(**vars(args))
 
     # get new axes, which depends on parameters above (in lattice parameter group)
-    axis1,axis2 = gc.getInoculumAxes(**vars(args)) # either (n1,n2) or [ (n,x) if args.newcoordinates == True ]
+    axis1,axis2 = gc.getInoculumAxes(**vars(args)) # either (n,x) or [ (n1,n2) if args.AbsoluteCoordinates == True ]
     shape       = (len(axis1),len(axis2))
 
     # loaded from pickle file
@@ -102,7 +85,7 @@ def main():
     # get all averages and store them in the appropriate matrices
     for i,a1 in enumerate(axis1):
         for j,a2 in enumerate(axis2):
-            sn1[i,j],sn2[i,j] = gc.getAbsoluteInoculumNumbers([a1,a2],args.newcoordinates)
+            sn1[i,j],sn2[i,j] = gc.getAbsoluteInoculumNumbers([a1,a2],args.AbsoluteCoordinates)
             g1[i,j] = gc.SeedingAverage(gm1, [sn1[i,j],sn2[i,j]])
             g2[i,j] = gc.SeedingAverage(gm2, [sn1[i,j],sn2[i,j]])
 
