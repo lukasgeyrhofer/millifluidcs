@@ -274,7 +274,7 @@ class MicrobialStrain(object):
     so far, we implemented:
         * growth rate
         * yield factor
-        * death rate
+        * death rate        # actually, never used in any of the within-deme dynamics
         
     '''
     def __init__(self,growthrate = 1.,yieldfactor = 1.,deathrate = 0.):
@@ -329,9 +329,9 @@ class Environment(object):
     Class to store environmental parameters
     '''
     def __init__(self,substrate = 1e4,dilution = 1.,mixingtime = 10.,numdroplets = 1000):
-        self.substrate   = substrate
-        self.dilution    = dilution
-        self.mixingtime  = mixingtime
+        self.substrate   = substrate    # uses setattr/getattr below
+        self.dilution    = dilution     # ^^
+        self.mixingtime  = mixingtime   # ^^
         if not numdroplets is None:
             self.numdroplets = numdroplets
             self.__usenumdroplets = True

@@ -119,11 +119,9 @@ def main():
                 fp_values.write('{} {} {} {}\n'.format(x,y,g.growthmatrix[x,y,0],g.growthmatrix[x,y,1]))
             fp_values.write('\n')
     elif isinstance(g.growthmatrixgrid,(tuple,list,np.ndarray)):
-        gridx = g.growthmatrixgrid[0]
-        gridy = g.growthmatrixgrid[1]
-        for i in range(len(gridx)):
-            for j in range(len(gridy)):
-                fp_values.write('{} {} {} {}\n'.format(gridx[i],gridy[j],g.growthmatrix[i,j,0],g.growthmatrix[i,j,1]))
+        for i,x in enumerate(g.growthmatrixgrid[0]):
+            for j,y in enumerate(g.growthmatrixgrid[1]):
+                fp_values.write('{} {} {} {}\n'.format(x,y,g.growthmatrix[i,j,0],g.growthmatrix[i,j,1]))
             fp_values.write('\n')
     else:
         raise NotImplementedError
