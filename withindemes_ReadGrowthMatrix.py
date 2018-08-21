@@ -33,7 +33,7 @@ import sys
 import growthclasses as gc
 
 def array_to_str(x):
-    return ' '.join(['{:e}'.format(y) for y in x])
+    return ' '.join(['{:e}'.format(float(y)) for y in x])
 
 def main():
     parser = argparse.ArgumentParser()
