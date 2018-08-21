@@ -245,8 +245,9 @@ def AssignGrowthDynamics(**kwargs):
 
 
 def LoadGM(**kwargs):
-    infile = kwargs.get("infile",None)
+    infile  = kwargs.get("infile",None)
     verbose = kwargs.get("verbose",False)
+    
     try:
         g = pickle.load(open(infile,'rb'), encoding = 'bytes')
     except:

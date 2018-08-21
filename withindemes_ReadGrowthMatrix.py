@@ -42,16 +42,11 @@ def main():
     parser.add_argument("-q", "--quiet",   default = False, action = "store_true")
     args = parser.parse_args()
 
-    try:
-        g = pickle.load(open(args.infile,'rb'),encoding = 'bytes')
-    except:
-        raise IOError("Could not open pickle file")
-
-    
+    g = gc.LoadGM(**vars(args))
     
     if not args.quiet:
         # output of all parameters
-        
+        # default to stderr
         fp_params = sys.stderr
         
         fp_params.write("==================================================================\n")
@@ -114,16 +109,19 @@ def main():
         fp_values = sys.stdout
     
     if isinstance(g.growthmatrixgrid,int):
+        # old implementation, still here for these old growth matrices
         for x in range(g.growthmatrixgrid):
             for y in range(g.growthmatrixgrid):
                 fp_values.write('{} {} {} {}\n'.format(x,y,g.growthmatrix[x,y,0],g.growthmatrix[x,y,1]))
             fp_values.write('\n')
     elif isinstance(g.growthmatrixgrid,(tuple,list,np.ndarray)):
+        # growthmatrixgrid is stored in pickle file
         for i,x in enumerate(g.growthmatrixgrid[0]):
             for j,y in enumerate(g.growthmatrixgrid[1]):
                 fp_values.write('{} {} {} {}\n'.format(x,y,g.growthmatrix[i,j,0],g.growthmatrix[i,j,1]))
             fp_values.write('\n')
     else:
+        # should not happen
         raise NotImplementedError
     
     if not args.outfile is None:
