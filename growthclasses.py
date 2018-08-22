@@ -1585,7 +1585,7 @@ class GrowthDynamicsAntibiotics4(GrowthDynamics):
 
 
 
-class GrowthDynamicsAntibiotics5(GrowthDynamics):
+class GrowthDynamicsAntibiotics5(GrowthDynamicsODE):
     def __init__(self,**kwargs):
 
         super(GrowthDynamicsAntibiotics5,self).__init__(**kwargs)
