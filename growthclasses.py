@@ -1585,6 +1585,61 @@ class GrowthDynamicsAntibiotics4(GrowthDynamics):
 
 
 
+class GrowthDynamicsAntibiotics5(GrowthDynamics):
+    def __init__(self,**kwargs):
+
+        super(GrowthDynamicsAntibiotics5,self).__init__(**kwargs)
+        self.__params = dict()
+        self.__params['gamma'] = kwargs.get("gamma",2)
+        self.__params['AB_Conc'] = kwargs.get("AB_Conc",1.24)
+        self.__params['EnzymeProductionActivity'] = kwargs.get("EnzymeProductionActivity",np.zeros(self.numstrains))
+
+        assert len(self.__params['EnzymeProductionActivity']) == self.numstrains, "Enzyme production not defined correctly"
+        assert sum(self.__params['EnzymeProductionActivity']) > 0, "Enzyme is not produced"
+        
+        self.otherinitialconditions =   np.concatenate([
+                                            np.array([self.env.substrate]),      # substrate
+                                            np.array([self.__params['AB_Conc']]) # external antibiotics concentration
+                                        ])
+        
+    
+    def growthr(self,substrate,abconc):
+        # new integration scheme needs a more relaxed version of when substrate is empty
+        # this variable is set as a (constant) fraction of the average yield
+        if substrate > self.EmptySubstrateThreshold:
+            if abconc > 1:
+                return -self.growthrates * self.__params['gamma']
+            else:
+                return self.growthrates
+        else:
+            return np.zeros(self.numstrains)
+    
+    def dynamics(self,t,x):
+        
+        a   =  self.growthr(x[self.numstrains],x[-1])
+        a0y = -self.growthr(x[self.numstrains],0)/self.yieldfactors
+        
+        return np.concatenate([
+                    a * x[:self.numstrains],    # cell growth
+                    np.array([
+                            np.sum(a0y * x[:self.numstrains]), # depletion of nutrients
+                            -np.dot(self.__params['EnzymeProductionActivity'],x[:self.numstrains]) # degradation of antibiotics
+                            ])
+                    ])
+
+
+    def ParameterString(self):
+        r  = '\n'
+        s  = super(GrowthDynamicsAntibiotics5,self).ParameterString() +r
+        s += "*** antibiotic parameters ***" +r
+        s += "  Antibiotics Initial Conc    " + str(self.__params['AB_Conc']) +r
+        s += "  gamma                       " + str(self.__params['gamma']) +r
+        s += "  Enzyme Production Activity  " + self.arraystring(self.__params['EnzymeProductionActivity']) +r
+        return s
+
+
+
+
 class GrowthDynamicsPyoverdin(GrowthDynamicsODE):
     def __init__(self,**kwargs):
         super(GrowthDynamicsPyoverdin,self).__init__(**kwargs)
