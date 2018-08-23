@@ -1587,11 +1587,11 @@ class GrowthDynamicsAntibiotics4(GrowthDynamics):
 
 class GrowthDynamicsAntibiotics5(GrowthDynamicsODE):
     def __init__(self,**kwargs):
-
         super(GrowthDynamicsAntibiotics5,self).__init__(**kwargs)
+
         self.__params = dict()
-        self.__params['gamma'] = kwargs.get("gamma",2)
-        self.__params['AB_Conc'] = kwargs.get("AB_Conc",1.24)
+        self.__params['gamma']                    = kwargs.get("gamma",2)
+        self.__params['AB_Conc']                  = kwargs.get("AB_Conc",1.25)
         self.__params['EnzymeProductionActivity'] = kwargs.get("EnzymeProductionActivity",np.zeros(self.numstrains))
 
         assert len(self.__params['EnzymeProductionActivity']) == self.numstrains, "Enzyme production not defined correctly"
@@ -1617,12 +1617,12 @@ class GrowthDynamicsAntibiotics5(GrowthDynamicsODE):
     def dynamics(self,t,x):
         
         a   =  self.growthr(x[self.numstrains],x[-1])
-        a0y = -self.growthr(x[self.numstrains],0)/self.yieldfactors
+        ma0y = -self.growthr(x[self.numstrains],0)/self.yieldfactors
         
         return np.concatenate([
                     a * x[:self.numstrains],    # cell growth
                     np.array([
-                            np.sum(a0y * x[:self.numstrains]), # depletion of nutrients
+                            np.sum(ma0y * x[:self.numstrains]), # depletion of nutrients
                             -np.dot(self.__params['EnzymeProductionActivity'],x[:self.numstrains]) # degradation of antibiotics
                             ])
                     ])
