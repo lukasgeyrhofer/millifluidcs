@@ -13,7 +13,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser_io = parser.add_argument_group(description = "==== I/O ====")
     parser_io.add_argument("-i","--infile",required=True)
-    parser_io.add_argument("-o","--baseoutfilename",default="out")
+    parser_io.add_argument("-o","--baseoutfilename",default=None)
     parser_io.add_argument("-v","--verbose",action="store_true",default=False)
     parser_io.add_argument("-X","--write_xi_file",action="store_true",default=False)
 
@@ -105,13 +105,15 @@ def main():
             avg_LogXi = gc.SeedingAverage(wd_logXi, inoc)
             
             # individual 4 terms for 2 strains in the expansion of Cov[X,N/<N>] up to O(da), weak selection limit
-            avg_exp1  =      gc.SeedingAverage(wd_X_ini * (omega - 1),               inoc)
-            avg_exp2  = da * gc.SeedingAverage(wd_X_ini * (omega - 1) * wd_logXi,    inoc)
-            avg_exp3a = da * gc.SeedingAverage(wd_X_ini * (2*wd_X_ini-1) * wd_logXi, inoc)
-            avg_exp3b = da * gc.SeedingAverage(wd_X_ini * omega,                     inoc) * gc.SeedingAverage((2*wd_X_ini-1) * omega * wd_logXi, inoc)
-
-            # output                                                                                                      1   2   3       4          5         6         7                      8       9      
-            fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(a1, a2, avg_dX, cov_XrelN, avg_exp1, avg_exp2, avg_exp3a - avg_exp3b, avg_Xi, avg_LogXi))
+            avg_exp1   =      gc.SeedingAverage(wd_X_ini * (omega - 1),               inoc)
+            avg_exp2   = da * gc.SeedingAverage(wd_X_ini * (omega - 1) * wd_logXi,    inoc)
+            avg_exp3A  = da * gc.SeedingAverage(wd_X_ini * (2*wd_X_ini-1) * wd_logXi, inoc)
+            avg_exp3B1 =      gc.SeedingAverage(wd_X_ini * omega,                     inoc)
+            avg_exp3B2 =      gc.SeedingAverage((2*wd_X_ini-1) * omega * wd_logXi,    inoc)
+            avg_exp3B  = da * avg_exp3B1 * avg_exp3B2
+            
+            # output                                                                                             1   2   3       4          5         6         7                      8       9      
+            fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(a1, a2, avg_dX, cov_XrelN, avg_exp1, avg_exp2, avg_exp3a - avg_exp3B, avg_Xi, avg_LogXi))
         fp.write("\n")
 
     if not args.baseoutfilename is None:
