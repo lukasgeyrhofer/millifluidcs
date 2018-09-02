@@ -78,7 +78,7 @@ def main():
     for i,a1 in enumerate(a1_list):
         for j,a2 in enumerate(a2_list):
             
-            inoc      = gc.getAbsoluteInoculumNumbers([a1,a2],args.newcoordinates)
+            inoc      = gc.getAbsoluteInoculumNumbers([a1,a2],args.AbsoluteCoordinates)
             
             avg_N1    = gc.SeedingAverage(gm1,       inoc)
             avg_N2    = gc.SeedingAverage(gm2,       inoc)
