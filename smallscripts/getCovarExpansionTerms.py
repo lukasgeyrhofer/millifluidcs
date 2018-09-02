@@ -18,8 +18,8 @@ def main():
     parser_io.add_argument("-X","--write_xi_file",action="store_true",default=False)
 
     parser_lattice = parser.add_argument_group(description = "==== Lattice parameters ====")
-    parser_lattice.add_argument("-C","--newcoordinates",default=False,action="store_true",help="Use (n,x) instead of (n1,n2) as coordinates")
-    parser_lattice.add_argument("-N","--maxInoculum",type=float,default=50)
+    parser_lattice.add_argument("-A","--AbsoluteCoordinates",default=False,action="store_true",help="Use (n1,n2) instead of (n,x) as coordinates")
+    parser_lattice.add_argument("-N","--maxInoculum",type=float,default=40)
     parser_lattice.add_argument("-n","--stepInoculum",type=float,default=2)
     parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
 
@@ -113,7 +113,7 @@ def main():
             avg_exp3B  = da * avg_exp3B1 * avg_exp3B2
             
             # output                                                                                             1   2   3       4          5         6         7                      8       9      
-            fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(a1, a2, avg_dX, cov_XrelN, avg_exp1, avg_exp2, avg_exp3a - avg_exp3B, avg_Xi, avg_LogXi))
+            fp.write("{:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e} {:14.6e}\n".format(a1, a2, avg_dX, cov_XrelN, avg_exp1, avg_exp2, avg_exp3A - avg_exp3B, avg_Xi, avg_LogXi))
         fp.write("\n")
 
     if not args.baseoutfilename is None:
