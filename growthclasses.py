@@ -7,15 +7,19 @@
 =  growthclasses.py
 ==================================
 
-  Contains code that generates the dynamics during a
-  single cycle of the droplet dilution. Both, deterministic
-  and stochastic, growth types are included as their own
-  classes.
+  Contains code that generates the dynamics during
+  a single cycle of growth, mixing and reseeding.
+  Classes in this file are used to compute a
+  'growthmatrix', which is a lookup-table for
+  all possible inoculum combinations. First, this
+  matrix needs to be computed, and stored in a
+  pickle file, then this pickle file is used as
+  input for analyzing the cycle map.
   
-  In addition, several helper routines help with heavily reused
-  code, to reduce the length of actual scripts that compute
+  In addition, this file contains several helper
+  routines help with heavily reused code, to
+  reduce the length of actual scripts that compute
   interesting properties of the dynamics.
-
 
   Lukas Geyrhofer, l.geyrhofer@technion.ac.il, 2016-2018
 
