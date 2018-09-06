@@ -74,9 +74,6 @@ def main():
         j          = np.zeros((2,2))    # jacobian
         stepcount  = 0                  # number of steps for debugging
 
-        if args.verbose:
-            sys.stdout.write("# starting iterations ... \n")
-
         while np.sum((dn[n>0]/n[n>0])**2) > args.precision:
             if args.verbose:
                 sys.stderr.write("{:4d} {:13.6e} {:13.6e}\n".format(stepcount,n[0],n[1]))
