@@ -47,18 +47,8 @@ def main():
     parser_io.add_argument("-v","--verbose",action="store_true",default=False)
     parser_io.add_argument("-S","--OutputSinglestrainNullclines",action="store_true",default=False)
 
-    parser_dilution = parser.add_argument_group(description = "==== Dilution values ====")
-    parser_dilution.add_argument("-d","--dilutionmin",type=float,default=1e-6)
-    parser_dilution.add_argument("-D","--dilutionmax",type=float,default=None)
-    parser_dilution.add_argument("-K","--dilutionsteps",type=int,default=10)
-    parser_dilution.add_argument("-L","--dilutionlogscale",default = False, action = "store_true")
-
-
-    parser_lattice = parser.add_argument_group(description = "==== Lattice parameters ====")
-    parser_lattice.add_argument("-A","--AbsoluteCoordinates",default=False,action="store_true",help="Use (n1,n2) instead of (n,x) as coordinates")
-    parser_lattice.add_argument("-N","--maxInoculum",type=float,default=40)
-    parser_lattice.add_argument("-n","--stepInoculum",type=float,default=2)
-    parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
+    parser = gc.AddLatticeParameters(parser)
+    parser = gc.AddDilutionParameters(parser)
 
     args=parser.parse_args()
 
@@ -85,7 +75,7 @@ def main():
     # get all averages and store them in the appropriate matrices
     for i,a1 in enumerate(axis1):
         for j,a2 in enumerate(axis2):
-            sn1[i,j],sn2[i,j] = gc.getAbsoluteInoculumNumbers([a1,a2],args.AbsoluteCoordinates)
+            sn1[i,j],sn2[i,j] = gc.TransformInoculum([a1,a2],inabs = args.AbsoluteCoordinates, outabs = True)
             g1[i,j] = gc.SeedingAverage(gm1, [sn1[i,j],sn2[i,j]])
             g2[i,j] = gc.SeedingAverage(gm2, [sn1[i,j],sn2[i,j]])
 

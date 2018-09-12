@@ -30,13 +30,8 @@ def main():
     parser_io.add_argument("-v","--verbose",default=False,action="store_true")
 
     parser = gc.AddDilutionParameters(parser)
-
-    parser_lattice = parser.add_argument_group(description = "==== Lattice parameters ====")
-    parser_lattice.add_argument("-A","--AbsoluteCoordinates",default=False,action="store_true",help="Use (n1,n2) instead of (n,x) as coordinates")
-    parser_lattice.add_argument("-N","--maxInoculum",type=float,default=40)
-    parser_lattice.add_argument("-n","--stepInoculum",type=float,default=2)
-    parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
-
+    parser = gc.AddLatticeParameters(parser)
+    
     args = parser.parse_args()
 
     g           = gc.LoadGM(**vars(args))

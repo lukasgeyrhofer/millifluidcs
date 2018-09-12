@@ -92,6 +92,15 @@ def AddDilutionParameters(p):
     return p
 
 
+def AddLatticeParameters(p):
+    parser_lattice = p.add_argument_group(description = "==== Lattice parameters ====")
+    parser_lattice.add_argument("-A","--AbsoluteCoordinates",default=False,action="store_true",help="Use (n1,n2) instead of (n,x) as coordinates")
+    parser_lattice.add_argument("-N","--maxInoculum",type=float,default=40)
+    parser_lattice.add_argument("-n","--stepInoculum",type=float,default=2)
+    parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
+    return p
+
+
 def PoissonSeedingVectors(m,n,cutoff = 1e-100,diff = False):
     if isinstance(n,(float,np.float,np.float64,int)):
         n = np.array([n],dtype=float)
@@ -148,24 +157,29 @@ def getInoculumAxes(**kwargs):
         return nlist,nlist
 
 
-def getAbsoluteInoculumNumbers(coordinate,absolutecoordinates = False):
-    if not absolutecoordinates:
-        return coordinate[0] * coordinate[1], coordinate[0] * (1 - coordinate[1])
-    else:
-        return coordinate[0],coordinate[1]
+def getInoculumMatrices(axis1,axis2):
+    m1 = np.repeat([axis1],axis=1).T
+    m2 = np.repeat([axis2],axis=1)
+    return m1,m2
 
 
-def getCoordinatesFromAbsoluteInoculum(inoculum,absolutecoordinates = False):
-    if absolutecoordinates:
-        return inoculum[0],inoculum[1]
+def TransformInoculum(coord, inabs = False, outabs = False):
+    # if either is True:
+    # inabs:  input coordinate are (n1,n2)
+    # outabs: output coordinates are (n1,n2)
+    # else use relative (n,x)
+    if inabs:
+        n1,n2 = (coord[0],coord[1])
     else:
-        n = float(inoculum[0] + inoculum[1])
-        if n>0:
-            x = inoculum[0]/n
+        n1,n2 = (coord[0] * coord[1], coord[0] * (1-coord[1]))
+    if outabs:
+        return np.array([n1,n2],dtype=np.float)
+    else:
+        if n1+n2 > 0:
+            return np.array([n1+n2,n1/(n1+n2)],dtype=np.float)
         else:
-            x = 0
-        return n,x
-
+            return np.zeros(2)
+        
 
 def getDilutionList(**kwargs):
     dilutionmin = kwargs.get("dilutionmin",1e-6)
@@ -266,6 +280,18 @@ def LoadGM(**kwargs):
         sys.stderr.write(str(g))
     
     return g
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class MicrobialStrain(object):

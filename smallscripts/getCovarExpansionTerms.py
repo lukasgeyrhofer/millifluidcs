@@ -17,12 +17,8 @@ def main():
     parser_io.add_argument("-v","--verbose",action="store_true",default=False)
     parser_io.add_argument("-X","--write_xi_file",action="store_true",default=False)
 
-    parser_lattice = parser.add_argument_group(description = "==== Lattice parameters ====")
-    parser_lattice.add_argument("-A","--AbsoluteCoordinates",default=False,action="store_true",help="Use (n1,n2) instead of (n,x) as coordinates")
-    parser_lattice.add_argument("-N","--maxInoculum",type=float,default=40)
-    parser_lattice.add_argument("-n","--stepInoculum",type=float,default=2)
-    parser_lattice.add_argument("-x","--stepFraction",type=float,default=.05)
-
+    parser = gc.AddLatticeParameters(parser)
+    
     args = parser.parse_args()
 
     g = gc.LoadGM(**vars(args))
@@ -78,7 +74,7 @@ def main():
     for i,a1 in enumerate(a1_list):
         for j,a2 in enumerate(a2_list):
             
-            inoc      = gc.getAbsoluteInoculumNumbers([a1,a2],args.AbsoluteCoordinates)
+            inoc      = gc.TransformInoculum([a1,a2],inabs = args.AbsoluteCoordinates, outabs = True)
             
             avg_N1    = gc.SeedingAverage(gm1,       inoc)
             avg_N2    = gc.SeedingAverage(gm2,       inoc)
