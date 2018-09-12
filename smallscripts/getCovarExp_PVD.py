@@ -15,7 +15,7 @@ def func_xexp(ax1,ax2,params):
     x      = np.zeros(np.shape(n))
     x[n>0] = m1[n>0]/n[n>0]
     
-    return x * np.exp(-params['expconst']/m1)
+    return x * np.exp(-params['expconst'] * x)
 
 def func_x(ax1,ax2,params):
     m1,m2  = gc.getInoculumMatrices(ax1,ax2)
@@ -31,7 +31,7 @@ def func_exp(ax1,ax2,params):
     x      = np.zeros(np.shape(n))
     x[n>0] = m1[n>0]/n[n>0]
     
-    return np.exp(-params['expconst']/m1)
+    return np.exp(-params['expconst'] * x)
     
 
 def main():
