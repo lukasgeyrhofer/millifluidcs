@@ -158,8 +158,8 @@ def getInoculumAxes(**kwargs):
 
 
 def getInoculumMatrices(axis1,axis2):
-    m1 = np.repeat([axis1],axis=1).T
-    m2 = np.repeat([axis2],axis=1)
+    m1 = np.repeat([axis1],axis=0, repeats = len(axis2)).T
+    m2 = np.repeat([axis2],axis=0, repeats = len(axis1))
     return m1,m2
 
 
