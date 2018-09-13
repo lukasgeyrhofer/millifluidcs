@@ -61,7 +61,7 @@ def main():
             Ex    = gc.SeedingAverage(func_x   (m,m,params), inoc)
             Eexp  = gc.SeedingAverage(func_exp (m,m,params), inoc)
             
-            xw1[i,j] = (Exexp - Ex * Eexp) / (params['sigma']/(params['sigma']-1) - Eexp)
+            xw1[i,j] = -(Exexp - Ex * Eexp) / (params['sigma']/(params['sigma']-1) - Eexp)
             
             print("{:14.6e} {:14.6e} {:14.6e}".format(a1,a2,xw1[i,j]))
         print("")
