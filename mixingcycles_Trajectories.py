@@ -69,7 +69,7 @@ def main():
     gm2   = g.growthmatrix[:,:,1]
 
     if args.verbose:
-        sys.stderr.write(str(g)
+        sys.stderr.write(str(g))
 
     for dilution in dlist:
         if args.verbose:
