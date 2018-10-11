@@ -48,9 +48,9 @@ def main():
         fp = open(args.outfile + "_D{:.3e}".format(dilution),"w")
         for i,a1 in enumerate(axis1):
             for j,a2 in enumerate(axis2):
-                next1 = gc.SeedingAverage(gm1, gc.getAbsoluteInoculumNumbers([a1,a2],args.AbsoluteCoordinates)) * dilution
-                next2 = gc.SeedingAverage(gm2, gc.getAbsoluteInoculumNumbers([a1,a2],args.AbsoluteCoordinates)) * dilution
-                fp.write('{} {} {} {}\n'.format(a1,a2,*gc.getCoordinatesFromAbsoluteInoculum([next1,next2],args.AbsoluteCoordinates)))
+                next1 = gc.SeedingAverage(gm1, gc.TransformInoculum([a1,a2],args.AbsoluteCoordinates,True)) * dilution
+                next2 = gc.SeedingAverage(gm2, gc.TransformInoculum([a1,a2],args.AbsoluteCoordinates,True)) * dilution
+                fp.write('{} {} {} {}\n'.format(a1,a2,*gc.TransformInoculum([next1,next2],True,args.AbsoluteCoordinates)))
             fp.write('\n')
         fp.close()
                 
